@@ -34,8 +34,7 @@ Analysis::Analysis( vector< string > v_infileName ) : Analysis() {
   catch (int code) { //Crash as soon as one file is not correct
     //Clear the TFile pointers created so far
     while (m_tfile.size()) {
-      //possible memory leak
-      // I need to better understand vectors of pointers
+      delete m_tfile.back();
       m_tfile.pop_back(); 
     }//while
   }//catch
@@ -44,6 +43,13 @@ Analysis::Analysis( vector< string > v_infileName ) : Analysis() {
   m_tevent.readFrom( m_tfile.front() );
 
 }
+//===============================================
+Analysis::~Analysis() {
+  while ( m_tfile.size() ) {
+    delete m_tfile.back();
+    m_tfile.pop_back();
+  }//while
+}//~Analysis
 
 //================================================
 void Analysis::AddFile( string infileName ) {
@@ -65,8 +71,7 @@ void Analysis::AddFile( string infileName ) {
     if (! code ) cout << "Initialization Failed" << endl;
     else {
       cout << "Root file not found" << endl;
-      // Possible memory leak
-      // Need to better understand vecotrs of pointers
+      delete m_tfile.back();
       m_tfile.pop_back();
     }
   }//catch

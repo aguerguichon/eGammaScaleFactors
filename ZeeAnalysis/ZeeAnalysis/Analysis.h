@@ -17,13 +17,14 @@ class Analysis
   Analysis();   // Will initialize histograms
   Analysis( string infileName);
   Analysis( vector<string> v_infileName ); //will initialize TFiles and TEvents
-
+  ~Analysis();
   //*******************************************
   // Add a Tfile to m_tfile
   // Return an exception if fiel is not found
   // Clear pointers if needed
   // The TEvent read the new file
   void AddFile(string infileName);
+
 
  private :
   //I assume that the TEvent can only read one fiel at the time
