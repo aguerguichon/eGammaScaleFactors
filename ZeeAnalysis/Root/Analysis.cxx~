@@ -1,0 +1,75 @@
+#include "ZeeAnalysis/Analysis.h"
+
+
+
+Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess), m_numEvent(0) {
+  m_infile.clean();
+}
+
+//=================================================================
+Analysis::Analysis ( string infileName) : Analysis() {
+
+  try {
+    AddFile( infileName );
+  }//try
+  catch (int ...) {
+  }//catch
+}//Analysis
+
+  //==========================================================
+Analysis::Analysis( vector< string > v_infileName ) : Analysis() {
+
+  try {
+    // Loop on file names to create TFiles
+    for (unsigned int ifile = 0; i < v_infileName.size(); i++) {
+      //Add one file to the list of TFile
+      AddFile(v_infileName)
+	}// for ifile
+  }//try 
+
+  catch (int ...) { //Crash as soon as one file is not correct
+    //Clear the TFile pointers created so far
+    while (m_tfile.size()) {
+      delete m_tfile.back();
+      m_tfile.pop_back();
+    }//while
+  }//catch
+  
+  //Reset the  TEvent to look at the first file
+  m_tevent.readFrom( m_tfile.front() );
+
+}
+
+//================================================
+void Analysis::AddFile( string infileName ) {
+
+  try {
+    // Initialise the application:                                                 
+    if ( ! xAOD::Init( infileName.c_str() ) ) throw 0;
+
+    // Open the input file:                                                        
+    m_tfile.push_back(0);
+    m_tfile.back() = TFile::Open( infileName.c_str() );
+    if ( ! m_tfile.back() ) throw 1;
+
+    // TEvent reads the file
+    if ( !  event.readFrom( m_tfile.back() ) ) throw 2;
+  }//try
+
+  catch (int code) {
+    if (code == 0) cout << "Initialization Failed" << endl;
+    else if ( code == 1 ) {
+	cout << "Root file not found" << endl;
+	m_tfile.pop_back();
+      }
+    else if ( code == 2 ) {
+      cout << "TEvent can't read file" << endl;
+      delete m_tfile.back();
+      m_tfile.pop_back();
+    }
+  }//catch
+  m_numEvent += m_tevent.getEntries();
+
+}//Addfile
+
+
