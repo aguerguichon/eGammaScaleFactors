@@ -7,17 +7,26 @@ using std::vector;
 #include "xAODRootAccess/TEvent.h"
 #include "xAODRootAccess/Init.h"
 #include "xAODRootAccess/TStore.h"
-
+#include "TH1F.h"
 
 class Analysis 
 {
 
  public : 
 
-  Analysis();   // Will initialize histograms
-  Analysis( string infileName);
-  Analysis( vector<string> v_infileName ); //will initialize TFiles and TEvents
+  Analysis();   
+  Analysis( string name );
+  Analysis( string name, string infileName );
+  Analysis( string name, vector<string> v_infileName ); 
   ~Analysis();
+
+  void SetName(string name);
+  string GetName();
+
+  // Function that makes ratio plot
+  // Need to have access to attributes
+  friend  void CompareAnalysis(Analysis &anaMC, Analysis &anaData, string filename="");
+
   //*******************************************
   // Add a Tfile to m_tfile
   // Return an exception if fiel is not found
@@ -25,6 +34,14 @@ class Analysis
   // The TEvent read the new file
   void AddFile(string infileName);
 
+  //Set the TEvent to read from first file
+  void ResetTEvent();
+
+  //Loop on all available events to perform the analysis
+  void TreatEvents();
+
+  //plot and save histograms results
+  void PlotResult(string fileName="");
 
  private :
   //I assume that the TEvent can only read one fiel at the time
@@ -35,6 +52,11 @@ class Analysis
   vector< TFile* > m_tfile; // Contains all TFiles which will be read by 
   xAOD::TEvent m_tevent;
 
- int  m_numEvent;
+  string m_name;
+
+  int  m_numEvent;
+  int m_goodEvent;
+
+  TH1F *m_ZMassRaw;
 };
 #endif

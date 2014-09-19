@@ -1,27 +1,48 @@
 #include "ZeeAnalysis/Analysis.h"
 #include "TFile.h"
+#include "ZeeAnalysis/Selection.h"
+#include "ZeeAnalysis/SideFunctions.h"
+#include "TString.h"
+#include "TCanvas.h"
+
 
 using std::cout;
 using std::endl;
 using std::vector;
 using std::string;
 
-Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess), m_numEvent(0) {
+
+Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess), m_numEvent(0),
+		       m_goodEvent(0)
+{
   m_tfile.clear();
+
+  //Initialize histograms
+  m_ZMassRaw = new TH1F ("ZMassRaw", "ZMassRaw", 40, 80, 100); //Masses in GeV
+  m_ZMassRaw->GetXaxis()->SetTitle("M_{ee} [GeV]");
+  m_ZMassRaw->GetYaxis()->SetTitle("Event/0.5 GeV");
+  m_ZMassRaw->Sumw2();
+}
+
+Analysis::Analysis( string name ) : Analysis()  {
+  m_name = name;
+  m_ZMassRaw->SetName( TString( "ZMassRaw_" + m_name ) );
+  m_ZMassRaw->SetTitle( TString( "ZMassRaw_" + m_name ) );
 }
 
 //=================================================================
-Analysis::Analysis ( string infileName) : Analysis() {
+Analysis::Analysis ( string name, string infileName) : Analysis(name) {
 
   try {
     AddFile( infileName );
   }//try
   catch (int code) {
   }//catch
+
 }//Analysis
 
   //==========================================================
-Analysis::Analysis( vector< string > v_infileName ) : Analysis() {
+Analysis::Analysis( string name, vector< string > v_infileName ) : Analysis(name) {
 
   try {
     // Loop on file names to create TFiles
@@ -39,9 +60,7 @@ Analysis::Analysis( vector< string > v_infileName ) : Analysis() {
     }//while
   }//catch
   
-  //Reset the  TEvent to look at the first file
-  m_tevent.readFrom( m_tfile.front() );
-
+  ResetTEvent();
 }
 //===============================================
 Analysis::~Analysis() {
@@ -79,4 +98,62 @@ void Analysis::AddFile( string infileName ) {
 
 }//Addfile
 
+//======================================================
+void Analysis::ResetTEvent() {
+  m_tevent.readFrom( m_tfile.front() ).ignore();
+}
 
+//=======================================================
+void Analysis::TreatEvents() {
+  int currentEvent=0;
+  //Loop on all TFile stored in the class
+  for (unsigned int i_file = 0 ; i_file < m_tfile.size() ; i_file++) {
+
+    // Set the TEvent on the current TFile
+    m_tevent.readFrom( m_tfile[i_file] ).ignore();
+    int nentries = m_tevent.getEntries();
+
+    //Loop on all events of the TFile
+    for (int i_event = 0 ; i_event < nentries ; i_event++) {
+      currentEvent++;
+      if (currentEvent % 1000 == 0 ) cout << "Event : " << currentEvent << endl;
+ 
+      // Read event 
+      m_tevent.getEntry( i_event );
+      //Retrieve the electron container                                               
+      const xAOD::ElectronContainer* eContainer = 0;
+      if ( !m_tevent.retrieve( eContainer, "ElectronCollection" ).isSuccess() ){
+	cout << "Can not retrieve ElectronContainer : ElectronCollection" << endl;
+	exit(1);
+      }// if retrieve                                                                 
+
+      if ( ! PassSelection( eContainer ) ) continue;
+      m_ZMassRaw->Fill( ComputeZMass( eContainer ) );
+
+    }//for i_event    
+  }//for i_file
+
+}//TreatEvents
+
+//=======================================================
+void Analysis::SetName( string name ) { m_name = name; }
+string Analysis::GetName() { return m_name; }
+
+
+//=======================================================
+void Analysis::PlotResult(string fileName) {
+
+  //check that the last character of directory is '/'
+  if ( fileName == "" ) fileName = m_name + ".root";
+
+  TFile *outfile = new TFile( fileName.c_str() , "RECREATE"); 
+  TCanvas *canvas = new TCanvas();
+
+  m_ZMassRaw->Draw("E");
+  canvas->SaveAs( TString( fileName.substr( 0, fileName.find_last_of ( "." ) - 1 ) + "_ZMassRaw.pdf" ) );
+
+  m_ZMassRaw->Write( "", TObject::kOverwrite );
+  outfile->Close();
+
+
+}//plotresutl
