@@ -7,8 +7,8 @@ using std::cout; using std::endl;
 void CompareAnalysis(Analysis &anaMC, Analysis &anaData, string fileName ){
 
 
-  TH1F* ZMassRawMC = ( TH1F* ) anaMC.m_ZMassRaw->Clone();
-  TH1F* ZMassRawData = ( TH1F* ) anaData.m_ZMassRaw->Clone();
+  TH1F* ZMassRawMC = ( TH1F* ) anaMC.m_ZMass->Clone();
+  TH1F* ZMassRawData = ( TH1F* ) anaData.m_ZMass->Clone();
 
   //Normalize hist before comparing
   ZMassRawMC->Scale( 1 / ZMassRawMC->Integral() );

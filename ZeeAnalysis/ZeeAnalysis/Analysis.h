@@ -38,10 +38,18 @@ class Analysis
   void ResetTEvent();
 
   //Loop on all available events to perform the analysis
-  void TreatEvents();
+  void TreatEvents(int nevent=0);
 
   //plot and save histograms results
   void PlotResult(string fileName="");
+
+  //Save All content of analysis in a root file
+  //fileName = output rootfile
+  void Save(string fileName="");
+
+  void Load( string fileName = "" );
+
+  void Add( Analysis analysis );
 
  private :
   //I assume that the TEvent can only read one fiel at the time
@@ -57,6 +65,9 @@ class Analysis
   int  m_numEvent;
   int m_goodEvent;
 
-  TH1F *m_ZMassRaw;
+  TH1F *m_ZMass;
+  TH1F *m_EPerEventBFSel;
+  TH1F *m_EPerEventAFSel;
+
 };
 #endif
