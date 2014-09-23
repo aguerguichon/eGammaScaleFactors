@@ -33,6 +33,7 @@ Analysis::Analysis( string name ) : Analysis()  {
 //=================================================================
 Analysis::Analysis ( string name, string infileName) : Analysis(name) {
 
+  cout << "Adding file" << endl;
   try {
     AddFile( infileName );
   }//try
@@ -44,10 +45,13 @@ Analysis::Analysis ( string name, string infileName) : Analysis(name) {
   //==========================================================
 Analysis::Analysis( string name, vector< string > v_infileName ) : Analysis(name) {
 
+  cout << "Input file : " << v_infileName.size() << endl;
+
   try {
     // Loop on file names to create TFiles
     for (unsigned int i = 0; i < v_infileName.size(); i++) {
       //Add one file to the list of TFile
+      cout << v_infileName[i] << endl;
       AddFile(v_infileName[i]);
 	}// for ifile
   }//try 
@@ -127,11 +131,19 @@ void Analysis::TreatEvents() {
 	exit(1);
       }// if retrieve                                                                 
 
-      if ( ! PassSelection( eContainer ) ) continue;
-      m_ZMassRaw->Fill( ComputeZMass( eContainer ) );
+      //copy the retrieved container in order to modify it.
+      xAOD::ElectronContainer tmp_econt( *eContainer );
+      
+      if ( ! PassSelection( tmp_econt ) ) continue;
+      else m_goodEvent++;
+
+      m_ZMassRaw->Fill( ComputeZMass( tmp_econt ) );
 
     }//for i_event    
   }//for i_file
+
+  cout << "Total Events Treated : " << m_numEvent << endl;
+  cout << "Total Good Events    : " << m_goodEvent << endl;
 
 }//TreatEvents
 
@@ -150,7 +162,7 @@ void Analysis::PlotResult(string fileName) {
   TCanvas *canvas = new TCanvas();
 
   m_ZMassRaw->Draw("E");
-  canvas->SaveAs( TString( fileName.substr( 0, fileName.find_last_of ( "." ) - 1 ) + "_ZMassRaw.pdf" ) );
+  canvas->SaveAs( TString( fileName.substr( 0, fileName.find_last_of ( "." )  ) + "_ZMassRaw.pdf" ) );
 
   m_ZMassRaw->Write( "", TObject::kOverwrite );
   outfile->Close();

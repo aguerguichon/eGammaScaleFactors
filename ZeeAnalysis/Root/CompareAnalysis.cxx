@@ -27,7 +27,7 @@ void CompareAnalysis(Analysis &anaMC, Analysis &anaData, string fileName ){
   //Save plots
   TCanvas *canvas = new TCanvas();
   ZMassRawData->Draw("E");
-  canvas->SaveAs( TString( fileName.substr( 0, fileName.find_last_of(".")-1) + "_ZMassRawDataMC.pdf") );
+  canvas->SaveAs( TString( fileName.substr( 0, fileName.find_last_of(".")) + "_ZMassRawDataMC.pdf") );
 
   TFile *outfile = new TFile( fileName.c_str() , "RECREATE" );
   ZMassRawData->Write( "", TObject::kOverwrite );

@@ -3,6 +3,6 @@
 
 #include "xAODEgamma/ElectronContainer.h"
 
-double ComputeZMass( const xAOD::ElectronContainer * eContainer);
+double ComputeZMass( const xAOD::ElectronContainer &eContainer);
 
 #endif
