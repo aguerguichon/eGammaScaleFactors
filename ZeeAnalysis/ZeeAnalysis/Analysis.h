@@ -49,7 +49,7 @@ class Analysis
 
   void Load( string fileName = "" );
 
-  void Add( Analysis analysis );
+  void Add( const Analysis & analysis  );
 
  private :
   //I assume that the TEvent can only read one fiel at the time

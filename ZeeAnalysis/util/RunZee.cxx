@@ -48,9 +48,10 @@ int main( int argc, char* argv[] ) {
   analysisMC.TreatEvents(1000);
   analysisMC.Save("results/test.root");
 
-  // Analysis analysis_tmp( "tmp" );
-  // analysis_tmp.Load( "results/test.root" );
-  // analysis_tmp.Save( "results/test1.root" );
+  Analysis analysis_tmp( "tmp" );
+  analysis_tmp.Load( "results/test.root" );
+  analysis_tmp.Add(analysisMC );
+  analysis_tmp.Save( "results/test1.root" );
 
   // Analysis analysisData( "Data",  infileNameData );
   // analysisData.TreatEvents();

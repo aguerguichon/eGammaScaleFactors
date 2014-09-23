@@ -212,7 +212,6 @@ void Analysis::Save( string fileName ) {
 
   char buffer_name[100];
   sprintf( buffer_name, "%s", m_name.c_str() );
-  cout << buffer_name << endl;
   TTree * treeout = new TTree( "InfoTree", "InfoTree" );
   treeout->Branch( "m_name", &buffer_name, "m_name/C" );
   treeout->Branch( "m_numEvent", &m_numEvent, "m_numEvent/I" );
@@ -247,22 +246,23 @@ void Analysis::Load( string fileName ) {
       m_name = string( buffer_name );
     }
     else throw 3;
-
+    
     if ( infile->Get( TString(m_name + "_ZMass" ) ) ) {
       delete m_ZMass;
       m_ZMass = (TH1F*) infile->Get( TString( m_name + "_ZMass" ) );
     }
     else throw 2;
 
+
     if ( infile->Get( TString( m_name + "_EPerEventBFSel" ) ) ) {
       delete m_EPerEventBFSel;
-      m_EPerEventBFSel = (TH1F*) infile->Get( TString( m_name + "EPerEventBFSel" ) );
+      m_EPerEventBFSel = (TH1F*) infile->Get( TString( m_name + "_EPerEventBFSel" ) );
     }
     else throw 4;
 
     if ( infile->Get( TString( m_name + "_EPerEventAFSel" ) ) ) {
       delete m_EPerEventAFSel;
-      m_EPerEventBFSel = (TH1F*) infile->Get( TString( m_name + "EPerEventAFSel") );
+      m_EPerEventAFSel = (TH1F*) infile->Get( TString( m_name + "_EPerEventAFSel" ) );
     }
     else throw 5;
 
@@ -287,11 +287,13 @@ void Analysis::Load( string fileName ) {
     default : break;
     }
   }
+
+  cout << "Loaded : " << fileName << endl;
 }//Load
 
 
 //========================================================
-void Analysis::Add( Analysis analysis ) {
+void Analysis::Add( Analysis const &analysis ) {
 
   m_numEvent += analysis.m_numEvent;
   m_goodEvent += analysis.m_goodEvent;
