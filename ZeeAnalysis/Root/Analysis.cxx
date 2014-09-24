@@ -1,6 +1,5 @@
 #include "ZeeAnalysis/Analysis.h"
 #include "TFile.h"
-#include "ZeeAnalysis/Selection.h"
 #include "ZeeAnalysis/SideFunctions.h"
 #include "TString.h"
 #include "TCanvas.h"
@@ -48,7 +47,7 @@ Analysis::Analysis ( string name, string infileName) : Analysis(name) {
 
   cout << "Adding file" << endl;
   try {
-    AddFile( infileName );
+      AddFile( infileName );
   }//try
   catch (int code) {
   }//catch
@@ -96,8 +95,7 @@ Analysis::~Analysis() {
 void Analysis::AddFile( string infileName ) {
 
   try {
-    // Initialise the application:                                                 
-    if ( ! xAOD::Init( infileName.c_str() ) ) throw 0;
+    if ( !m_tfile.size() )  if ( !xAOD::Init( infileName.c_str() ) ) throw 0;
 
     // Open the input file:                                                        
     m_tfile.push_back(0);
@@ -212,7 +210,7 @@ void Analysis::Save( string fileName ) {
 
   char buffer_name[100];
   sprintf( buffer_name, "%s", m_name.c_str() );
-  TTree * treeout = new TTree( "InfoTree", "InfoTree" );
+  TTree * treeout = new TTree( "_InfoTree" , "InfoTree" );
   treeout->Branch( "m_name", &buffer_name, "m_name/C" );
   treeout->Branch( "m_numEvent", &m_numEvent, "m_numEvent/I" );
   treeout->Branch( "m_goodEvent", &m_goodEvent, "m_goodEvent/I" );
@@ -244,6 +242,7 @@ void Analysis::Load( string fileName ) {
 
       treeout->GetEntry(0);
       m_name = string( buffer_name );
+      delete treeout;
     }
     else throw 3;
     
@@ -305,3 +304,16 @@ void Analysis::Add( Analysis const &analysis ) {
 
 
 }//Analysis
+
+//==========================================================
+bool Analysis::PassSelection( xAOD::ElectronContainer &eContainer ) {
+
+  //Reduce number of electron in container by appling kinematical cuts
+  MakeKinCut(eContainer);
+
+  //Request exactly two electrons
+  if (eContainer.size()!=2) return false;
+  if (ComputeZMass(eContainer) > 100 || ComputeZMass(eContainer) < 80) return false;
+
+  return true;
+}

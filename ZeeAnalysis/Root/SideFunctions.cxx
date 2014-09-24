@@ -20,3 +20,18 @@ double ComputeZMass(const xAOD::ElectronContainer &eContainer){
 
   return Zmomentum.M()*0.001; // Gives result in GeV
 }
+
+
+//==================================================================
+void MakeKinCut( xAOD::ElectronContainer &eContainer ) {
+
+  for (unsigned int i=0; i<eContainer.size(); i++) {
+    if (fabs((*eContainer[i]).eta()) > 2.47 || (*eContainer[i]).pt() < 27e3) {
+      //Have to erase this electron from container                                
+      eContainer.erase(eContainer.begin()+i);
+      i--;
+    }
+
+  }
+
+}//MakeKincut

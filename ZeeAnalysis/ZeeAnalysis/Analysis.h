@@ -8,6 +8,7 @@ using std::vector;
 #include "xAODRootAccess/Init.h"
 #include "xAODRootAccess/TStore.h"
 #include "TH1F.h"
+#include "xAODEgamma/ElectronContainer.h"
 
 class Analysis 
 {
@@ -69,5 +70,7 @@ class Analysis
   TH1F *m_EPerEventBFSel;
   TH1F *m_EPerEventAFSel;
 
+
+  bool PassSelection( xAOD::ElectronContainer &eContainer);
 };
 #endif
