@@ -66,10 +66,16 @@ class Analysis
   int  m_numEvent;
   int m_goodEvent;
 
+
+  TH1F *m_ZMassRaw;
+  TH1F *m_ZMassMedium;
   TH1F *m_ZMass;
+
   TH1F *m_EPerEventBFSel;
   TH1F *m_EPerEventAFSel;
 
+  //Store pointers of histograms to lighten the saving and reading code
+  vector< TH1F* > v_hist;
 
   bool PassSelection( xAOD::ElectronContainer &eContainer);
 };

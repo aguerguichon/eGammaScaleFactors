@@ -21,25 +21,39 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess), m_numEvent(0),
   m_ZMass->GetXaxis()->SetTitle("M_{ee} [GeV]");
   m_ZMass->GetYaxis()->SetTitle("Event/0.5 GeV");
   m_ZMass->Sumw2();
+  v_hist.push_back( m_ZMass );
+
+  m_ZMassRaw = new TH1F ("ZMassRaw", "ZMassRaw", 40, 80, 100); //Masses in GeV
+  m_ZMassRaw->GetXaxis()->SetTitle("M_{ee} [GeV]");
+  m_ZMassRaw->GetYaxis()->SetTitle("Event/0.5 GeV");
+  m_ZMassRaw->Sumw2();
+  v_hist.push_back( m_ZMassRaw );
+
+  m_ZMassMedium = new TH1F ("ZMassMedium", "ZMassMedium", 40, 80, 100); //Masses in GeV
+  m_ZMassMedium->GetXaxis()->SetTitle("M_{ee} [GeV]");
+  m_ZMassMedium->GetYaxis()->SetTitle("Event/0.5 GeV");
+  m_ZMassMedium->Sumw2();
+  v_hist.push_back( m_ZMassMedium );
 
   m_EPerEventBFSel = new TH1F ("EPerEventBFSel", "EPerEventBFSel", 10, -0.5, 9.5); //Masses in GeV
   m_EPerEventBFSel->GetXaxis()->SetTitle("electrons");
   m_EPerEventBFSel->GetYaxis()->SetTitle("Events");
   m_EPerEventBFSel->Sumw2();
+  v_hist.push_back( m_EPerEventBFSel );
 
   m_EPerEventAFSel = new TH1F ("EPerEventAFSel", "EPerEventAFSel", 10, -0.5, 9.5); //Masses in GeV
   m_EPerEventAFSel->GetXaxis()->SetTitle("electrons");
   m_EPerEventAFSel->GetYaxis()->SetTitle("Events");
   m_EPerEventAFSel->Sumw2();
-
+  v_hist.push_back( m_EPerEventAFSel );
 }
 
 Analysis::Analysis( string name ) : Analysis()  {
   m_name = name;
 
-  m_ZMass->SetName( TString( m_name + "_ZMass" ) );
-  m_EPerEventBFSel->SetName( TString( m_name + "_EPerEventBFSel" ) );
-  m_EPerEventAFSel->SetName( TString( m_name + "_EPerEventAFSel" ) );
+  for (unsigned int ihist = 0; ihist < v_hist.size() ; ihist++) {
+    v_hist[ihist]->SetName( TString( m_name + "_" + v_hist[ihist]->GetName() ) );
+  }
 }
 
 //=================================================================
@@ -85,9 +99,9 @@ Analysis::~Analysis() {
     m_tfile.pop_back();
   }//while
 
-  delete m_ZMass;
-  delete m_EPerEventBFSel;
-  delete m_EPerEventAFSel;
+  for ( unsigned int ihist = 0; ihist < v_hist.size(); ihist++ ) {
+    delete v_hist[ihist];
+  }
 
 }//~Analysis
 
@@ -204,13 +218,13 @@ void Analysis::Save( string fileName ) {
 
   TFile *outfile = new TFile( fileName.c_str() , "RECREATE"); 
 
-  m_ZMass->Write( "", TObject::kOverwrite );
-  m_EPerEventBFSel->Write( "", TObject::kOverwrite );
-  m_EPerEventAFSel->Write( "", TObject::kOverwrite );
+  for (unsigned int ihist = 0; ihist < v_hist.size() ; ihist++) {
+    v_hist[ihist]->Write( "", TObject::kOverwrite );
+  }
 
   char buffer_name[100];
   sprintf( buffer_name, "%s", m_name.c_str() );
-  TTree * treeout = new TTree( "_InfoTree" , "InfoTree" );
+  TTree * treeout = new TTree( "InfoTree" , "InfoTree" );
   treeout->Branch( "m_name", &buffer_name, "m_name/C" );
   treeout->Branch( "m_numEvent", &m_numEvent, "m_numEvent/I" );
   treeout->Branch( "m_goodEvent", &m_goodEvent, "m_goodEvent/I" );
@@ -230,7 +244,7 @@ void Analysis::Load( string fileName ) {
 
   try {
     TFile *infile = TFile::Open( fileName.c_str() );
-    if ( !infile ) throw 1;
+    if ( !infile ) throw -1;
 
     if ( infile->Get( "InfoTree" ) ){
       char buffer_name[100];
@@ -239,51 +253,33 @@ void Analysis::Load( string fileName ) {
       treeout->SetBranchAddress( "m_name", &buffer_name);
       treeout->SetBranchAddress( "m_numEvent", &m_numEvent);
       treeout->SetBranchAddress( "m_goodEvent", &m_goodEvent);
-
+      
       treeout->GetEntry(0);
       m_name = string( buffer_name );
       delete treeout;
     }
-    else throw 3;
-    
-    if ( infile->Get( TString(m_name + "_ZMass" ) ) ) {
-      delete m_ZMass;
-      m_ZMass = (TH1F*) infile->Get( TString( m_name + "_ZMass" ) );
+    else throw -2;
+
+  for (unsigned int ihist = 0; ihist < v_hist.size() ; ihist++) {
+    string buffer = v_hist[ihist]->GetTitle();
+    if ( infile->Get( TString(m_name + "_" + v_hist[ihist]->GetTitle() ) ) ) {
+      delete v_hist[ihist];
+      v_hist[ihist] = (TH1F*) infile->Get( TString(m_name + "_" + buffer ) );  
     }
-    else throw 2;
-
-
-    if ( infile->Get( TString( m_name + "_EPerEventBFSel" ) ) ) {
-      delete m_EPerEventBFSel;
-      m_EPerEventBFSel = (TH1F*) infile->Get( TString( m_name + "_EPerEventBFSel" ) );
-    }
-    else throw 4;
-
-    if ( infile->Get( TString( m_name + "_EPerEventAFSel" ) ) ) {
-      delete m_EPerEventAFSel;
-      m_EPerEventAFSel = (TH1F*) infile->Get( TString( m_name + "_EPerEventAFSel" ) );
-    }
-    else throw 5;
-
+    else throw (int) ihist;
+  }
   }//try
   catch (int code) {
     switch (code) {
-    case 1 : 
+    case -1 : 
       cout << "TFile Not found" << endl;
       break;
-    case 2 :
-      cout << "ZMass hist do not exist" << endl;
-      break;
-    case 3 :
+    case -2 :
       cout << "InfoTree do not exist" << endl;
       break;
-    case 4 :
-      cout << "EPerEventBFSel do not exist" << endl;
+    default : 
+      cout << "Histogram not found : " << endl;
       break;
-    case 5 :
-      cout << "EPerEventAFSel do not exist" << endl;
-      break;
-    default : break;
     }
   }
 
@@ -309,7 +305,7 @@ void Analysis::Add( Analysis const &analysis ) {
 bool Analysis::PassSelection( xAOD::ElectronContainer &eContainer ) {
 
   //Reduce number of electron in container by appling kinematical cuts
-  MakeKinCut(eContainer);
+  MakeElectronCut(eContainer);
 
   //Request exactly two electrons
   if (eContainer.size()!=2) return false;
