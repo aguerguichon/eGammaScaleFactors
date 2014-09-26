@@ -6,7 +6,7 @@ using std::cout; using std::endl;
 double ComputeZMass(const xAOD::ElectronContainer &eContainer){
   //Check if the container has exactly two electrons
   //We do not consider combinations for the calibration
-  if (eContainer.size()!=2) {cout << "Error : Too many electrons in container" << endl; exit(1);}
+  if (eContainer.size()!=2) return 0;
 
   TLorentzVector Zmomentum(0,0,0,0); //Momentum of the initial Z particle
 
@@ -22,20 +22,3 @@ double ComputeZMass(const xAOD::ElectronContainer &eContainer){
 }
 
 
-//==================================================================
-void MakeElectronCut( xAOD::ElectronContainer &eContainer ) {
-
-  for (unsigned int i=0; i<eContainer.size(); i++) {
-
-    //kinematical cuts on electrons    
-    if (fabs((*eContainer[i]).eta()) > 2.47 || (*eContainer[i]).pt() < 27e3) {
-      //Have to erase this electron from container                                
-      eContainer.erase(eContainer.begin()+i);
-      i--;
-    }
-    
-  }
-
-}//MakeKincut
-
-//==================================================================

@@ -14,7 +14,7 @@ using std::string;
 Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess), m_numEvent(0),
 		       m_goodEvent(0)
 {
-  m_tfile.clear();
+  m_fileName.clear();
 
   //Initialize histograms
   m_ZMass = new TH1F ("ZMass", "ZMass", 40, 80, 100); //Masses in GeV
@@ -28,12 +28,6 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess), m_numEvent(0),
   m_ZMassRaw->GetYaxis()->SetTitle("Event/0.5 GeV");
   m_ZMassRaw->Sumw2();
   v_hist.push_back( m_ZMassRaw );
-
-  m_ZMassMedium = new TH1F ("ZMassMedium", "ZMassMedium", 40, 80, 100); //Masses in GeV
-  m_ZMassMedium->GetXaxis()->SetTitle("M_{ee} [GeV]");
-  m_ZMassMedium->GetYaxis()->SetTitle("Event/0.5 GeV");
-  m_ZMassMedium->Sumw2();
-  v_hist.push_back( m_ZMassMedium );
 
   m_EPerEventBFSel = new TH1F ("EPerEventBFSel", "EPerEventBFSel", 10, -0.5, 9.5); //Masses in GeV
   m_EPerEventBFSel->GetXaxis()->SetTitle("electrons");
@@ -83,10 +77,10 @@ Analysis::Analysis( string name, vector< string > v_infileName ) : Analysis(name
   }//try 
 
   catch (int code) { //Crash as soon as one file is not correct
+    cout << "Crash" << endl;
     //Clear the TFile pointers created so far
-    while (m_tfile.size()) {
-      delete m_tfile.back();
-      m_tfile.pop_back(); 
+    while (m_fileName.size()) {
+      m_fileName.pop_back(); 
     }//while
   }//catch
   
@@ -94,11 +88,6 @@ Analysis::Analysis( string name, vector< string > v_infileName ) : Analysis(name
 }
 //===============================================
 Analysis::~Analysis() {
-  while ( m_tfile.size() ) {
-    delete m_tfile.back();
-    m_tfile.pop_back();
-  }//while
-
   for ( unsigned int ihist = 0; ihist < v_hist.size(); ihist++ ) {
     delete v_hist[ihist];
   }
@@ -109,23 +98,19 @@ Analysis::~Analysis() {
 void Analysis::AddFile( string infileName ) {
 
   try {
-    if ( !m_tfile.size() )  if ( !xAOD::Init( infileName.c_str() ) ) throw 0;
+    if ( !m_fileName.size() )  if ( !xAOD::Init( infileName.c_str() ) ) throw 0;
 
     // Open the input file:                                                        
-    m_tfile.push_back(0);
-    m_tfile.back() = TFile::Open( infileName.c_str() );
-    if ( ! m_tfile.back() ) throw 1;
+    m_fileName.push_back( infileName );
 
-    // TEvent reads the file
-    if ( !  m_tevent.readFrom( m_tfile.back() ) ) throw 2;
+    if ( !  m_tevent.readFrom( TFile::Open( m_fileName.back().c_str() ) ) ) throw 2;
   }//try
 
   catch (int code) {
     if (! code ) cout << "Initialization Failed" << endl;
     else {
       cout << "Root file not found" << endl;
-      delete m_tfile.back();
-      m_tfile.pop_back();
+      m_fileName.pop_back();
     }
   }//catch
   m_numEvent += m_tevent.getEntries();
@@ -134,17 +119,17 @@ void Analysis::AddFile( string infileName ) {
 
 //======================================================
 void Analysis::ResetTEvent() {
-  m_tevent.readFrom( m_tfile.front() ).ignore();
+  m_tevent.readFrom( TFile::Open( m_fileName.front().c_str() ) ).ignore();
 }
 
 //=======================================================
 void Analysis::TreatEvents(int nevent) {
   int currentEvent=0;
   //Loop on all TFile stored in the class
-  for (unsigned int i_file = 0 ; i_file < m_tfile.size() ; i_file++) {
+  for (unsigned int i_file = 0 ; i_file < m_fileName.size() ; i_file++) {
 
     // Set the TEvent on the current TFile
-    m_tevent.readFrom( m_tfile[i_file] ).ignore();
+    m_tevent.readFrom( TFile::Open( m_fileName[i_file].c_str() ) ).ignore();
     int nentries = ( nevent ) ? nevent : m_tevent.getEntries();
 
     //Loop on all events of the TFile
@@ -165,14 +150,11 @@ void Analysis::TreatEvents(int nevent) {
       xAOD::ElectronContainer tmp_econt( *eContainer );
 
       m_EPerEventBFSel->Fill( tmp_econt.size() );
+      m_ZMassRaw->Fill( ComputeZMass( tmp_econt ) );
 
-      if ( ! PassSelection( tmp_econt ) ) {
-	m_EPerEventAFSel->Fill( tmp_econt.size() );
-	continue;}
-      else {
-	m_EPerEventAFSel->Fill( tmp_econt.size() );
-	m_goodEvent++;
-      }
+      if ( ! PassSelection( tmp_econt ) ) continue;
+      else m_goodEvent++;
+
 
       m_ZMass->Fill( ComputeZMass( tmp_econt ) );
 
@@ -185,7 +167,13 @@ void Analysis::TreatEvents(int nevent) {
 }//TreatEvents
 
 //=======================================================
-void Analysis::SetName( string name ) { m_name = name; }
+void Analysis::SetName( string name ) { 
+m_name = name; 
+
+ for (unsigned int ihist = 0; ihist < v_hist.size(); ihist++ ) {
+   v_hist[ihist]->SetName( TString( m_name + "_" + v_hist[ihist]->GetTitle() ) );
+ }
+}
 string Analysis::GetName() { return m_name; }
 
 
@@ -198,16 +186,10 @@ void Analysis::PlotResult(string fileName) {
 
   TCanvas *canvas = new TCanvas();
 
-  m_ZMass->Draw("E");
-  canvas->SaveAs( TString( fileName + "_ZMass.pdf" ) );
-
-  m_EPerEventBFSel->Draw("E");
-  canvas->SaveAs( TString( fileName + "_EPerEventBFSel.pdf" ) );
-
-  m_EPerEventAFSel->Draw("E");
-  canvas->SaveAs( TString( fileName + "_EPerEventAFSel.pdf" ) );
-
-
+  for (unsigned int ihist = 0; ihist < v_hist.size() ; ihist++) {
+    v_hist[ihist]->Draw("E");
+    canvas->SaveAs( TString( fileName + "_" + v_hist[ihist]->GetName() + ".pdf" ) );
+  }
 
 }//plotresutl
  
@@ -232,7 +214,9 @@ void Analysis::Save( string fileName ) {
   treeout->Fill();
   treeout->Write( "", TObject::kOverwrite );
 
+  cout << "Written on : " << outfile->GetName() << endl;
   outfile->Close();
+ 
 }
 
 
@@ -293,23 +277,77 @@ void Analysis::Add( Analysis const &analysis ) {
   m_numEvent += analysis.m_numEvent;
   m_goodEvent += analysis.m_goodEvent;
 
-
-  m_ZMass->Add( analysis.m_ZMass );
-  m_EPerEventBFSel->Add( analysis.m_EPerEventBFSel );
-  m_EPerEventAFSel->Add( analysis.m_EPerEventAFSel );
-
+  for (unsigned int ihist = 0; ihist < v_hist.size(); ihist++ ) {
+    v_hist[ihist]->Add( analysis.v_hist[ihist] );
+  }
 
 }//Analysis
 
 //==========================================================
 bool Analysis::PassSelection( xAOD::ElectronContainer &eContainer ) {
 
-  //Reduce number of electron in container by appling kinematical cuts
+  //Reduce number of electron in container by appling cuts on electrons
   MakeElectronCut(eContainer);
 
+  m_EPerEventAFSel->Fill( eContainer.size() );
   //Request exactly two electrons
   if (eContainer.size()!=2) return false;
+
+  //Check the sign of the two electrons
+  if ( ( (*eContainer[0]).charge() > 0 && (*eContainer[1]).charge() > 0 )
+       || ( (*eContainer[1]).charge() < 0 && (*eContainer[0]).charge() < 0 ) )
+    return false;
+  
   if (ComputeZMass(eContainer) > 100 || ComputeZMass(eContainer) < 80) return false;
 
   return true;
+}
+
+//===================================================================
+void Analysis::MakeElectronCut( xAOD::ElectronContainer &eContainer ) {
+  for (unsigned int i=0; i<eContainer.size(); i++) {
+    if ( !isGoodElectron( *eContainer[i] ) ) {  
+      eContainer.erase(eContainer.begin()+i);
+      i--;
+    }
+  }
+}//MakeKincut
+
+//==================================================================
+
+bool Analysis::isGoodElectron( xAOD::Electron &el ) {
+
+  //kinematical cuts on electrons
+  if ( el.eta() > 2.47 ) return false;
+  if ( el.pt() < 27e3 ) return false;
+  
+  //Author cut
+  if ( el.author() != 1 && el.author() != 3 ) return false;
+  
+  //Cut on the quality of the electron
+  bool selected = false;
+  if ( ! el.passSelection(selected, "Medium") ) return false;
+  if ( !selected ) return false;
+  
+  //OQ cut
+  //    if ( !isGoodOQ()) return false;
+  
+  return true;
+}
+
+//========================================================================
+void Analysis::Divide( Analysis  &analysis ) {
+
+  for ( unsigned int ihist = 0; ihist < v_hist.size(); ihist++ ) {
+
+    analysis.v_hist[ihist]->Scale( 1 / analysis.v_hist[ihist]->Integral() );    
+
+    v_hist[ihist]->Scale( 1 / v_hist[ihist]->Integral() );
+    
+    v_hist[ihist]->Divide( analysis.v_hist[ihist] );
+
+    v_hist[ihist]->SetTitle( TString( "Ratio") + TString(v_hist[ihist]->GetTitle()) );
+
+    v_hist[ihist]->GetYaxis()->SetTitle( TString( "Data/MC" ) );
+  }
 }

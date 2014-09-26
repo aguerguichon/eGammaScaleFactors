@@ -42,20 +42,15 @@ int main( int argc, char* argv[] ) {
   //########## END BOOST ##############################"
   if ( ! infile.size() ) { 
   string infileNameMC = "/sps/atlas/f/fayard/christophe/mc14_8TeV.129680.PowhegPythia8_AU2CT10_Zee_DiLeptonFilter.merge.AOD.e1861_s1933_s1911_r5591_r5625_tid01512382_00/AOD.01512382._000239.pool.root.1";
-  string infileNameData = "/sps/atlas/f/fayard/christophe1/data12_8TeV.00204796.physics_Egamma.merge.AOD.r5723_p1751_tid01534473_00/AOD.01534473._000007.pool.root.1";
+  string infileNameMC2 = "/sps/atlas/f/fayard/christophe/mc14_8TeV.129680.PowhegPythia8_AU2CT10_Zee_DiLeptonFilter.merge.AOD.e1861_s1933_s1911_r5591_r5625_tid01512382_00/AOD.01512382._000001.pool.root.1";
 
-  Analysis analysisMC( "MC",  infileNameMC );
-  analysisMC.TreatEvents(1000);
+  vector< string > inputMC;
+  inputMC.push_back( infileNameMC );
+  inputMC.push_back( infileNameMC2 );
+
+  Analysis analysisMC( "MC",  inputMC );
+  analysisMC.TreatEvents();
   analysisMC.Save("results/test.root");
-
-  Analysis analysis_tmp( "tmp" );
-  analysis_tmp.Load( "results/test.root" );
-  // analysis_tmp.Add(analysisMC );
-  // analysis_tmp.Save( "results/test1.root" );
-
-  // Analysis analysisData( "Data",  infileNameData );
-  // analysisData.TreatEvents();
-  // analysisData.PlotResult();
 
   }
   else {

@@ -9,6 +9,7 @@ using std::vector;
 #include "xAODRootAccess/TStore.h"
 #include "TH1F.h"
 #include "xAODEgamma/ElectronContainer.h"
+#include "xAODEgamma/Electron.h"
 
 class Analysis 
 {
@@ -23,10 +24,6 @@ class Analysis
 
   void SetName(string name);
   string GetName();
-
-  // Function that makes ratio plot
-  // Need to have access to attributes
-  friend  void CompareAnalysis(Analysis &anaMC, Analysis &anaData, string filename="");
 
   //*******************************************
   // Add a Tfile to m_tfile
@@ -52,13 +49,16 @@ class Analysis
 
   void Add( const Analysis & analysis  );
 
+  //Make ratio of current histograms over input histograms
+  void Divide ( Analysis & analysis );
+
  private :
   //I assume that the TEvent can only read one fiel at the time
   //and it can not concatenate multiple files
   //Hence I store in the class the vector of TFile
   //When doing event per event method i will make the TEvent run over all files
 
-  vector< TFile* > m_tfile; // Contains all TFiles which will be read by 
+  vector< string > m_fileName; // Contains all Files Names which will be read by 
   xAOD::TEvent m_tevent;
 
   string m_name;
@@ -68,8 +68,8 @@ class Analysis
 
 
   TH1F *m_ZMassRaw;
-  TH1F *m_ZMassMedium;
   TH1F *m_ZMass;
+
 
   TH1F *m_EPerEventBFSel;
   TH1F *m_EPerEventAFSel;
@@ -78,5 +78,7 @@ class Analysis
   vector< TH1F* > v_hist;
 
   bool PassSelection( xAOD::ElectronContainer &eContainer);
+  void MakeElectronCut( xAOD::ElectronContainer &eContainer);
+  bool isGoodElectron( xAOD::Electron &el);
 };
 #endif
