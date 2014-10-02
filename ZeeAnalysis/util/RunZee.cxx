@@ -46,7 +46,7 @@ int main( int argc, char* argv[] ) {
 
   vector< string > inputMC;
   inputMC.push_back( infileNameMC );
-  inputMC.push_back( infileNameMC2 );
+  //  inputMC.push_back( infileNameMC2 );
 
   Analysis analysisMC( "MC",  inputMC );
   analysisMC.TreatEvents();

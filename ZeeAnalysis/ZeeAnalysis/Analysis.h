@@ -10,6 +10,9 @@ using std::vector;
 #include "TH1F.h"
 #include "xAODEgamma/ElectronContainer.h"
 #include "xAODEgamma/Electron.h"
+#include "ElectronPhotonFourMomentumCorrection/EgammaCalibrationAndSmearingTool.h"
+#include "xAODEventInfo/EventInfo.h"
+#include "xAODCore/ShallowCopy.h"
 
 class Analysis 
 {
@@ -66,7 +69,6 @@ class Analysis
   int  m_numEvent;
   int m_goodEvent;
 
-
   TH1F *m_ZMassRaw;
   TH1F *m_ZMass;
 
@@ -74,11 +76,23 @@ class Analysis
   TH1F *m_EPerEventBFSel;
   TH1F *m_EPerEventAFSel;
 
+  //========================================
+  // Define variables internal to the analysis
   //Store pointers of histograms to lighten the saving and reading code
   vector< TH1F* > v_hist;
+  //Electron calibration tool
 
-  bool PassSelection( xAOD::ElectronContainer &eContainer);
-  void MakeElectronCut( xAOD::ElectronContainer &eContainer);
-  bool isGoodElectron( xAOD::Electron &el);
+  CP::EgammaCalibrationAndSmearingTool *m_EgammaCalibrationAndSmearingTool = new CP::EgammaCalibrationAndSmearingTool("EgammaCalibrationAndSmearingTool"); 
+  const xAOD::EventInfo* m_eventInfo;
+  // Current read file 
+  // Opening one file at a time and deleting others allow to have more files in the job
+  TFile* m_tfile;
+  vector< xAOD::Electron *> m_velectron;
+  //==========================================
+
+  //Internal functions
+  bool PassSelection( );
+  void MakeElectronCut( );
+  bool isGoodElectron( xAOD::Electron* const );
 };
 #endif

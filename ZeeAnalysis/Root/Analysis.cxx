@@ -4,17 +4,25 @@
 #include "TString.h"
 #include "TCanvas.h"
 #include "TTree.h"
+#include "xAODEventInfo/EventInfo.h"
+#include "xAODCore/ShallowCopy.h"
 
 using std::cout;
 using std::endl;
 using std::vector;
 using std::string;
 
-
 Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess), m_numEvent(0),
 		       m_goodEvent(0)
 {
   m_fileName.clear();
+
+  // Initialize calibration Tool
+  m_EgammaCalibrationAndSmearingTool->setProperty("ESModel", "es2012c"); 
+  m_EgammaCalibrationAndSmearingTool->setProperty("ResolutionType", "SigmaEff90"); 
+  m_EgammaCalibrationAndSmearingTool->initialize();
+  m_eventInfo = 0;
+  m_tfile = 0;
 
   //Initialize histograms
   m_ZMass = new TH1F ("ZMass", "ZMass", 40, 80, 100); //Masses in GeV
@@ -102,8 +110,12 @@ void Analysis::AddFile( string infileName ) {
 
     // Open the input file:                                                        
     m_fileName.push_back( infileName );
-
-    if ( !  m_tevent.readFrom( TFile::Open( m_fileName.back().c_str() ) ) ) throw 2;
+    if ( m_tfile ) {
+      delete m_tfile;
+      m_tfile = 0;}
+    m_tfile = TFile::Open( m_fileName.back().c_str() );
+    
+    if ( !  m_tevent.readFrom( m_tfile ) ) throw 2;
   }//try
 
   catch (int code) {
@@ -119,17 +131,21 @@ void Analysis::AddFile( string infileName ) {
 
 //======================================================
 void Analysis::ResetTEvent() {
-  m_tevent.readFrom( TFile::Open( m_fileName.front().c_str() ) ).ignore();
+  delete m_tfile;
+  m_tfile = new TFile( m_fileName.front().c_str() );
+  m_tevent.readFrom( m_tfile ).ignore();
 }
 
 //=======================================================
 void Analysis::TreatEvents(int nevent) {
   int currentEvent=0;
+
   //Loop on all TFile stored in the class
   for (unsigned int i_file = 0 ; i_file < m_fileName.size() ; i_file++) {
-
+    delete m_tfile;
+    m_tfile = new TFile( m_fileName[i_file].c_str() );
     // Set the TEvent on the current TFile
-    m_tevent.readFrom( TFile::Open( m_fileName[i_file].c_str() ) ).ignore();
+    m_tevent.readFrom( m_tfile ).ignore();
     int nentries = ( nevent ) ? nevent : m_tevent.getEntries();
 
     //Loop on all events of the TFile
@@ -141,22 +157,34 @@ void Analysis::TreatEvents(int nevent) {
       m_tevent.getEntry( i_event );
       //Retrieve the electron container                                               
       const xAOD::ElectronContainer* eContainer = 0;
-      if ( !m_tevent.retrieve( eContainer, "ElectronCollection" ).isSuccess() ){
-	cout << "Can not retrieve ElectronContainer : ElectronCollection" << endl;
-	exit(1);
-      }// if retrieve                                                                 
+      if ( ! m_tevent.retrieve( eContainer, "ElectronCollection" ).isSuccess() ){ cout << "Can not retrieve ElectronContainer : ElectronCollection" << endl; exit(1); }// if retrieve                                                                 
+      if ( ! m_tevent.retrieve( m_eventInfo, "EventInfo" ).isSuccess() ){ cout << "Can Not retriev EventInfo" << endl; exit(1); }
 
-      //copy the retrieved container in order to modify it.
-      xAOD::ElectronContainer tmp_econt( *eContainer );
+      //Create a shallow copy of the container to modify it
+      std::pair< xAOD::ElectronContainer*, xAOD::ShallowAuxContainer* > eContShallow = xAOD::shallowCopyContainer( *eContainer );
+      for ( xAOD::ElectronContainer::const_iterator eContShallowItr = eContShallow.first->begin() ; eContShallowItr != eContShallow.first->end(); eContShallowItr++ ) {
+	cout << "pt1 : " << (*eContShallowItr)->pt() << endl;
+	m_EgammaCalibrationAndSmearingTool->applyCorrection( *const_cast< xAOD::Electron* >(*eContShallowItr ), m_eventInfo);
+	cout << "pt2 : " << (*eContShallowItr)->pt() << endl;
+	// m_velectron.push_back( 0 );
+      	// m_velectron.back() = const_cast< xAOD::Electron* > ( *eContShallowItr );      
+      }
 
-      m_EPerEventBFSel->Fill( tmp_econt.size() );
-      m_ZMassRaw->Fill( ComputeZMass( tmp_econt ) );
+      //Setup the calibration tool
+      if ( ! i_event ) {
+      m_EgammaCalibrationAndSmearingTool->setDefaultConfiguration( m_eventInfo );
+      m_EgammaCalibrationAndSmearingTool->forceSmearing( false);
+      m_EgammaCalibrationAndSmearingTool->forceScaleCorrection( false );
+      }
 
-      if ( ! PassSelection( tmp_econt ) ) continue;
+      m_EPerEventBFSel->Fill( m_velectron.size() );
+      m_ZMassRaw->Fill( ComputeZMass( m_velectron ) );
+
+      if ( ! PassSelection() ) continue;
       else m_goodEvent++;
 
 
-      m_ZMass->Fill( ComputeZMass( tmp_econt ) );
+      m_ZMass->Fill( ComputeZMass( m_velectron ) );
 
     }//for i_event    
   }//for i_file
@@ -284,30 +312,31 @@ void Analysis::Add( Analysis const &analysis ) {
 }//Analysis
 
 //==========================================================
-bool Analysis::PassSelection( xAOD::ElectronContainer &eContainer ) {
+bool Analysis::PassSelection() {
 
   //Reduce number of electron in container by appling cuts on electrons
-  MakeElectronCut(eContainer);
+  MakeElectronCut();
 
-  m_EPerEventAFSel->Fill( eContainer.size() );
+  m_EPerEventAFSel->Fill( m_velectron.size() );
   //Request exactly two electrons
-  if (eContainer.size()!=2) return false;
+  if ( m_velectron.size() != 2 ) return false;
 
-  //Check the sign of the two electrons
-  if ( ( (*eContainer[0]).charge() > 0 && (*eContainer[1]).charge() > 0 )
-       || ( (*eContainer[1]).charge() < 0 && (*eContainer[0]).charge() < 0 ) )
-    return false;
+  //  Check the sign of the two electrons
+  if ( m_velectron[0]->charge() * m_velectron[1]->charge() < 0 )  return false;
   
-  if (ComputeZMass(eContainer) > 100 || ComputeZMass(eContainer) < 80) return false;
+  if (ComputeZMass( m_velectron ) > 100 || ComputeZMass( m_velectron ) < 80) return false;
 
   return true;
 }
 
 //===================================================================
-void Analysis::MakeElectronCut( xAOD::ElectronContainer &eContainer ) {
-  for (unsigned int i=0; i<eContainer.size(); i++) {
-    if ( !isGoodElectron( *eContainer[i] ) ) {  
-      eContainer.erase(eContainer.begin()+i);
+void Analysis::MakeElectronCut() {
+  
+  for (unsigned int i=0; i<m_velectron.size(); i++) {
+    //m_EgammaCalibrationAndSmearingTool->applyCorrection( *m_velectron[i], m_eventInfo);
+
+    if ( !isGoodElectron( m_velectron[i] ) ) {  
+      m_velectron.erase( m_velectron.begin() + i );
       i--;
     }
   }
@@ -315,18 +344,18 @@ void Analysis::MakeElectronCut( xAOD::ElectronContainer &eContainer ) {
 
 //==================================================================
 
-bool Analysis::isGoodElectron( xAOD::Electron &el ) {
+bool Analysis::isGoodElectron( xAOD::Electron* const el ) {
 
   //kinematical cuts on electrons
-  if ( el.eta() > 2.47 ) return false;
-  if ( el.pt() < 27e3 ) return false;
+  if ( el->eta() > 2.47 ) return false;
+  if ( el->pt() < 27e3 ) return false;
   
   //Author cut
-  if ( el.author() != 1 && el.author() != 3 ) return false;
+  if ( el->author() != 1 && el->author() != 3 ) return false;
   
   //Cut on the quality of the electron
   bool selected = false;
-  if ( ! el.passSelection(selected, "Medium") ) return false;
+  if ( ! el->passSelection(selected, "Medium") ) return false;
   if ( !selected ) return false;
   
   //OQ cut

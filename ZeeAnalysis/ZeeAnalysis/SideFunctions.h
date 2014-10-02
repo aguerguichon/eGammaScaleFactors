@@ -1,9 +1,12 @@
 #ifndef SIDEFUNCTIONS_H
 #define SIDEFUNCTIONS_H
 
+#include <vector>
 #include "xAODEgamma/ElectronContainer.h"
 
-double ComputeZMass( const xAOD::ElectronContainer &eContainer);
+using std::vector;
+
+double ComputeZMass( vector< xAOD::Electron *> v_electron);
 
 
 
