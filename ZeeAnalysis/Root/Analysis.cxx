@@ -84,7 +84,6 @@ Analysis::Analysis( string name, vector< string > v_infileName ) : Analysis(name
     // Loop on file names to create TFiles
     for (unsigned int i = 0; i < v_infileName.size(); i++) {
       //Add one file to the list of TFile
-      cout << v_infileName[i] << endl;
       AddFile(v_infileName[i]);
 	}// for ifile
   }//try 
@@ -317,14 +316,13 @@ bool Analysis::PassSelection() {
   //Reduce number of electron in container by appling cuts on electrons
   MakeElectronCut();
 
-  m_EPerEventAFSel->Fill( m_velectron.size() );
   //Request exactly two electrons
   if ( m_eGoodContainer->size() != 2 ) return false;
 
   //  Check the sign of the two electrons
   if ( (*m_eGoodContainer)[0]->charge() *  (*m_eGoodContainer)[1]->charge() > 0 ) return false;
 
-  //  if (ComputeZMass( m_velectron ) > 100 || ComputeZMass( m_velectron ) < 80) return false;
+  if (ComputeZMass( m_eGoodContainer ) > 100 || ComputeZMass( m_eGoodContainer ) < 80) return false;
 
   return true;
 }
@@ -353,7 +351,7 @@ void Analysis::MakeElectronCut() {
 bool Analysis::isGoodElectron( xAOD::Electron* const el ) {
 
   //kinematical cuts on electrons
-  if ( el->eta() > 2.47 ) return false;
+  if ( fabs( el->eta() ) > 2.47 ) return false;
   if ( el->pt() < 27e3 ) return false;
   
   //Author cut

@@ -84,12 +84,12 @@ class Analysis
   xAOD::ElectronContainer* m_eGoodContainer;
   xAOD::ElectronAuxContainer* m_eGoodAuxContainer;
   //Electron calibration tool
-  CP::EgammaCalibrationAndSmearingTool *m_EgammaCalibrationAndSmearingTool = new CP::EgammaCalibrationAndSmearingTool("EgammaCalibrationAndSmearingTool"); 
+  CP::EgammaCalibrationAndSmearingTool *m_EgammaCalibrationAndSmearingTool;
   const xAOD::EventInfo* m_eventInfo;
   // Current read file 
   // Opening one file at a time and deleting others allow to have more files in the job
   TFile* m_tfile;
-  vector< xAOD::Electron *> m_velectron;
+
   //==========================================
 
   //Internal functions
