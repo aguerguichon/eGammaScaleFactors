@@ -24,7 +24,7 @@ class Analysis
   Analysis();   
   Analysis( string name , int debug = 0);
   Analysis( string name, string infileName , int debug = 0);
-  Analysis( string name, vector<string> v_infileName , int debug = 0); 
+  Analysis( string name, vector<string> v_infileName, int debug = 0); 
   ~Analysis();
 
   void SetName(string name);

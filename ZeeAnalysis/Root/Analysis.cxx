@@ -12,7 +12,7 @@ using std::vector;
 using std::string;
 
 Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess), 
-		       m_numEvent(0), m_goodEvent(0), debug(0)
+		       m_debug(0), m_numEvent(0), m_goodEvent(0)
 {
   m_fileName.clear();
 
@@ -68,7 +68,7 @@ Analysis::Analysis ( string name, string infileName, int debug) : Analysis(name,
 }//Analysis
 
   //==========================================================
-Analysis::Analysis( string name, vector< string > v_infileName ) : Analysis(name, debug) {
+Analysis::Analysis( string name, vector< string > v_infileName, int debug ) : Analysis(name, debug) {
 
   cout << "Input file : " << v_infileName.size() << endl;
 
