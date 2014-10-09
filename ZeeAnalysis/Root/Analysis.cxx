@@ -12,7 +12,7 @@ using std::vector;
 using std::string;
 
 Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess), 
-		       m_numEvent(0), m_goodEvent(0)
+		       m_numEvent(0), m_goodEvent(0), debug(0)
 {
   m_fileName.clear();
 
@@ -47,16 +47,16 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
 
 }
 
-Analysis::Analysis( string name ) : Analysis()  {
+Analysis::Analysis( string name , int debug ) : Analysis()  {
   m_name = name;
-
+  m_debug = debug;
   for (unsigned int ihist = 0; ihist < v_hist.size() ; ihist++) {
     v_hist[ihist]->SetName( TString( m_name + "_" + v_hist[ihist]->GetName() ) );
   }
 }
 
 //=================================================================
-Analysis::Analysis ( string name, string infileName) : Analysis(name) {
+Analysis::Analysis ( string name, string infileName, int debug) : Analysis(name, debug) {
 
   cout << "Adding file" << endl;
   try {
@@ -68,7 +68,7 @@ Analysis::Analysis ( string name, string infileName) : Analysis(name) {
 }//Analysis
 
   //==========================================================
-Analysis::Analysis( string name, vector< string > v_infileName ) : Analysis(name) {
+Analysis::Analysis( string name, vector< string > v_infileName ) : Analysis(name, debug) {
 
   cout << "Input file : " << v_infileName.size() << endl;
 

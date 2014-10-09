@@ -22,9 +22,9 @@ class Analysis
  public : 
 
   Analysis();   
-  Analysis( string name );
-  Analysis( string name, string infileName );
-  Analysis( string name, vector<string> v_infileName ); 
+  Analysis( string name , int debug = 0);
+  Analysis( string name, string infileName , int debug = 0);
+  Analysis( string name, vector<string> v_infileName , int debug = 0); 
   ~Analysis();
 
   void SetName(string name);
@@ -69,10 +69,13 @@ class Analysis
 
   string m_name;
 
+  int m_debug;
   int  m_numEvent;
   int m_goodEvent;
 
+  //output histograms
   TH1F *m_ZMass;
+
 
   //========================================
   // Define variables internal to the analysis
