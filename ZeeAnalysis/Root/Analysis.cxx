@@ -4,28 +4,37 @@
 #include "TString.h"
 #include "TCanvas.h"
 #include "TTree.h"
+#include "GoodRunsLists/GoodRunsListSelectionTool.h"
 
 using std::cout;
 using std::endl;
 using std::vector;
 using std::string;
 
-Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess), m_numEvent(0),
-		       m_goodEvent(0)
+Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess), 
+		       m_numEvent(0), m_goodEvent(0)
 {
   m_fileName.clear();
 
   //Initialize depp copy container
   m_eContainer = 0;
-  m_eGoodContainer = 0;
-  m_eGoodAuxContainer = 0;
 
-
-  // Initialize calibration Tool
   m_EgammaCalibrationAndSmearingTool  = new CP::EgammaCalibrationAndSmearingTool("EgammaCalibrationAndSmearingTool"); 
   m_EgammaCalibrationAndSmearingTool->setProperty("ESModel", "es2012c"); 
   m_EgammaCalibrationAndSmearingTool->setProperty("ResolutionType", "SigmaEff90"); 
   m_EgammaCalibrationAndSmearingTool->initialize();
+
+  // GRL
+  m_grl = new GoodRunsListSelectionTool("GoodRunsListSelectionTool");
+  std::vector<std::string> vecStringGRL;
+  vecStringGRL.push_back("/afs/cern.ch/user/a/atlasdqm/grlgen/All_Good/data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml");
+  m_grl->setProperty( "GoodRunsListVec", vecStringGRL);
+  m_grl->setProperty("PassThrough", false); // if true (default) will ignore result of GRL and will just pass all events
+  if (!m_grl->initialize().isSuccess()) { // check this isSuccess
+    cout << "Erreur : GRL not initialized" << endl;
+    exit(1);
+  }
+
   m_eventInfo = 0;
   m_tfile = 0;
 
@@ -36,23 +45,6 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess), m_numEvent(0),
   m_ZMass->Sumw2();
   v_hist.push_back( m_ZMass );
 
-  m_ZMassRaw = new TH1F ("ZMassRaw", "ZMassRaw", 40, 80, 100); //Masses in GeV
-  m_ZMassRaw->GetXaxis()->SetTitle("M_{ee} [GeV]");
-  m_ZMassRaw->GetYaxis()->SetTitle("Event/0.5 GeV");
-  m_ZMassRaw->Sumw2();
-  v_hist.push_back( m_ZMassRaw );
-
-  m_EPerEventBFSel = new TH1F ("EPerEventBFSel", "EPerEventBFSel", 10, -0.5, 9.5); //Masses in GeV
-  m_EPerEventBFSel->GetXaxis()->SetTitle("electrons");
-  m_EPerEventBFSel->GetYaxis()->SetTitle("Events");
-  m_EPerEventBFSel->Sumw2();
-  v_hist.push_back( m_EPerEventBFSel );
-
-  m_EPerEventAFSel = new TH1F ("EPerEventAFSel", "EPerEventAFSel", 10, -0.5, 9.5); //Masses in GeV
-  m_EPerEventAFSel->GetXaxis()->SetTitle("electrons");
-  m_EPerEventAFSel->GetYaxis()->SetTitle("Events");
-  m_EPerEventAFSel->Sumw2();
-  v_hist.push_back( m_EPerEventAFSel );
 }
 
 Analysis::Analysis( string name ) : Analysis()  {
@@ -100,11 +92,18 @@ Analysis::Analysis( string name, vector< string > v_infileName ) : Analysis(name
 }
 //===============================================
 Analysis::~Analysis() {
+
   for ( unsigned int ihist = 0; ihist < v_hist.size(); ihist++ ) {
     delete v_hist[ihist];
   }
 
-}//~Analysis
+  delete  m_EgammaCalibrationAndSmearingTool;
+  delete m_tfile;
+
+  if( m_grl ) {
+    delete m_grl; m_grl = 0; }
+
+  }//~Analysis
 
 //================================================
 void Analysis::AddFile( string infileName ) {
@@ -115,6 +114,7 @@ void Analysis::AddFile( string infileName ) {
     // Open the input file:                                                        
     m_fileName.push_back( infileName );
     if ( m_tfile ) {
+      m_tfile->Close();
       delete m_tfile;
       m_tfile = 0;}
     m_tfile = TFile::Open( m_fileName.back().c_str() );
@@ -144,44 +144,57 @@ void Analysis::ResetTEvent() {
 void Analysis::TreatEvents(int nevent) {
   int currentEvent=0;
 
+
   //Loop on all TFile stored in the class
   for (unsigned int i_file = 0 ; i_file < m_fileName.size() ; i_file++) {
-    delete m_tfile;
+
+    //Set the new file in the current file pointer
+    delete m_tfile; m_tfile = 0;
     m_tfile = new TFile( m_fileName[i_file].c_str() );
     // Set the TEvent on the current TFile
     m_tevent.readFrom( m_tfile ).ignore();
-    int nentries = ( nevent ) ? nevent : m_tevent.getEntries();
+    int nentries = m_tevent.getEntries();
 
     //Loop on all events of the TFile
     for (int i_event = 0 ; i_event < nentries ; i_event++) {
       currentEvent++;
+      if ( currentEvent == nevent ) return;
       if (currentEvent % 1000 == 0 ) cout << "Event : " << currentEvent << endl;
  
       // Read event 
       m_tevent.getEntry( i_event );
-      //Retrieve the electron container                                               
+
+      //Retrieve the electron container                  
       if ( ! m_tevent.retrieve( m_eContainer, "ElectronCollection" ).isSuccess() ){ cout << "Can not retrieve ElectronContainer : ElectronCollection" << endl; exit(1); }// if retrieve                                                                 
       if ( ! m_tevent.retrieve( m_eventInfo, "EventInfo" ).isSuccess() ){ cout << "Can Not retriev EventInfo" << endl; exit(1); }
 
-      //Setup the calibration tool
-      if ( ! i_event ) {
+      //Create a shallow copy
+      // Allow to modify electrons properties for calibration
+      m_eShallowContainer = xAOD::shallowCopyContainer( *m_eContainer );
+
+      //Initialize calibration Tool
       m_EgammaCalibrationAndSmearingTool->setDefaultConfiguration( m_eventInfo );
-      m_EgammaCalibrationAndSmearingTool->forceSmearing( false);
+      m_EgammaCalibrationAndSmearingTool->forceSmearing( false );
       m_EgammaCalibrationAndSmearingTool->forceScaleCorrection( false );
+      
+      //GRL
+      if ( ! m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) //test if is data
+      	   && !m_grl->passRunLB(*m_eventInfo) )  //passes the GRL
+      	continue;
+      
+      //      Make the electron selection and fill m_eGoodContainer
+      if ( PassSelection() )  {
+      	m_goodEvent++;
+      	//Should not contain events in bin 0
+      	m_ZMass->Fill( ComputeZMass( m_veGood ) );
       }
 
-      //Create a new elecron container for the event
-      m_eGoodContainer = new xAOD::ElectronContainer();
-      m_eGoodAuxContainer = new xAOD::ElectronAuxContainer();
-      m_eGoodContainer->setStore( m_eGoodAuxContainer );
-      
-      // Make the electron selection and fill m_eGoodContainer
-      if ( ! PassSelection() ) continue;
-      else m_goodEvent++;
+      // Free the memory from copy
+      if ( m_eShallowContainer.first )  delete m_eShallowContainer.first;
+      if ( m_eShallowContainer.second ) delete m_eShallowContainer.second;
 
-      //Clean the event-level objects
-      delete m_eGoodContainer; m_eGoodContainer = 0;
-      delete m_eGoodAuxContainer; m_eGoodAuxContainer = 0;
+      //Reset elecron vector to size 0
+      m_veGood.clear();
 
     }//for i_event    
   }//for i_file
@@ -216,6 +229,7 @@ void Analysis::PlotResult(string fileName) {
     canvas->SaveAs( TString( fileName + "_" + v_hist[ihist]->GetName() + ".pdf" ) );
   }
 
+  delete canvas;
 }//plotresutl
  
 
@@ -240,12 +254,10 @@ void Analysis::Save( string fileName ) {
   treeout->Write( "", TObject::kOverwrite );
 
   cout << "Written on : " << outfile->GetName() << endl;
+  delete treeout;
   outfile->Close();
- 
-}
-
-
-//void 
+  delete outfile; 
+}//void 
 
 
 //========================================================================
@@ -276,6 +288,7 @@ void Analysis::Load( string fileName ) {
       v_hist[ihist] = (TH1F*) infile->Get( TString(m_name + "_" + buffer ) );  
     }
     else throw (int) ihist;
+    delete infile;
   }
   }//try
   catch (int code) {
@@ -317,12 +330,12 @@ bool Analysis::PassSelection() {
   MakeElectronCut();
 
   //Request exactly two electrons
-  if ( m_eGoodContainer->size() != 2 ) return false;
+  if ( m_veGood.size() != 2 ) return false;
 
   //  Check the sign of the two electrons
-  if ( (*m_eGoodContainer)[0]->charge() *  (*m_eGoodContainer)[1]->charge() > 0 ) return false;
+  if ( m_veGood[0]->charge() *  m_veGood[1]->charge() > 0 ) return false;
 
-  if (ComputeZMass( m_eGoodContainer ) > 100 || ComputeZMass( m_eGoodContainer ) < 80) return false;
+  if (ComputeZMass( m_veGood ) > 100 || ComputeZMass( m_veGood ) < 80) return false;
 
   return true;
 }
@@ -331,39 +344,39 @@ bool Analysis::PassSelection() {
 //Make selection on electron level
 void Analysis::MakeElectronCut() {
 
-  for ( xAOD::ElectronContainer::const_iterator eContItr = m_eContainer->begin(); eContItr != m_eContainer->end(); eContItr++ ) {
-    //Create a new electron that takes properties 
-    xAOD::Electron *eCopy = new xAOD::Electron();
-    eCopy->makePrivateStore( **eContItr );
+  for ( xAOD::ElectronContainer::iterator eContItr = (m_eShallowContainer.first)->begin(); eContItr != (m_eShallowContainer.first)->end(); eContItr++ ) {
 
-    //Calibrate this new electron
-    m_EgammaCalibrationAndSmearingTool->applyCorrection( *eCopy, m_eventInfo);
+    // //Calibrate this new electron
+    m_EgammaCalibrationAndSmearingTool->applyCorrection( **eContItr, m_eventInfo);
 
-    //Make the selection of electron 
-    if ( !isGoodElectron( eCopy ) ) continue;
-    m_eGoodContainer->push_back( eCopy );
+    // //Make the selection of electron 
+    if ( !isGoodElectron( **eContItr ) ) continue;
+
+    //Fill the vector of good electrons
+    m_veGood.push_back( 0 );
+    m_veGood.back() = *eContItr;
   }
 
 }//MakeKincut
 
 //==================================================================
 
-bool Analysis::isGoodElectron( xAOD::Electron* const el ) {
+bool Analysis::isGoodElectron( xAOD::Electron const & el ) {
 
   //kinematical cuts on electrons
-  if ( fabs( el->eta() ) > 2.47 ) return false;
-  if ( el->pt() < 27e3 ) return false;
+  if ( fabs( el.eta() ) > 2.47 ) return false;
+  if ( el.pt() < 27e3 ) return false;
   
-  //Author cut
-  if ( el->author() != 1 && el->author() != 3 ) return false;
+  // //  Author cut
+  if ( el.author() != 1 && el.author() != 3 ) return false;
   
-  //Cut on the quality of the electron
-  bool selected = false;
-  if ( ! el->passSelection(selected, "Medium") ) return false;
+  //  Cut on the quality of the electron
+   bool selected = false;
+  if ( ! el.passSelection(selected, "Medium") ) return false;
   if ( !selected ) return false;
-  
-  //OQ cut
-  //    if ( !isGoodOQ()) return false;
+
+  // //  OQ cut
+  // // if ( !isGoodOQ()) return false;
   
   return true;
 }

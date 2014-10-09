@@ -46,20 +46,18 @@ int main( int argc, char* argv[] ) {
 
   vector< string > inputMC;
   inputMC.push_back( infileNameMC );
-  //  inputMC.push_back( infileNameMC2 );
+  inputMC.push_back( infileNameMC2 );
 
   Analysis analysisMC( "MC",  inputMC );
-  cout << "treat events" << endl;
-  analysisMC.TreatEvents(10);
-  cout << "treated" << endl;
+  analysisMC.TreatEvents( );
   analysisMC.Save("results/test.root");}
   
   else {
     cout << "infile size : " << infile.size() << endl;
-
-  Analysis analysisData( anaName,  infile );
-  analysisData.TreatEvents();
-  analysisData.Save( outName );
+    
+    Analysis analysisData( anaName,  infile );
+    analysisData.TreatEvents();
+    analysisData.Save( outName );
   }
 
 return 0;
