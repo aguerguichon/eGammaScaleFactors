@@ -348,8 +348,8 @@ void Analysis::TreatEvents(int nevent) {
 
       //Initialize calibration Tool
       m_EgammaCalibrationAndSmearingTool->setDefaultConfiguration( m_eventInfo );
-      // m_EgammaCalibrationAndSmearingTool->forceSmearing( false );
-      // m_EgammaCalibrationAndSmearingTool->forceScaleCorrection( false );
+      m_EgammaCalibrationAndSmearingTool->forceSmearing( m_doSmearing );
+      m_EgammaCalibrationAndSmearingTool->forceScaleCorrection( m_doScaleFactor );
       
       //GRL
       if ( ! m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {//test if is data

@@ -16,11 +16,11 @@ using std::vector;
 
 class GoodRunsListSelectionTool;
 
-/**\class < Analysis > [<Analysis.h>]
- * \brief{Main function for the selection.}
- *
- * 
- */
+/*\class < Analysis > [<Analysis.h>]
+  \brief{Main function for the selection.}
+  
+  
+*/
 
 class Analysis 
 {
@@ -44,12 +44,11 @@ class Analysis
 
   /** \brief Use configuration file to set some variables values
       \param configFile Input configuration file 
-      
+
       Input file must be in Boost language \n
       [plugins] \n
       name = somePlugin \n
       name = otherPlugin \n
-    
    */
   void Configure( string configFile );
 
