@@ -16,6 +16,12 @@ using std::vector;
 
 class GoodRunsListSelectionTool;
 
+/**\class < Analysis > [<Analysis.h>]
+ * \brief{Main function for the selection.}
+ *
+ * 
+ */
+
 class Analysis 
 {
 
@@ -27,35 +33,48 @@ class Analysis
   Analysis( string name, vector<string> v_infileName, int debug = 0); 
   ~Analysis();
 
-  void SetName(string name);
-  string GetName();
 
-  //*******************************************
+  void Add( const Analysis & analysis  );
+  
   // Add a Tfile to m_tfile
   // Return an exception if fiel is not found
   // Clear pointers if needed
   // The TEvent read the new file
   void AddFile(string infileName);
 
-  //Set the TEvent to read from first file
-  void ResetTEvent();
+  /** \brief Use configuration file to set some variables values
+      \param configFile Input configuration file 
+      
+      Input file must be in Boost language \n
+      [plugins] \n
+      name = somePlugin \n
+      name = otherPlugin \n
+    
+   */
+  void Configure( string configFile );
 
-  //Loop on all available events to perform the analysis
-  void TreatEvents(int nevent=0);
+  //Make ratio of current histograms over input histograms
+  void Divide ( Analysis & analysis );
+
+  string GetName();
+
+  void Load( string fileName = "" , int debug = 0);
 
   //plot and save histograms results
   void PlotResult(string fileName="");
+
+  //Set the TEvent to read from first file
+  void ResetTEvent();
 
   //Save All content of analysis in a root file
   //fileName = output rootfile
   void Save(string fileName="");
 
-  void Load( string fileName = "" );
+  void SetName(string name);
 
-  void Add( const Analysis & analysis  );
+  //Loop on all available events to perform the analysis
+  void TreatEvents(int nevent=0);
 
-  //Make ratio of current histograms over input histograms
-  void Divide ( Analysis & analysis );
 
  private :
   //I assume that the TEvent can only read one fiel at the time
@@ -67,18 +86,23 @@ class Analysis
   xAOD::TEvent m_tevent;
   xAOD::TStore *m_tstore;
 
+  //Name of the object
+  //This name will be displayed in the namme and title of all output histograms
   string m_name;
 
+  //debug mode
   int m_debug;
+
+  //Counters of events
   int  m_numEvent;
   int m_goodEvent;
 
+  //Configuration attributes
+  bool m_doSmearing;
+  bool m_doScaleFactor;
+
   //output histograms
   TH1F *m_ZMass;
-
-
-  //========================================
-  // Define variables internal to the analysis
 
   //Store pointers of histograms to lighten the saving and reading code
   vector< TH1F* > v_hist;
@@ -86,6 +110,7 @@ class Analysis
   //Store electron container and its shallow copy 
   const xAOD::ElectronContainer* m_eContainer;
   std::pair< xAOD::ElectronContainer*, xAOD::ShallowAuxContainer* > m_eShallowContainer;
+
   //GRL
 #ifndef __CINT__
   GoodRunsListSelectionTool *m_grl; 

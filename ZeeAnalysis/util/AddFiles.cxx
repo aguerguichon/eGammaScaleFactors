@@ -11,7 +11,7 @@ namespace po = boost::program_options;
 
 int main( int argc, char* argv[] ) {
 
-
+  //################# BOOST ####################
   //Check validity of Arguments
   po::options_description desc("LikelihoodProfiel Usage");
   //define all options in the program
@@ -22,6 +22,7 @@ int main( int argc, char* argv[] ) {
     ("outName", po::value<string >(&outName)->default_value("Analysis.root") , "Name of the output root file")
     ("infile", po::value< vector< string > >(&infile), "The name of result rootfiles")
     ("divide", "Divide the two input files")
+    ("debug", "Debug mode" )
     ;
   //Define options gathered by position
   po::positional_options_description p;
@@ -32,12 +33,15 @@ int main( int argc, char* argv[] ) {
   po::notify(vm);
   if(vm.count("help")) {cout << desc; return 0;}
   if ( ! infile.size() ) { cout << "No input file" << endl; return 1;}
-  //########## END BOOST ##############################"
+  //########## END BOOST ##############################
+
+  int debug = ( vm.count( "debug" ) ) ? 1 : 0;
+
   string name = outName;
-  if ( name.find_last_of( "/" ) != string::npos ) name = name.substr( name.find_last_of( "/" ) );
+  if ( name.find_last_of( "/" ) != string::npos ) name = name.substr( name.find_last_of( "/" ) +1 );
   name = name.substr( 0, name.find_last_of( "." ) );
 
-  Analysis final_analysis;
+  Analysis final_analysis( "Final", debug );;
 
   if ( vm.count( "divide" ) ) {
     if ( infile.size() != 2 ) { cout << "Not only 2 inputs" << endl; return 1;}
@@ -55,7 +59,9 @@ int main( int argc, char* argv[] ) {
     //Load input files into an analysis
 
     for (unsigned int i = 0; i < infile.size(); i++ ) {
-      if (!i) final_analysis.Load( infile[0] );
+      if (!i) {
+	final_analysis.Load( infile[0] );
+	final_analysis.SetName( "Final" );}
       else {
 	Analysis dummy_analysis;
 	dummy_analysis.Load( infile[i] );
