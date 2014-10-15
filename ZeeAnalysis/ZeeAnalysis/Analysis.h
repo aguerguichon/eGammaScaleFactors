@@ -13,12 +13,12 @@ using std::vector;
 #include "ElectronPhotonFourMomentumCorrection/EgammaCalibrationAndSmearingTool.h"
 #include "xAODEventInfo/EventInfo.h"
 #include "xAODCore/ShallowCopy.h"
+#include "TTree.h"
 
 class GoodRunsListSelectionTool;
 
-/*\class < Analysis > [<Analysis.h>]
-  \brief{Main function for the selection.}
-  
+/**\class < Analysis > [<Analysis.h>]
+  \brief Main function for the selection
   
 */
 
@@ -28,18 +28,31 @@ class Analysis
  public : 
 
   Analysis();   
-  Analysis( string name , int debug = 0);
-  Analysis( string name, string infileName , int debug = 0);
-  Analysis( string name, vector<string> v_infileName, int debug = 0); 
+  Analysis( string name );
+  Analysis( string name, string infileName );
+  Analysis( string name, vector<string> v_infileName ); 
   ~Analysis();
 
+  /**\brief Add Content of another Analysis
+     \param analysis Analysis which content should be added
 
+     Adding two analyses consist of : \n
+     - Summing all histograms
+     - Merging lists of input files
+     - Keeping the name of the first analysis
+     - Summing the counters of events
+   */
   void Add( const Analysis & analysis  );
   
-  // Add a Tfile to m_tfile
-  // Return an exception if fiel is not found
-  // Clear pointers if needed
-  // The TEvent read the new file
+
+  /**\brief Add a ROOT file to the list of input files.
+     \param infileName Name of the input ROOT file
+
+     The TEvent object points to the new file.
+
+     If the file do not exist, the objects remains unchanged and return an exception
+
+   */
   void AddFile(string infileName);
 
   /** \brief Use configuration file to set some variables values
@@ -52,12 +65,27 @@ class Analysis
    */
   void Configure( string configFile );
 
-  //Make ratio of current histograms over input histograms
+
+  /**\brief Make a ratio Analysis
+     \param analysis Denominator analysis
+
+     The ratio Analysis consist of : \n
+     - m_histograms / histograms_input
+     - Change histograms properties
+   */
   void Divide ( Analysis & analysis );
 
-  string GetName();
+  string GetName() const;
+  int GetGoodEvents() const;
+  /**\brief Create an Analysis object from a ROOT file saving
+     \param fileName ROOT file created by Analysis::Save 
 
-  void Load( string fileName = "" , int debug = 0);
+     Loading an Analysis consist of : \n
+     - Changing the name of the Analysis
+     - Loading the histograms
+     - Loading event counters
+  */
+  void Load( string fileName = "");
 
   //plot and save histograms results
   void PlotResult(string fileName="");
@@ -65,13 +93,34 @@ class Analysis
   //Set the TEvent to read from first file
   void ResetTEvent();
 
-  //Save All content of analysis in a root file
-  //fileName = output rootfile
+  /**\brief Write the content of the Analysis in a ROOT file
+     \param fileName output ROOT file
+
+     Properties of the analysis that are saved : \n
+     - name
+     - event counters values
+     - histograms
+  */
   void Save(string fileName="");
 
+  /**\brief Change the name of the Analysis
+     \param name new name
+     
+     The change of name will be propagated to the titles and names of attributes.
+  */  
   void SetName(string name);
 
-  //Loop on all available events to perform the analysis
+  /**\brief Event per event analysis
+     \param nevent Number of events to run over
+
+     This is the main function of this class. 
+     It must be called in order to perform the the analysis.
+     - It runs over events in all input files of the class
+     - Retrieve the containers
+     - Call Analysis::PassSelection to perform the cuts
+
+     If nevent = 0, the program will run over all events
+  */
   void TreatEvents(int nevent=0);
 
 
@@ -103,6 +152,10 @@ class Analysis
   //output histograms
   TH1F *m_ZMass;
 
+  /**\brief TTree containing minimal information of selected events
+   */
+  TTree *m_selectionTree;
+
   //Store pointers of histograms to lighten the saving and reading code
   vector< TH1F* > v_hist;
 
@@ -125,11 +178,16 @@ class Analysis
   // Opening one file at a time and deleting others allow to have more files in the job
   TFile* m_tfile;
 
-  //==========================================
-
-  //Internal functions
+  /**\brief Make the selection at Event Level
+   */
   bool PassSelection( );
   void MakeElectronCut( );
   bool isGoodElectron( xAOD::Electron const & el);
+
+  /**\brief Fill the TTree with events passing the selection
+     \return 0 Success return
+     \return 1 m_veGood has wrong size
+   */
+  int FillSelectionTree();
 };
 #endif

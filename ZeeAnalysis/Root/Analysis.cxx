@@ -6,6 +6,7 @@
 #include "TTree.h"
 #include "GoodRunsLists/GoodRunsListSelectionTool.h"
 #include <boost/program_options.hpp>
+#include "TChain.h"
 
 using std::cout;
 using std::endl;
@@ -24,7 +25,7 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_eContainer = 0;
   m_EgammaCalibrationAndSmearingTool = 0;
   m_grl = 0;
-
+  m_selectionTree = 0;
 
   m_eventInfo = 0;
   m_tfile = 0;
@@ -36,18 +37,18 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_ZMass->Sumw2();
   v_hist.push_back( m_ZMass );
 
+  
 }
 
-Analysis::Analysis( string name , int debug ) : Analysis()  {
+Analysis::Analysis( string name ) : Analysis()  {
   m_name = name;
-  m_debug = debug;
   for (unsigned int ihist = 0; ihist < v_hist.size() ; ihist++) {
     v_hist[ihist]->SetName( TString( m_name + "_" + v_hist[ihist]->GetName() ) );
   }
 }
 
 //=================================================================
-Analysis::Analysis ( string name, string infileName, int debug) : Analysis(name, debug) {
+Analysis::Analysis ( string name, string infileName ) : Analysis(name) {
 
   cout << "Adding file" << endl;
   try {
@@ -59,7 +60,7 @@ Analysis::Analysis ( string name, string infileName, int debug) : Analysis(name,
 }//Analysis
 
 //==========================================================
-Analysis::Analysis( string name, vector< string > v_infileName, int debug ) : Analysis(name, debug) {
+Analysis::Analysis( string name, vector< string > v_infileName ) : Analysis(name) {
 
   cout << "Input file : " << v_infileName.size() << endl;
 
@@ -163,8 +164,9 @@ void Analysis::SetName( string name ) {
     if ( m_debug )   cout << v_hist[ihist]->GetName() << endl;
   }
 }
-string Analysis::GetName() { return m_name; }
 
+string Analysis::GetName() const { return m_name; }
+int Analysis::GetGoodEvents() const {return m_goodEvent; }
 
 //=======================================================
 void Analysis::PlotResult(string fileName) {
@@ -212,9 +214,7 @@ void Analysis::Save( string fileName ) {
 
 
 //========================================================================
-void Analysis::Load( string fileName, int debug ) {
-
-  m_debug = ( m_debug || debug ) ? 1 : 0;
+void Analysis::Load( string fileName ) {
 
   try {
     //Open the storing root file
@@ -243,7 +243,6 @@ void Analysis::Load( string fileName, int debug ) {
       if ( infile->Get( TString(m_name + "_" + v_hist[ihist]->GetTitle() ) ) ) {
 	delete v_hist[ihist];
 	//make a copy of the input histogram
-	//TH1F *dumHist = (TH1F*) infile->Get( TString(m_name + "_" + buffer ) );
 	v_hist[ihist] = (TH1F*) infile->Get( TString(m_name + "_" + buffer ) )->Clone();  
 	if ( m_debug ) cout << "Loaded histogram : " << v_hist[ihist]->GetName() << endl;
       }
@@ -283,9 +282,6 @@ void Analysis::Add( Analysis const &analysis ) {
   else m_tfile = 0;
   if ( m_tfile ) m_tevent.readFrom( m_tfile );
 
-  // If one file is in debug mode, the sum will be
-  m_debug = ( m_debug || analysis.m_debug ) ? 1 : 0;
-
   //Add events counters
   m_numEvent += analysis.m_numEvent;
   m_goodEvent += analysis.m_goodEvent;
@@ -295,6 +291,10 @@ void Analysis::Add( Analysis const &analysis ) {
     cout << v_hist[ihist]->GetName() << endl;//" " << (analysis.v_hist[ihist])->GetName() << endl;
     v_hist[ihist]->Add( analysis.v_hist[ihist] );
   }
+
+  //Add selectionTree's
+  m_selectionTree->CopyEntries( analysis.m_selectionTree );
+
   if ( m_debug ) cout << analysis.m_name << " Added" << endl;
 }//Analysis
 
@@ -307,6 +307,8 @@ void Analysis::TreatEvents(int nevent) {
   m_EgammaCalibrationAndSmearingTool->setProperty("ESModel", "es2012c"); 
   m_EgammaCalibrationAndSmearingTool->setProperty("ResolutionType", "SigmaEff90"); 
   m_EgammaCalibrationAndSmearingTool->initialize();
+  m_EgammaCalibrationAndSmearingTool->forceSmearing( m_doSmearing );
+  m_EgammaCalibrationAndSmearingTool->forceScaleCorrection( m_doScaleFactor );
   
   //Setup the GRL 
   m_grl = new GoodRunsListSelectionTool("GoodRunsListSelectionTool");
@@ -318,6 +320,17 @@ void Analysis::TreatEvents(int nevent) {
     cout << "Erreur : GRL not initialized" << endl;
     exit(1);
   }
+
+  //Setup m_SelectionTree
+  double dummyVar = 0;
+  m_selectionTree = new TTree( TString( m_name.c_str() ) + "selectionTree", TString( m_name.c_str() ) + "selectionTree" ); 
+  m_selectionTree->Branch( "pt_1" , &dummyVar );
+  m_selectionTree->Branch( "pt_2" , &dummyVar );
+  m_selectionTree->Branch( "eta_1", &dummyVar );
+  m_selectionTree->Branch( "eta_2", &dummyVar );
+  m_selectionTree->Branch( "phi_1", &dummyVar );
+  m_selectionTree->Branch( "phi_2", &dummyVar );
+  m_selectionTree->Branch( "mass",  &dummyVar );
 
   //Loop on all TFile stored in the class
   for (unsigned int i_file = 0 ; i_file < m_fileName.size() ; i_file++) {
@@ -348,8 +361,6 @@ void Analysis::TreatEvents(int nevent) {
 
       //Initialize calibration Tool
       m_EgammaCalibrationAndSmearingTool->setDefaultConfiguration( m_eventInfo );
-      m_EgammaCalibrationAndSmearingTool->forceSmearing( m_doSmearing );
-      m_EgammaCalibrationAndSmearingTool->forceScaleCorrection( m_doScaleFactor );
       
       //GRL
       if ( ! m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {//test if is data
@@ -365,6 +376,7 @@ void Analysis::TreatEvents(int nevent) {
 	m_goodEvent++;
 	//Should not contain events in bin 0
 	m_ZMass->Fill( ComputeZMass( m_veGood ) );
+	FillSelectionTree();
       }
 
       // Free the memory from copy
@@ -458,4 +470,32 @@ void Analysis::Divide( Analysis  &analysis ) {
 
     v_hist[ihist]->GetYaxis()->SetTitle( TString( "Data/MC" ) );
   }
+}
+
+//=======================================================================
+int Analysis::FillSelectionTree() {
+
+  if ( m_veGood.size() != 2 ) return 1;
+
+  double pt_1 = m_veGood[0]->pt();
+  double eta_1 = m_veGood[0]->eta();
+  double phi_1 = m_veGood[0]->phi();
+
+  double pt_2 = m_veGood[1]->pt();
+  double eta_2 = m_veGood[1]->eta();
+  double phi_2 = m_veGood[1]->phi();
+
+  double mass = ComputeZMass( m_veGood );
+
+  m_selectionTree->SetBranchAddress( "pt_1" , &pt_1 );
+  m_selectionTree->SetBranchAddress( "eta_1" , &eta_1 );
+  m_selectionTree->SetBranchAddress( "phi_1" , &phi_1 );
+
+  m_selectionTree->SetBranchAddress( "pt_2" , &pt_2 );
+  m_selectionTree->SetBranchAddress( "eta_2" , &eta_2 );
+  m_selectionTree->SetBranchAddress( "phi_2" , &phi_2 );
+
+  m_selectionTree->SetBranchAddress( "mass" , &mass );
+
+  return 0;
 }

@@ -1,1 +1,5 @@
+- Remplacer Add par l'operateur +
 
+- Donner des valeurs de retour aux fonctions qui peuvent planter
+
+- Enlever les excpetions de Addfile pour mettre des bool

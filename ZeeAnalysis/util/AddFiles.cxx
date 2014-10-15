@@ -35,13 +35,13 @@ int main( int argc, char* argv[] ) {
   if ( ! infile.size() ) { cout << "No input file" << endl; return 1;}
   //########## END BOOST ##############################
 
-  int debug = ( vm.count( "debug" ) ) ? 1 : 0;
+  //  int debug = ( vm.count( "debug" ) ) ? 1 : 0;
 
   string name = outName;
   if ( name.find_last_of( "/" ) != string::npos ) name = name.substr( name.find_last_of( "/" ) +1 );
   name = name.substr( 0, name.find_last_of( "." ) );
 
-  Analysis final_analysis( "Final", debug );;
+  Analysis final_analysis( "Final" );;
 
   if ( vm.count( "divide" ) ) {
     if ( infile.size() != 2 ) { cout << "Not only 2 inputs" << endl; return 1;}

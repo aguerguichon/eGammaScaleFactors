@@ -48,11 +48,16 @@ int main( int argc, char* argv[] ) {
   inputMC.push_back( infileNameMC );
   inputMC.push_back( infileNameMC2 );
 
-  Analysis analysisMC( "MC",  inputMC );
-  analysisMC.Configure( "ConfigFile" );
-  // analysisMC.TreatEvents( );
-  // analysisMC.Save("results/test.root");
+  Analysis analysisMC1( "MC1",  infileNameMC);
+  analysisMC1.TreatEvents( );
   
+  Analysis analysisMC2( "MC2", infileNameMC2 );
+  analysisMC2.TreatEvents();
+
+  cout << analysisMC1.GetGoodEvents() << endl;
+  analysisMC1.Add( analysisMC2 );
+  cout << analysisMC1.GetGoodEvents() << endl;
+    
 }  
   else {
     cout << "infile size : " << infile.size() << endl;
