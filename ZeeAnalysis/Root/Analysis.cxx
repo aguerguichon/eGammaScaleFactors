@@ -12,12 +12,12 @@ using std::cout;
 using std::endl;
 using std::vector;
 using std::string;
-
+namespace po = boost::program_options;
 
 
 Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess), 
 		       m_debug(0), m_numEvent(0), m_goodEvent(0), 
-		       m_doSmearing(true), m_doScaleFactor(true)
+		       m_doSmearing(false), m_doScaleFactor(false)
 {
   m_fileName.clear();
 
@@ -128,22 +128,19 @@ void Analysis::AddFile( string infileName ) {
 //=====================================================
 void Analysis::Configure( string configFile ) {
   
-  namespace po = boost::program_options;
-  
   //Define the properties we will load from configFile
-  po::options_description desc("Options");
-  desc.add_options()
-    ("EGammaCalibTool.doSmearing", po::value< bool >( &m_doSmearing ), "Choose MC smearing" )
-    ("EGammaCalibTool.doScaleFactor", po::value< bool >( &m_doScaleFactor ), "Choose data scaling" )
-    ;
+  //po::options_description desc;
+  // desc.add_options()
+  //   ("EGammaCalibTool.doSmearing", po::value< bool >( &m_doSmearing ), "Choose MC smearing" )
+  //   ("EGammaCalibTool.doScaleFactor", po::value< bool >( &m_doScaleFactor ), "Choose data scaling" )
+  //   ;
   
-  // Load setting file.
-  po::variables_map vm;
-  std::ifstream settings_file( configFile.c_str() , std::ifstream::in );
-  po::store( po::parse_config_file( settings_file , desc ), vm );
-  settings_file.close();
-  po::notify( vm );
-
+  // // Load setting file.
+  // po::variables_map vm;
+  // std::ifstream settings_file( configFile.c_str() , std::ifstream::in );
+  // po::store( po::parse_config_file( settings_file , desc ), vm );
+  // po::notify( vm );
+  
 }
 
 
@@ -205,9 +202,12 @@ void Analysis::Save( string fileName ) {
 
   treeout->Fill();
   treeout->Write( "", TObject::kOverwrite );
-
   cout << "Written on : " << outfile->GetName() << endl;
   delete treeout;
+
+  //Save Ntuple
+  m_selectionTree->Write( "", TObject::kOverwrite );
+
   outfile->Close();
   delete outfile; 
 }//void 
@@ -248,6 +248,9 @@ void Analysis::Load( string fileName ) {
       }
       else throw (int) ihist;
     }//for
+
+    if ( m_selectionTree ) delete m_selectionTree;
+    m_selectionTree = (TTree* ) infile->Get( TString( m_name + "_selectionTree" ) );
 
   }//try
   catch (int code) {
@@ -307,13 +310,11 @@ void Analysis::TreatEvents(int nevent) {
   m_EgammaCalibrationAndSmearingTool->setProperty("ESModel", "es2012c"); 
   m_EgammaCalibrationAndSmearingTool->setProperty("ResolutionType", "SigmaEff90"); 
   m_EgammaCalibrationAndSmearingTool->initialize();
-  m_EgammaCalibrationAndSmearingTool->forceSmearing( m_doSmearing );
-  m_EgammaCalibrationAndSmearingTool->forceScaleCorrection( m_doScaleFactor );
   
   //Setup the GRL 
   m_grl = new GoodRunsListSelectionTool("GoodRunsListSelectionTool");
   std::vector<std::string> vecStringGRL;
-  vecStringGRL.push_back("/afs/cern.ch/user/a/atlasdqm/grlgen/All_Good/data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml");
+  vecStringGRL.push_back("data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml");
   m_grl->setProperty( "GoodRunsListVec", vecStringGRL);
   m_grl->setProperty("PassThrough", false); // if true (default) will ignore result of GRL and will just pass all events
   if (!m_grl->initialize().isSuccess()) { // check this isSuccess
@@ -345,6 +346,7 @@ void Analysis::TreatEvents(int nevent) {
     //Loop on all events of the TFile
     for (int i_event = 0 ; i_event < nentries ; i_event++) {
       currentEvent++;
+
       if ( currentEvent == nevent ) return;
       if (currentEvent % 1000 == 0 ) cout << "Event : " << currentEvent << endl;
  
@@ -360,8 +362,10 @@ void Analysis::TreatEvents(int nevent) {
       m_eShallowContainer = xAOD::shallowCopyContainer( *m_eContainer );
 
       //Initialize calibration Tool
-      m_EgammaCalibrationAndSmearingTool->setDefaultConfiguration( m_eventInfo );
-      
+	m_EgammaCalibrationAndSmearingTool->setDefaultConfiguration( m_eventInfo );
+	m_EgammaCalibrationAndSmearingTool->forceSmearing( m_doSmearing );
+	m_EgammaCalibrationAndSmearingTool->forceScaleCorrection( m_doScaleFactor );
+
       //GRL
       if ( ! m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {//test if is data
 	if ( !m_grl->passRunLB(*m_eventInfo) ) continue;  //passes the GRL
@@ -376,7 +380,10 @@ void Analysis::TreatEvents(int nevent) {
 	m_goodEvent++;
 	//Should not contain events in bin 0
 	m_ZMass->Fill( ComputeZMass( m_veGood ) );
-	FillSelectionTree();
+	if ( FillSelectionTree() ) {
+	  cout << "Error Filling selectionTree" << endl;
+	  exit(2);
+	}
       }
 
       // Free the memory from copy
@@ -487,6 +494,8 @@ int Analysis::FillSelectionTree() {
 
   double mass = ComputeZMass( m_veGood );
 
+  m_selectionTree->SetBranchStatus( "*", 1);
+
   m_selectionTree->SetBranchAddress( "pt_1" , &pt_1 );
   m_selectionTree->SetBranchAddress( "eta_1" , &eta_1 );
   m_selectionTree->SetBranchAddress( "phi_1" , &phi_1 );
@@ -497,5 +506,6 @@ int Analysis::FillSelectionTree() {
 
   m_selectionTree->SetBranchAddress( "mass" , &mass );
 
+  m_selectionTree->Fill();
   return 0;
 }

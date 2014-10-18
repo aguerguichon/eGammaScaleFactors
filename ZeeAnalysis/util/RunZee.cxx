@@ -24,7 +24,7 @@ int main( int argc, char* argv[] ) {
   string outName,anaName;
   desc.add_options()
     ("help", "Display this help message")
-    ("outName", po::value<string >(&outName)->default_value("Analysis.root") , "Name of the output file")
+    ("outName", po::value<string >(&outName)->default_value("results/TestAnalysis.root") , "Name of the output file")
     ("infile", po::value< vector< string > >(&infile), "The name of xAOD rootfiles")
     ("anaName", po::value< string >( &anaName )->default_value( "Analysis" ), "Name of the object")
     ;
@@ -48,15 +48,12 @@ int main( int argc, char* argv[] ) {
   inputMC.push_back( infileNameMC );
   inputMC.push_back( infileNameMC2 );
 
-  Analysis analysisMC1( "MC1",  infileNameMC);
+  Analysis analysisMC1( "MC",  inputMC );
   analysisMC1.TreatEvents( );
-  
-  Analysis analysisMC2( "MC2", infileNameMC2 );
-  analysisMC2.TreatEvents();
 
-  cout << analysisMC1.GetGoodEvents() << endl;
-  analysisMC1.Add( analysisMC2 );
-  cout << analysisMC1.GetGoodEvents() << endl;
+  outName = "/sps/atlas/c/cgoudet/Calibration/test/TestAnalysis.root";
+  analysisMC1.Save( outName );
+
     
 }  
   else {
