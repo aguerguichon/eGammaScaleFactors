@@ -41,27 +41,30 @@ int main( int argc, char* argv[] ) {
 
   //########## END BOOST ##############################"
   if ( ! infile.size() ) { 
-  string infileNameMC = "/sps/atlas/f/fayard/christophe/mc14_8TeV.129680.PowhegPythia8_AU2CT10_Zee_DiLeptonFilter.merge.AOD.e1861_s1933_s1911_r5591_r5625_tid01512382_00/AOD.01512382._000239.pool.root.1";
+  string infileNameMC = "/sps/atlas/f/fayard/christophe/mc14_8TeV.129680.PowhegPythia8_AU2CT10_Zee_DiLeptonFilter.merge.AOD.e1861_s1933_s1911_r5591_r5625_tid01512382_00/AOD.01512382._000001.pool.root.1";
   string infileNameMC2 = "/sps/atlas/f/fayard/christophe/mc14_8TeV.129680.PowhegPythia8_AU2CT10_Zee_DiLeptonFilter.merge.AOD.e1861_s1933_s1911_r5591_r5625_tid01512382_00/AOD.01512382._000001.pool.root.1";
+
+  outName = "/sps/atlas/c/cgoudet/Calibration/test/TestAnalysis.root";
 
   vector< string > inputMC;
   inputMC.push_back( infileNameMC );
   inputMC.push_back( infileNameMC2 );
 
-  Analysis analysisMC1( "MC",  inputMC );
+  Analysis analysisMC1( "MC",  inputMC, outName );
+  analysisMC1.SetDebug( true );
   analysisMC1.TreatEvents( );
+  analysisMC1.Save();
 
-  outName = "/sps/atlas/c/cgoudet/Calibration/test/TestAnalysis.root";
-  analysisMC1.Save( outName );
+
 
     
 }  
   else {
     cout << "infile size : " << infile.size() << endl;
     
-    Analysis analysisData( anaName,  infile );
+    Analysis analysisData( anaName,  infile, outName );
     analysisData.TreatEvents();
-    analysisData.Save( outName );
+    analysisData.Save( );
   }
 
 return 0;

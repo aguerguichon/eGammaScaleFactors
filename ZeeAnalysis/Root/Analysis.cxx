@@ -16,9 +16,11 @@ namespace po = boost::program_options;
 
 
 Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess), 
-		       m_debug(0), m_numEvent(0), m_goodEvent(0), 
+		       m_debug( true ), m_numEvent(0), m_goodEvent(0), 
 		       m_doSmearing(false), m_doScaleFactor(false)
 {
+  if ( m_debug ) cout << "Analysis::Analysis()" << endl;
+  cout << "m_debug : " << m_debug << endl;
   m_fileName.clear();
 
   //Initialize depp copy container
@@ -37,31 +39,35 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_ZMass->Sumw2();
   v_hist.push_back( m_ZMass );
 
-  
+  if ( m_debug ) cout << "Analysis::Analysis() Done" << endl;  
 }
 
-Analysis::Analysis( string name ) : Analysis()  {
+Analysis::Analysis( string name , string outputFile ) : Analysis() {
+  if ( m_debug ) cout << "Analysis::Analysis( string name , string outputFile )" << endl;
   m_name = name;
   for (unsigned int ihist = 0; ihist < v_hist.size() ; ihist++) {
     v_hist[ihist]->SetName( TString( m_name + "_" + v_hist[ihist]->GetName() ) );
   }
+
+  m_logFile = new TFile( outputFile.c_str(), "RECREATE" );
+  if ( m_debug ) cout << "Analysis::Analysis( string name , string outputFile ) Done" << endl;
 }
 
 //=================================================================
-Analysis::Analysis ( string name, string infileName ) : Analysis(name) {
-
+Analysis::Analysis ( string name, string infileName, string outputFile ) : Analysis(name, outputFile) {
+  if ( m_debug ) cout << "Analysis::Analysis ( string name, string infileName, string outputFile )" << endl;
   cout << "Adding file" << endl;
   try {
     AddFile( infileName );
   }//try
   catch (int code) {
   }//catch
-
+  if ( m_debug ) cout << "Analysis::Analysis ( string name, string infileName, string outputFile ) Done" << endl;
 }//Analysis
 
 //==========================================================
-Analysis::Analysis( string name, vector< string > v_infileName ) : Analysis(name) {
-
+Analysis::Analysis( string name, vector< string > v_infileName, string outputFile ) : Analysis(name, outputFile) {
+  if ( m_debug ) cout << "Analysis::Analysis( string name, vector< string > v_infileName, string outputFile )" << endl;
   cout << "Input file : " << v_infileName.size() << endl;
 
   try {
@@ -81,6 +87,7 @@ Analysis::Analysis( string name, vector< string > v_infileName ) : Analysis(name
   }//catch
   
   ResetTEvent();
+  if ( m_debug ) cout << "Analysis::Analysis( string name, vector< string > v_infileName, string outputFile ) Done" << endl;
 }
 //===============================================
 Analysis::~Analysis() {
@@ -126,7 +133,7 @@ void Analysis::AddFile( string infileName ) {
 }//Addfile
 
 //=====================================================
-void Analysis::Configure( string configFile ) {
+// void Analysis::Configure( string configFile ) {
   
   //Define the properties we will load from configFile
   //po::options_description desc;
@@ -141,14 +148,16 @@ void Analysis::Configure( string configFile ) {
   // po::store( po::parse_config_file( settings_file , desc ), vm );
   // po::notify( vm );
   
-}
+//}
 
 
 //======================================================
 void Analysis::ResetTEvent() {
+  if ( m_debug ) cout << "Analysis::ResetTevent" << endl;
   delete m_tfile;
-  m_tfile = new TFile( m_fileName.front().c_str() );
+  m_tfile = TFile::Open( m_fileName.front().c_str() );
   m_tevent.readFrom( m_tfile ).ignore();
+  if ( m_debug ) cout << "Analysis::ResetTevent" << endl;
 }
 
 //=======================================================
@@ -165,6 +174,7 @@ void Analysis::SetName( string name ) {
 string Analysis::GetName() const { return m_name; }
 int Analysis::GetGoodEvents() const {return m_goodEvent; }
 
+void Analysis::SetDebug( bool debug ) { m_debug = debug; }
 //=======================================================
 void Analysis::PlotResult(string fileName) {
 
@@ -184,11 +194,8 @@ void Analysis::PlotResult(string fileName) {
  
 
 //=====================================================================
-void Analysis::Save( string fileName ) {
-  if ( fileName == "" ) fileName = m_name + ".root";
-
-  TFile *outfile = new TFile( fileName.c_str() , "RECREATE"); 
-
+void Analysis::Save( ) {
+  m_logFile->cd();
   for (unsigned int ihist = 0; ihist < v_hist.size() ; ihist++) {
     v_hist[ihist]->Write( "", TObject::kOverwrite );
   }
@@ -202,14 +209,12 @@ void Analysis::Save( string fileName ) {
 
   treeout->Fill();
   treeout->Write( "", TObject::kOverwrite );
-  cout << "Written on : " << outfile->GetName() << endl;
   delete treeout;
 
   //Save Ntuple
   m_selectionTree->Write( "", TObject::kOverwrite );
 
-  outfile->Close();
-  delete outfile; 
+
 }//void 
 
 
@@ -281,7 +286,7 @@ void Analysis::Add( Analysis const &analysis ) {
 
   // reset the tevent on the first file if exists
   if ( m_tfile ) delete m_tfile;
-  if ( m_fileName.size() )  m_tfile = new TFile( m_fileName[0].c_str() );
+  if ( m_fileName.size() )  m_tfile = TFile::Open( m_fileName[0].c_str() );
   else m_tfile = 0;
   if ( m_tfile ) m_tevent.readFrom( m_tfile );
 
@@ -303,6 +308,7 @@ void Analysis::Add( Analysis const &analysis ) {
 
 //=======================================================
 void Analysis::TreatEvents(int nevent) {
+  if ( m_debug ) cout << "Analysis::TreatEvents" << endl;
   int currentEvent=0;
   
   //Setup the calibration tool
@@ -338,7 +344,7 @@ void Analysis::TreatEvents(int nevent) {
 
     //Set the new file in the current file pointer
     delete m_tfile; m_tfile = 0;
-    m_tfile = new TFile( m_fileName[i_file].c_str() );
+    m_tfile = TFile::Open( m_fileName[i_file].c_str() );
     // Set the TEvent on the current TFile
     m_tevent.readFrom( m_tfile ).ignore();
     int nentries = m_tevent.getEntries();
@@ -399,6 +405,7 @@ void Analysis::TreatEvents(int nevent) {
   cout << "Total Events Treated : " << m_numEvent << endl;
   cout << "Total Good Events    : " << m_goodEvent << endl;
 
+  if ( m_debug ) cout << "Analysis::TreatEvents Done" << endl;
 }//TreatEvents
 
 

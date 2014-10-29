@@ -41,7 +41,7 @@ int main( int argc, char* argv[] ) {
   if ( name.find_last_of( "/" ) != string::npos ) name = name.substr( name.find_last_of( "/" ) +1 );
   name = name.substr( 0, name.find_last_of( "." ) );
 
-  Analysis final_analysis( "Final" );;
+  Analysis final_analysis( "Final", outName );;
 
   if ( vm.count( "divide" ) ) {
     if ( infile.size() != 2 ) { cout << "Not only 2 inputs" << endl; return 1;}
@@ -70,7 +70,7 @@ int main( int argc, char* argv[] ) {
     }
   }
   final_analysis.SetName( name );
-  final_analysis.Save( outName );
+  final_analysis.Save();
 
   return 0;
 }

@@ -28,9 +28,9 @@ class Analysis
  public : 
 
   Analysis();   
-  Analysis( string name );
-  Analysis( string name, string infileName );
-  Analysis( string name, vector<string> v_infileName ); 
+  Analysis( string name , string outputFile );
+  Analysis( string name, string infileName, string outputFile );
+  Analysis( string name, vector<string> v_infileName , string outputFile  ); 
   ~Analysis();
 
   /**\brief Add Content of another Analysis
@@ -63,7 +63,7 @@ class Analysis
       name = somePlugin \n
       name = otherPlugin \n
    */
-  void Configure( string configFile );
+  //  void Configure( string configFile );
 
 
   /**\brief Make a ratio Analysis
@@ -94,14 +94,12 @@ class Analysis
   void ResetTEvent();
 
   /**\brief Write the content of the Analysis in a ROOT file
-     \param fileName output ROOT file
-
      Properties of the analysis that are saved : \n
      - name
      - event counters values
      - histograms
   */
-  void Save(string fileName="");
+  void Save();
 
   /**\brief Change the name of the Analysis
      \param name new name
@@ -109,6 +107,10 @@ class Analysis
      The change of name will be propagated to the titles and names of attributes.
   */  
   void SetName(string name);
+
+  /**\brief Set debug mode
+   */
+  void SetDebug( bool debug );
 
   /**\brief Event per event analysis
      \param nevent Number of events to run over
@@ -139,7 +141,7 @@ class Analysis
   string m_name;
 
   //debug mode
-  int m_debug;
+  bool m_debug;
 
   //Counters of events
   int  m_numEvent;
@@ -189,5 +191,9 @@ class Analysis
      \return 1 m_veGood has wrong size
    */
   int FillSelectionTree();
+
+  /**\brief TFile to save the content of the analysis
+   */
+  TFile *m_logFile;
 };
 #endif
