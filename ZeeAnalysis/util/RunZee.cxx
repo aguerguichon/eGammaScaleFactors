@@ -48,7 +48,7 @@ int main( int argc, char* argv[] ) {
 
   vector< string > inputMC;
   inputMC.push_back( infileNameMC );
-  inputMC.push_back( infileNameMC2 );
+  //  inputMC.push_back( infileNameMC2 );
 
   Analysis analysisMC1( "MC",  inputMC, outName );
   analysisMC1.SetDebug( true );
@@ -63,6 +63,8 @@ int main( int argc, char* argv[] ) {
     cout << "infile size : " << infile.size() << endl;
     
     Analysis analysisData( anaName,  infile, outName );
+    analysisData.SetDoSmearing( false );
+    analysisData.SetDoScaleFactor( false );
     analysisData.TreatEvents();
     analysisData.Save( );
   }

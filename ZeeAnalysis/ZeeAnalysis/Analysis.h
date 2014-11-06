@@ -14,7 +14,7 @@ using std::vector;
 #include "xAODEventInfo/EventInfo.h"
 #include "xAODCore/ShallowCopy.h"
 #include "TTree.h"
-
+#include "xAODTracking/VertexContainer.h"
 class GoodRunsListSelectionTool;
 
 /**\class < Analysis > [<Analysis.h>]
@@ -28,9 +28,9 @@ class Analysis
  public : 
 
   Analysis();   
-  Analysis( string name , string outputFile );
+  Analysis( string name , string outputFile  );
   Analysis( string name, string infileName, string outputFile );
-  Analysis( string name, vector<string> v_infileName , string outputFile  ); 
+  Analysis( string name, vector<string> v_infileName , string outputFile ); 
   ~Analysis();
 
   /**\brief Add Content of another Analysis
@@ -108,6 +108,9 @@ class Analysis
   */  
   void SetName(string name);
 
+  void SetDoSmearing( bool doSmearing );
+  void SetDoScaleFactor( bool doScale );
+
   /**\brief Set debug mode
    */
   void SetDebug( bool debug );
@@ -153,6 +156,9 @@ class Analysis
 
   //output histograms
   TH1F *m_ZMass;
+  TH1F *m_elEta;
+  TH1F *m_elPt;
+  TH1F *m_eventZVertex;
 
   /**\brief TTree containing minimal information of selected events
    */
@@ -164,6 +170,7 @@ class Analysis
   //Store electron container and its shallow copy 
   const xAOD::ElectronContainer* m_eContainer;
   std::pair< xAOD::ElectronContainer*, xAOD::ShallowAuxContainer* > m_eShallowContainer;
+  const xAOD::VertexContainer *m_ZVertex;
 
   //GRL
 #ifndef __CINT__

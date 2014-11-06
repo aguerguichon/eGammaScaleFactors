@@ -7,6 +7,7 @@
 #include "GoodRunsLists/GoodRunsListSelectionTool.h"
 #include <boost/program_options.hpp>
 #include "TChain.h"
+#include "xAODEgamma/EgammaDefs.h"
 
 using std::cout;
 using std::endl;
@@ -22,6 +23,8 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   if ( m_debug ) cout << "Analysis::Analysis()" << endl;
   cout << "m_debug : " << m_debug << endl;
   m_fileName.clear();
+
+  m_logFile = 0;
 
   //Initialize depp copy container
   m_eContainer = 0;
@@ -39,6 +42,25 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_ZMass->Sumw2();
   v_hist.push_back( m_ZMass );
 
+  m_elEta = new TH1F( "elEta", "elEta", 100, -5, 5 );
+  m_elEta->GetXaxis()->SetTitle( "#eta_{el}" );
+  m_elEta->GetYaxis()->SetTitle( "Event / 0.1" );
+  m_elEta->Sumw2();
+  v_hist.push_back( m_elEta );
+
+  m_elPt = new TH1F( "elPt", "elPt", 100, 0, 100 );
+  m_elPt->GetXaxis()->SetTitle( "pt_{el}" );
+  m_elPt->GetYaxis()->SetTitle( "Event / 1 GeV" );
+  m_elPt->Sumw2();
+  v_hist.push_back( m_elPt );
+
+  m_eventZVertex = new TH1F( "eventZVertex", "eventZVertex", 100, -250, 250 );
+  m_eventZVertex->GetXaxis()->SetTitle( "Z Primary Vertex" );
+  m_eventZVertex->GetYaxis()->SetTitle( "Event / 5 mm" );
+  m_eventZVertex->Sumw2();
+  v_hist.push_back( m_eventZVertex );
+
+
   if ( m_debug ) cout << "Analysis::Analysis() Done" << endl;  
 }
 
@@ -49,7 +71,7 @@ Analysis::Analysis( string name , string outputFile ) : Analysis() {
     v_hist[ihist]->SetName( TString( m_name + "_" + v_hist[ihist]->GetName() ) );
   }
 
-  m_logFile = new TFile( outputFile.c_str(), "RECREATE" );
+  m_logFile = new TFile( outputFile.c_str(), "RECREATE" );  
   if ( m_debug ) cout << "Analysis::Analysis( string name , string outputFile ) Done" << endl;
 }
 
@@ -169,12 +191,16 @@ void Analysis::SetName( string name ) {
     v_hist[ihist]->SetName( TString( m_name + "_" + v_hist[ihist]->GetTitle() ) );
     if ( m_debug )   cout << v_hist[ihist]->GetName() << endl;
   }
+
+  m_selectionTree->SetName( TString (m_name + "_" + m_selectionTree->GetTitle() ) ); 
 }
 
 string Analysis::GetName() const { return m_name; }
 int Analysis::GetGoodEvents() const {return m_goodEvent; }
 
 void Analysis::SetDebug( bool debug ) { m_debug = debug; }
+void Analysis::SetDoScaleFactor( bool doScale ) { m_doScaleFactor = doScale;}
+void Analysis::SetDoSmearing( bool doSmearing ) { m_doSmearing = doSmearing; }
 //=======================================================
 void Analysis::PlotResult(string fileName) {
 
@@ -195,6 +221,7 @@ void Analysis::PlotResult(string fileName) {
 
 //=====================================================================
 void Analysis::Save( ) {
+
   m_logFile->cd();
   for (unsigned int ihist = 0; ihist < v_hist.size() ; ihist++) {
     v_hist[ihist]->Write( "", TObject::kOverwrite );
@@ -206,15 +233,17 @@ void Analysis::Save( ) {
   treeout->Branch( "m_name", &buffer_name, "m_name/C" );
   treeout->Branch( "m_numEvent", &m_numEvent, "m_numEvent/I" );
   treeout->Branch( "m_goodEvent", &m_goodEvent, "m_goodEvent/I" );
+  treeout->Branch( "m_doScaleFactor", &m_doScaleFactor);
+  treeout->Branch( "m_doSmearing", &m_doSmearing);
 
   treeout->Fill();
   treeout->Write( "", TObject::kOverwrite );
-  delete treeout;
 
   //Save Ntuple
   m_selectionTree->Write( "", TObject::kOverwrite );
-
-
+  m_logFile->ls();
+  m_logFile->SaveSelf();
+  cout << "Saved in : " << m_logFile->GetName() << endl;
 }//void 
 
 
@@ -236,7 +265,8 @@ void Analysis::Load( string fileName ) {
       treeout->SetBranchAddress( "m_name", &buffer_name);
       treeout->SetBranchAddress( "m_numEvent", &m_numEvent);
       treeout->SetBranchAddress( "m_goodEvent", &m_goodEvent);
-      
+      treeout->SetBranchAddress( "m_doScaleFactor", &m_doScaleFactor );      
+      treeout->SetBranchAddress( "m_doSmearing", &m_doSmearing );      
       treeout->GetEntry(0);
       m_name = string( buffer_name );
       delete treeout;
@@ -255,8 +285,9 @@ void Analysis::Load( string fileName ) {
     }//for
 
     if ( m_selectionTree ) delete m_selectionTree;
-    m_selectionTree = (TTree* ) infile->Get( TString( m_name + "_selectionTree" ) );
-
+    m_selectionTree = (TTree* ) infile->Get( TString( m_name + "selectionTree" ) );
+    if ( !m_selectionTree ) throw -3;
+    else m_selectionTree->SetDirectory( 0 );
   }//try
   catch (int code) {
     switch (code) {
@@ -267,7 +298,10 @@ void Analysis::Load( string fileName ) {
       cout << "InfoTree do not exist" << endl;
       break;
     default : 
-      cout << "Histogram not found : " << endl;
+      cout << "Histogram not found" << endl;
+      break;
+    case -3 :
+      cout << "selectionTree not found" << endl;
       break;
     }
   }
@@ -301,7 +335,14 @@ void Analysis::Add( Analysis const &analysis ) {
   }
 
   //Add selectionTree's
-  m_selectionTree->CopyEntries( analysis.m_selectionTree );
+  int dumSelectionTreeEntries = m_selectionTree->GetEntries();
+  //  m_selectionTree->CopyEntries( analysis.m_selectionTree );
+  TList *list = new TList();
+  list->Add( m_selectionTree );
+  list->Add( analysis.m_selectionTree );
+  m_selectionTree->Merge( list );
+  cout << dumSelectionTreeEntries << " " << analysis.m_selectionTree->GetEntries() << " " << m_selectionTree->GetEntries() << endl;
+  if ( dumSelectionTreeEntries + analysis.m_selectionTree->GetEntries() != m_selectionTree->GetEntries() ) exit( 1 );
 
   if ( m_debug ) cout << analysis.m_name << " Added" << endl;
 }//Analysis
@@ -320,6 +361,7 @@ void Analysis::TreatEvents(int nevent) {
   //Setup the GRL 
   m_grl = new GoodRunsListSelectionTool("GoodRunsListSelectionTool");
   std::vector<std::string> vecStringGRL;
+  //  vecStringGRL.push_back("data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml");
   vecStringGRL.push_back("data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml");
   m_grl->setProperty( "GoodRunsListVec", vecStringGRL);
   m_grl->setProperty("PassThrough", false); // if true (default) will ignore result of GRL and will just pass all events
@@ -330,7 +372,8 @@ void Analysis::TreatEvents(int nevent) {
 
   //Setup m_SelectionTree
   double dummyVar = 0;
-  m_selectionTree = new TTree( TString( m_name.c_str() ) + "selectionTree", TString( m_name.c_str() ) + "selectionTree" ); 
+  m_selectionTree = new TTree( TString( m_name.c_str() ) + "_selectionTree", "selectionTree" ); 
+  m_selectionTree->SetDirectory( 0 );
   m_selectionTree->Branch( "pt_1" , &dummyVar );
   m_selectionTree->Branch( "pt_2" , &dummyVar );
   m_selectionTree->Branch( "eta_1", &dummyVar );
@@ -361,7 +404,8 @@ void Analysis::TreatEvents(int nevent) {
 
       //Retrieve the electron container                  
       if ( ! m_tevent.retrieve( m_eContainer, "ElectronCollection" ).isSuccess() ){ cout << "Can not retrieve ElectronContainer : ElectronCollection" << endl; exit(1); }// if retrieve                                                                 
-      if ( ! m_tevent.retrieve( m_eventInfo, "EventInfo" ).isSuccess() ){ cout << "Can Not retriev EventInfo" << endl; exit(1); }
+      if ( ! m_tevent.retrieve( m_eventInfo, "EventInfo" ).isSuccess() ){ cout << "Can Not retrieve EventInfo" << endl; exit(1); }
+      if ( ! m_tevent.retrieve( m_ZVertex, "PrimaryVertices" ).isSuccess() ){ cout << "Can Not retrieve Vertex Info" << endl; exit(1); }
 
       //Create a shallow copy
       // Allow to modify electrons properties for calibration
@@ -413,6 +457,7 @@ void Analysis::TreatEvents(int nevent) {
 //Make selection on event level
 bool Analysis::PassSelection() {
 
+  m_eventZVertex->Fill( (*m_ZVertex)[0]->z() );
 
   //Reduce number of electron in container by appling cuts on electrons
   MakeElectronCut();
@@ -423,7 +468,11 @@ bool Analysis::PassSelection() {
   //  Check the sign of the two electrons
   if ( m_veGood[0]->charge() *  m_veGood[1]->charge() > 0 ) return false;
 
-  if (ComputeZMass( m_veGood ) > 100 || ComputeZMass( m_veGood ) < 80) return false;
+  //Cut on the position of the primary Vertex
+  if ( fabs( (*m_ZVertex)[0]->z() ) > 150 ) return false;
+
+
+  //if (ComputeZMass( m_veGood ) > 100 || ComputeZMass( m_veGood ) < 80) return false;
 
   return true;
 }
@@ -451,21 +500,24 @@ void Analysis::MakeElectronCut() {
 
 bool Analysis::isGoodElectron( xAOD::Electron const & el ) {
 
+  m_elEta->Fill( el.eta() );
+  m_elPt->Fill( el.pt() );
+
   //kinematical cuts on electrons
   if ( fabs( el.eta() ) > 2.47 ) return false;
   if ( el.pt() < 27e3 ) return false;
   
-  // //  Author cut
-  if ( el.author() != 1 && el.author() != 3 ) return false;
+  //  Author cut
+  if ( el.author() != 1 ) return false;
   
   //  Cut on the quality of the electron
   bool selected = false;
   if ( ! el.passSelection(selected, "Medium") ) return false;
   if ( !selected ) return false;
 
-  // //  OQ cut
-  // // if ( !isGoodOQ()) return false;
-  
+  //  OQ cut
+  if ( el.isGoodOQ( xAOD::EgammaParameters::BADCLUSELECTRON ) ) return false;
+
   return true;
 }
 
