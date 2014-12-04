@@ -375,14 +375,15 @@ void Analysis::TreatEvents(int nevent) {
   double dummyVar = 0;
   m_selectionTree = new TTree( TString( m_name.c_str() ) + "_selectionTree", "selectionTree" ); 
   m_selectionTree->SetDirectory( 0 );
-  //  m_selectionTree->Branch( "energy1", &dummyVar );
-  m_selectionTree->Branch( "pt_1" , &dummyVar );
-  m_selectionTree->Branch( "pt_2" , &dummyVar );
-  m_selectionTree->Branch( "eta_1", &dummyVar );
-  m_selectionTree->Branch( "eta_2", &dummyVar );
-  m_selectionTree->Branch( "phi_1", &dummyVar );
-  m_selectionTree->Branch( "phi_2", &dummyVar );
-  m_selectionTree->Branch( "mass",  &dummyVar );
+  m_selectionTree->Branch( "energy1", &dummyVar );
+  m_selectionTree->Branch( "energy2", &dummyVar );
+  m_selectionTree->Branch( "pt1" , &dummyVar );
+  m_selectionTree->Branch( "pt2" , &dummyVar );
+  m_selectionTree->Branch( "eta1", &dummyVar );
+  m_selectionTree->Branch( "eta2", &dummyVar );
+  m_selectionTree->Branch( "phi1", &dummyVar );
+  m_selectionTree->Branch( "phi2", &dummyVar );
+  m_selectionTree->Branch( "m12",  &dummyVar );
 
   //Loop on all TFile stored in the class
   for (unsigned int i_file = 0 ; i_file < m_fileName.size() ; i_file++) {
