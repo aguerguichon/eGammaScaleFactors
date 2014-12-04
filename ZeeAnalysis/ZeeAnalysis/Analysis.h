@@ -75,7 +75,10 @@ class Analysis
    */
   void Divide ( Analysis & analysis );
 
+  TH1F* GetZMass() const;
+
   string GetName() const;
+  int GetNEvents() const;
   int GetGoodEvents() const;
   /**\brief Create an Analysis object from a ROOT file saving
      \param fileName ROOT file created by Analysis::Save 
@@ -147,7 +150,7 @@ class Analysis
   bool m_debug;
 
   //Counters of events
-  int  m_numEvent;
+  int m_numEvent;
   int m_goodEvent;
 
   //Configuration attributes

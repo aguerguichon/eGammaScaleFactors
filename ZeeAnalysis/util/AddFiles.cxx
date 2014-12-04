@@ -35,7 +35,7 @@ int main( int argc, char* argv[] ) {
   if ( ! infile.size() ) { cout << "No input file" << endl; return 1;}
   //########## END BOOST ##############################
 
-  //  int debug = ( vm.count( "debug" ) ) ? 1 : 0;
+  int debug = ( vm.count( "debug" ) ) ? 1 : 0;
 
   string name = outName;
   if ( name.find_last_of( "/" ) != string::npos ) name = name.substr( name.find_last_of( "/" ) +1 );
@@ -57,19 +57,18 @@ int main( int argc, char* argv[] ) {
   }
   else {
     //Load input files into an analysis
-
     for (unsigned int i = 0; i < infile.size(); i++ ) {
       if (!i) {
 	final_analysis.Load( infile[0] );
-	final_analysis.SetName( "Final" );}
+	final_analysis.SetName( name );}
       else {
 	Analysis dummy_analysis;
 	dummy_analysis.Load( infile[i] );
 	final_analysis.Add( dummy_analysis );
+	if ( final_analysis.GetGoodEvents() > 50000 ) break;
       }
     }
   }
-  final_analysis.SetName( name );
   final_analysis.Save();
 
   return 0;

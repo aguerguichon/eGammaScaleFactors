@@ -22,11 +22,14 @@ int main( int argc, char* argv[] ) {
   //define all options in the program                                                
   vector<string> infile;
   string outName,anaName;
+  int doSmearing, doScale;
   desc.add_options()
     ("help", "Display this help message")
     ("outName", po::value<string >(&outName)->default_value("results/TestAnalysis.root") , "Name of the output file")
     ("infile", po::value< vector< string > >(&infile), "The name of xAOD rootfiles")
     ("anaName", po::value< string >( &anaName )->default_value( "Analysis" ), "Name of the object")
+    ("doSmearing", po::value<int >( &doSmearing )->default_value( false )->implicit_value( true ), "Switch on the smearing")
+    ("doScale", po::value<int >( &doScale )->default_value( false )->implicit_value( true ), "Switch on the scale")
     ;
 
   //Define options gathered by position                                              
@@ -63,8 +66,8 @@ int main( int argc, char* argv[] ) {
     cout << "infile size : " << infile.size() << endl;
     
     Analysis analysisData( anaName,  infile, outName );
-    analysisData.SetDoSmearing( false );
-    analysisData.SetDoScaleFactor( false );
+    analysisData.SetDoSmearing( doSmearing );
+    analysisData.SetDoScaleFactor( doScale );
     analysisData.TreatEvents();
     analysisData.Save( );
   }

@@ -17,11 +17,11 @@ namespace po = boost::program_options;
 
 
 Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess), 
-		       m_debug( true ), m_numEvent(0), m_goodEvent(0), 
+		       m_debug( false), m_numEvent(0), m_goodEvent(0), 
 		       m_doSmearing(false), m_doScaleFactor(false)
 {
   if ( m_debug ) cout << "Analysis::Analysis()" << endl;
-  cout << "m_debug : " << m_debug << endl;
+  //  cout << "m_debug : " << m_debug << endl;
   m_fileName.clear();
 
   m_logFile = 0;
@@ -106,6 +106,7 @@ Analysis::Analysis( string name, vector< string > v_infileName, string outputFil
     while (m_fileName.size()) {
       m_fileName.pop_back(); 
     }//while
+    exit(code);
   }//catch
   
   ResetTEvent();
@@ -119,7 +120,7 @@ Analysis::~Analysis() {
   }
 
   delete  m_EgammaCalibrationAndSmearingTool;
-  delete m_tfile;
+  if ( m_tfile ) m_tfile->Close();
 
   if( m_grl ) {
     delete m_grl; m_grl = 0; }
@@ -197,6 +198,7 @@ void Analysis::SetName( string name ) {
 
 string Analysis::GetName() const { return m_name; }
 int Analysis::GetGoodEvents() const {return m_goodEvent; }
+int Analysis::GetNEvents() const { return m_numEvent; }
 
 void Analysis::SetDebug( bool debug ) { m_debug = debug; }
 void Analysis::SetDoScaleFactor( bool doScale ) { m_doScaleFactor = doScale;}
@@ -241,7 +243,6 @@ void Analysis::Save( ) {
 
   //Save Ntuple
   m_selectionTree->Write( "", TObject::kOverwrite );
-  m_logFile->ls();
   m_logFile->SaveSelf();
   cout << "Saved in : " << m_logFile->GetName() << endl;
 }//void 
@@ -279,15 +280,17 @@ void Analysis::Load( string fileName ) {
 	delete v_hist[ihist];
 	//make a copy of the input histogram
 	v_hist[ihist] = (TH1F*) infile->Get( TString(m_name + "_" + buffer ) )->Clone();  
+	v_hist[ihist]->SetDirectory( 0 );
 	if ( m_debug ) cout << "Loaded histogram : " << v_hist[ihist]->GetName() << endl;
       }
       else throw (int) ihist;
     }//for
 
     if ( m_selectionTree ) delete m_selectionTree;
-    m_selectionTree = (TTree* ) infile->Get( TString( m_name + "selectionTree" ) );
+    m_selectionTree = (TTree* ) infile->Get( TString( m_name + "_selectionTree" ) );
     if ( !m_selectionTree ) throw -3;
     else m_selectionTree->SetDirectory( 0 );
+    infile->Close();
   }//try
   catch (int code) {
     switch (code) {
@@ -306,7 +309,7 @@ void Analysis::Load( string fileName ) {
     }
   }
 
-  cout << "Loaded : " << fileName << endl;
+  //  cout << "Loaded : " << fileName << endl;
 }//Load
 
 
@@ -330,8 +333,7 @@ void Analysis::Add( Analysis const &analysis ) {
 
   //Add histograms
   for (unsigned int ihist = 0; ihist < v_hist.size(); ihist++ ) {
-    cout << v_hist[ihist]->GetName() << endl;//" " << (analysis.v_hist[ihist])->GetName() << endl;
-    v_hist[ihist]->Add( analysis.v_hist[ihist] );
+       v_hist[ihist]->Add( analysis.v_hist[ihist] );
   }
 
   //Add selectionTree's
@@ -341,7 +343,6 @@ void Analysis::Add( Analysis const &analysis ) {
   list->Add( m_selectionTree );
   list->Add( analysis.m_selectionTree );
   m_selectionTree->Merge( list );
-  cout << dumSelectionTreeEntries << " " << analysis.m_selectionTree->GetEntries() << " " << m_selectionTree->GetEntries() << endl;
   if ( dumSelectionTreeEntries + analysis.m_selectionTree->GetEntries() != m_selectionTree->GetEntries() ) exit( 1 );
 
   if ( m_debug ) cout << analysis.m_name << " Added" << endl;
@@ -374,6 +375,7 @@ void Analysis::TreatEvents(int nevent) {
   double dummyVar = 0;
   m_selectionTree = new TTree( TString( m_name.c_str() ) + "_selectionTree", "selectionTree" ); 
   m_selectionTree->SetDirectory( 0 );
+  //  m_selectionTree->Branch( "energy1", &dummyVar );
   m_selectionTree->Branch( "pt_1" , &dummyVar );
   m_selectionTree->Branch( "pt_2" , &dummyVar );
   m_selectionTree->Branch( "eta_1", &dummyVar );
@@ -412,10 +414,10 @@ void Analysis::TreatEvents(int nevent) {
       m_eShallowContainer = xAOD::shallowCopyContainer( *m_eContainer );
 
       //Initialize calibration Tool
-	m_EgammaCalibrationAndSmearingTool->setDefaultConfiguration( m_eventInfo );
-	m_EgammaCalibrationAndSmearingTool->forceSmearing( m_doSmearing );
-	m_EgammaCalibrationAndSmearingTool->forceScaleCorrection( m_doScaleFactor );
-
+      m_EgammaCalibrationAndSmearingTool->setDefaultConfiguration( m_eventInfo );
+      m_EgammaCalibrationAndSmearingTool->forceSmearing( m_doSmearing );
+      m_EgammaCalibrationAndSmearingTool->forceScaleCorrection( m_doScaleFactor );
+      
       //GRL
       if ( ! m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {//test if is data
 	if ( !m_grl->passRunLB(*m_eventInfo) ) continue;  //passes the GRL
@@ -485,7 +487,7 @@ void Analysis::MakeElectronCut() {
 
     // //Calibrate this new electron
     m_EgammaCalibrationAndSmearingTool->applyCorrection( **eContItr, m_eventInfo);
-
+    //    (**eContItr).setPt( (**eContItr).pt() * 0.998 );
     // //Make the selection of electron 
     if ( !isGoodElectron( **eContItr ) ) continue;
 
@@ -506,9 +508,6 @@ bool Analysis::isGoodElectron( xAOD::Electron const & el ) {
   //kinematical cuts on electrons
   if ( fabs( el.eta() ) > 2.47 ) return false;
   if ( el.pt() < 27e3 ) return false;
-  
-  //  Author cut
-  if ( el.author() != 1 ) return false;
   
   //  Cut on the quality of the electron
   bool selected = false;
@@ -568,3 +567,6 @@ int Analysis::FillSelectionTree() {
   m_selectionTree->Fill();
   return 0;
 }
+
+//=====================================================
+TH1F* Analysis::GetZMass() const { return (TH1F*) m_ZMass->Clone(); }
