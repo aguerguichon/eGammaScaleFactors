@@ -25,7 +25,7 @@ int main( int argc, char* argv[] ) {
   int doSmearing, doScale;
   desc.add_options()
     ("help", "Display this help message")
-    ("outName", po::value<string >(&outName)->default_value("results/TestAnalysis.root") , "Name of the output file")
+    ("outName", po::value<string >(&outName)->default_value("/sps/atlas/c/cgoudet/Calibration/TestAnalysis.root") , "Name of the output file")
     ("infile", po::value< vector< string > >(&infile), "The name of xAOD rootfiles")
     ("anaName", po::value< string >( &anaName )->default_value( "Analysis" ), "Name of the object")
     ("doSmearing", po::value<int >( &doSmearing )->default_value( false )->implicit_value( true ), "Switch on the smearing")
@@ -44,33 +44,31 @@ int main( int argc, char* argv[] ) {
 
   //########## END BOOST ##############################"
   if ( ! infile.size() ) { 
-  string infileNameMC = "/sps/atlas/f/fayard/christophe/mc14_8TeV.129680.PowhegPythia8_AU2CT10_Zee_DiLeptonFilter.merge.AOD.e1861_s1933_s1911_r5591_r5625_tid01512382_00/AOD.01512382._000001.pool.root.1";
-  string infileNameMC2 = "/sps/atlas/f/fayard/christophe/mc14_8TeV.129680.PowhegPythia8_AU2CT10_Zee_DiLeptonFilter.merge.AOD.e1861_s1933_s1911_r5591_r5625_tid01512382_00/AOD.01512382._000001.pool.root.1";
-
-  outName = "/sps/atlas/c/cgoudet/Calibration/test/TestAnalysis.root";
-
-  vector< string > inputMC;
-  inputMC.push_back( infileNameMC );
-  //  inputMC.push_back( infileNameMC2 );
-
-  Analysis analysisMC1( "MC",  inputMC, outName );
-  analysisMC1.SetDebug( true );
-  analysisMC1.TreatEvents( );
-  analysisMC1.Save();
-
-
-
+    string infileNameMC = "/sps/atlas/f/fayard/christophe/mc14_8TeV.129680.PowhegPythia8_AU2CT10_Zee_DiLeptonFilter.merge.AOD.e1861_s1933_s1911_r5591_r5625_tid01512382_00/AOD.01512382._000001.pool.root.1";
+    string infileNameMC2 = "/sps/atlas/f/fayard/christophe/mc14_8TeV.129680.PowhegPythia8_AU2CT10_Zee_DiLeptonFilter.merge.AOD.e1861_s1933_s1911_r5591_r5625_tid01512382_00/AOD.01512382._000001.pool.root.1";
     
-}  
+    outName = "/sps/atlas/c/cgoudet/Calibration/test/TestAnalysis.root";
+    
+    vector< string > inputMC;
+    inputMC.push_back( infileNameMC );
+    //  inputMC.push_back( infileNameMC2 );
+    
+    Analysis analysisMC1( "MC",  inputMC, outName );
+    analysisMC1.SetDebug( true );
+    analysisMC1.TreatEvents( );
+    analysisMC1.Save();
+    
+  }  
   else {
     cout << "infile size : " << infile.size() << endl;
     
     Analysis analysisData( anaName,  infile, outName );
+    analysisData.SetDebug(false);
     analysisData.SetDoSmearing( doSmearing );
     analysisData.SetDoScaleFactor( doScale );
     analysisData.TreatEvents();
     analysisData.Save( );
   }
-
-return 0;
+  
+  return 0;
 }

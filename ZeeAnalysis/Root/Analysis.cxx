@@ -223,8 +223,9 @@ void Analysis::PlotResult(string fileName) {
 
 //=====================================================================
 void Analysis::Save( ) {
-
+  if ( m_debug ) cout << "Analysis::Save()" << endl;
   m_logFile->cd();
+
   for (unsigned int ihist = 0; ihist < v_hist.size() ; ihist++) {
     v_hist[ihist]->Write( "", TObject::kOverwrite );
   }
@@ -372,22 +373,25 @@ void Analysis::TreatEvents(int nevent) {
   }
 
   //Setup m_SelectionTree
-  double dummyVar = 0;
+  double dummyVar = -99;
   m_selectionTree = new TTree( TString( m_name.c_str() ) + "_selectionTree", "selectionTree" ); 
   m_selectionTree->SetDirectory( 0 );
-  m_selectionTree->Branch( "energy1", &dummyVar );
-  m_selectionTree->Branch( "energy2", &dummyVar );
-  m_selectionTree->Branch( "pt1" , &dummyVar );
-  m_selectionTree->Branch( "pt2" , &dummyVar );
-  m_selectionTree->Branch( "eta1", &dummyVar );
-  m_selectionTree->Branch( "eta2", &dummyVar );
-  m_selectionTree->Branch( "phi1", &dummyVar );
-  m_selectionTree->Branch( "phi2", &dummyVar );
+  m_selectionTree->Branch( "energy_1", &dummyVar );
+  m_selectionTree->Branch( "energy_2", &dummyVar );
+  m_selectionTree->Branch( "pt_1" , &dummyVar );
+  m_selectionTree->Branch( "pt_2" , &dummyVar );
+  m_selectionTree->Branch( "eta_1", &dummyVar );
+  m_selectionTree->Branch( "eta_2", &dummyVar );
+  m_selectionTree->Branch( "phi_1", &dummyVar );
+  m_selectionTree->Branch( "phi_2", &dummyVar );
+  m_selectionTree->Branch( "eta_cl_1", &dummyVar );
+  m_selectionTree->Branch( "eta_cl_2", &dummyVar );
   m_selectionTree->Branch( "m12",  &dummyVar );
+  m_selectionTree->Branch( "weight", &dummyVar );
 
   //Loop on all TFile stored in the class
   for (unsigned int i_file = 0 ; i_file < m_fileName.size() ; i_file++) {
-
+    cout << "file : " << i_file << endl;
     //Set the new file in the current file pointer
     delete m_tfile; m_tfile = 0;
     m_tfile = TFile::Open( m_fileName[i_file].c_str() );
@@ -398,7 +402,7 @@ void Analysis::TreatEvents(int nevent) {
     //Loop on all events of the TFile
     for (int i_event = 0 ; i_event < nentries ; i_event++) {
       currentEvent++;
-
+      cout << "event : " << i_event << endl;
       if ( currentEvent == nevent ) return;
       if (currentEvent % 1000 == 0 ) cout << "Event : " << currentEvent << endl;
  
@@ -429,10 +433,14 @@ void Analysis::TreatEvents(int nevent) {
       }
 	  
       //      Make the electron selection and fill m_eGoodContainer
-      if ( PassSelection() )  {
+      int err = (int) PassSelection();
+      if ( m_debug ) cout << "PassSelection : " << err << endl;
+      if ( err )  {
 	m_goodEvent++;
 	//Should not contain events in bin 0
+
 	m_ZMass->Fill( ComputeZMass( m_veGood ) );
+
 	if ( FillSelectionTree() ) {
 	  cout << "Error Filling selectionTree" << endl;
 	  exit(2);
@@ -442,10 +450,8 @@ void Analysis::TreatEvents(int nevent) {
       // Free the memory from copy
       if ( m_eShallowContainer.first )  delete m_eShallowContainer.first;
       if ( m_eShallowContainer.second ) delete m_eShallowContainer.second;
-
       //Reset elecron vector to size 0
       m_veGood.clear();
-
     }//for i_event    
   }//for i_file
 
@@ -459,6 +465,7 @@ void Analysis::TreatEvents(int nevent) {
 //==========================================================
 //Make selection on event level
 bool Analysis::PassSelection() {
+  if ( m_debug ) cout << "Analysis::PassSelection()" << endl;
 
   m_eventZVertex->Fill( (*m_ZVertex)[0]->z() );
 
@@ -476,32 +483,35 @@ bool Analysis::PassSelection() {
 
 
   //if (ComputeZMass( m_veGood ) > 100 || ComputeZMass( m_veGood ) < 80) return false;
-
+  if ( m_debug ) cout << "Analysis::PassSelection done" << endl;
   return true;
 }
 
 //===================================================================
 //Make selection on electron level
 void Analysis::MakeElectronCut() {
+  if ( m_debug ) cout << "Analysis::MakeElectronCut" << endl;
 
   for ( xAOD::ElectronContainer::iterator eContItr = (m_eShallowContainer.first)->begin(); eContItr != (m_eShallowContainer.first)->end(); eContItr++ ) {
-
     // //Calibrate this new electron
     m_EgammaCalibrationAndSmearingTool->applyCorrection( **eContItr, m_eventInfo);
+
     //    (**eContItr).setPt( (**eContItr).pt() * 0.998 );
     // //Make the selection of electron 
-    if ( !isGoodElectron( **eContItr ) ) continue;
-
+    if ( !isGoodElectron( (**eContItr) ) ) continue;
     //Fill the vector of good electrons
+
     m_veGood.push_back( 0 );
     m_veGood.back() = *eContItr;
   }
 
+  if ( m_debug ) cout << "Analysis::MakeElectronCut done" << endl;
 }//MakeKincut
 
 //==================================================================
 
 bool Analysis::isGoodElectron( xAOD::Electron const & el ) {
+  if ( m_debug ) cout << "Analysis::isGoodElectron" << endl;
 
   m_elEta->Fill( el.eta() );
   m_elPt->Fill( el.pt() );
@@ -509,15 +519,15 @@ bool Analysis::isGoodElectron( xAOD::Electron const & el ) {
   //kinematical cuts on electrons
   if ( fabs( el.eta() ) > 2.47 ) return false;
   if ( el.pt() < 27e3 ) return false;
-  
+
   //  Cut on the quality of the electron
   bool selected = false;
   if ( ! el.passSelection(selected, "Medium") ) return false;
   if ( !selected ) return false;
-
   //  OQ cut
   if ( el.isGoodOQ( xAOD::EgammaParameters::BADCLUSELECTRON ) ) return false;
 
+  if ( m_debug ) cout << "Analysis::isGoodElectron done" << endl;
   return true;
 }
 
@@ -540,34 +550,51 @@ void Analysis::Divide( Analysis  &analysis ) {
 
 //=======================================================================
 int Analysis::FillSelectionTree() {
-
+  if ( m_debug ) cout << "Analysis::FillSelectionTree" << endl;
+  
   if ( m_veGood.size() != 2 ) return 1;
-
+  cout << "good size" << endl;
   double pt_1 = m_veGood[0]->pt();
   double eta_1 = m_veGood[0]->eta();
   double phi_1 = m_veGood[0]->phi();
+  double eta_cl_1 = m_veGood[0]->caloCluster()->eta();
+  double e1_1 = m_veGood[0]->caloCluster()->energyBE(1);
+  double e2_1 = m_veGood[0]->caloCluster()->energyBE(2);
 
   double pt_2 = m_veGood[1]->pt();
   double eta_2 = m_veGood[1]->eta();
   double phi_2 = m_veGood[1]->phi();
+  double eta_cl_2 = m_veGood[1]->caloCluster()->eta();
+  double e1_2 = m_veGood[1]->caloCluster()->energyBE(1);
+  double e2_2 = m_veGood[1]->caloCluster()->energyBE(2);
 
   double mass = ComputeZMass( m_veGood );
+  double weight = 1;
 
   m_selectionTree->SetBranchStatus( "*", 1);
 
   m_selectionTree->SetBranchAddress( "pt_1" , &pt_1 );
   m_selectionTree->SetBranchAddress( "eta_1" , &eta_1 );
   m_selectionTree->SetBranchAddress( "phi_1" , &phi_1 );
+  m_selectionTree->SetBranchAddress( "eta_cl_1" , &eta_cl_1 );
+  m_selectionTree->SetBranchAddress( "e1_1", &e1_1);
+  m_selectionTree->SetBranchAddress( "e2_1", &e2_1);
 
   m_selectionTree->SetBranchAddress( "pt_2" , &pt_2 );
   m_selectionTree->SetBranchAddress( "eta_2" , &eta_2 );
   m_selectionTree->SetBranchAddress( "phi_2" , &phi_2 );
+  m_selectionTree->SetBranchAddress( "eta_cl_2" , &eta_cl_2 );
+  m_selectionTree->SetBranchAddress( "e1_2", &e1_2);
+  m_selectionTree->SetBranchAddress( "e2_2", &e2_2);
 
-  m_selectionTree->SetBranchAddress( "mass" , &mass );
-
+  m_selectionTree->SetBranchAddress( "m12" , &mass );  
+  m_selectionTree->SetBranchAddress( "weight" , &weight );
+ 
   m_selectionTree->Fill();
+  if ( m_debug ) cout << "Analysis::FillSelectionTree done" << endl;
   return 0;
 }
 
 //=====================================================
-TH1F* Analysis::GetZMass() const { return (TH1F*) m_ZMass->Clone(); }
+TH1F* Analysis::GetZMass() const { 
+  return  m_ZMass; }

@@ -65,7 +65,7 @@ int main( int argc, char* argv[] ) {
 	Analysis dummy_analysis;
 	dummy_analysis.Load( infile[i] );
 	final_analysis.Add( dummy_analysis );
-	if ( final_analysis.GetGoodEvents() > 50000 ) break;
+	//	if ( final_analysis.GetGoodEvents() > 50000 ) break;
       }
     }
   }

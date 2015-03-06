@@ -23,12 +23,12 @@ int main( int argc, char* argv[] ) {
   desc.add_options()
     ("help", "Display this help message")
     ("outName", po::value<string >(&outName)->default_value("results/TestAnalysis.root") , "Name of the output file")
-    ("inMCName", po::value< string >(&inMCName)->default_value("/sps/atlas/c/cgoudet/Calibration/MC_8TeV_Zee_noCorr_ZeeNtuple.root" ), "Name of MC root file without correction")
+    ("inMCName", po::value< string >(&inMCName)->default_value("/sps/atlas/c/cgoudet/Calibration/MC_8TeV_Zee_ZeeNtuple.root" ), "Name of MC root file without correction")
     ("inMCScaleName", po::value< string >(&inMCScaleName)->default_value("/sps/atlas/c/cgoudet/Calibration/MC_8TeV_Zee_scale_ZeeNtuple.root" ), "Name of MC root file with scale only")
-    ("inMCScaleSmearName", po::value< string >(&inMCScaleSmearName)->default_value("/sps/atlas/c/cgoudet/Calibration/MC_8TeV_Zee_scale_smearing_ZeeNtuple.root" ), "Name of MC root file with scale a,d smearing")
+    ("inMCScaleSmearName", po::value< string >(&inMCScaleSmearName)->default_value("/sps/atlas/c/cgoudet/Calibration/MC_8TeV_Zee_scale_smear_ZeeNtuple.root" ), "Name of MC root file with scale a,d smearing")
     ("inDataName", po::value< string >(&inDataName)->default_value("/sps/atlas/c/cgoudet/Calibration/Data_8TeV_Zee_ZeeNtuple.root"), "Name of Data root file without correction")
     ("inDataScaleName", po::value< string >(&inDataScaleName)->default_value("/sps/atlas/c/cgoudet/Calibration/Data_8TeV_Zee_scale_ZeeNtuple.root"), "Name of Data root file with scale only")
-    ("inDataScaleSmearName", po::value< string >(&inDataScaleSmearName)->default_value("/sps/atlas/c/cgoudet/Calibration/Data_8TeV_Zee_scale_smearing_ZeeNtuple.root"), "Name of Data root file with scale a,d smearing")
+    ("inDataScaleSmearName", po::value< string >(&inDataScaleSmearName)->default_value("/sps/atlas/c/cgoudet/Calibration/Data_8TeV_Zee_scale_smear_ZeeNtuple.root"), "Name of Data root file with scale a,d smearing")
     ("savingDirectory", po::value< string >( &savingDirectory )->default_value( "/sps/atlas/c/cgoudet/Calibration/plot/" ), "Directory where to put plots" )
     ;
 
@@ -48,38 +48,50 @@ int main( int argc, char* argv[] ) {
 
   //Load the input files into analyses
   Analysis aMCNoCorr,  aMCScale, aMCScaleSmear, aDataNoCorr, aDataScale, aDataScaleSmear;
+
   aMCNoCorr.Load( inMCName );
-  aMCScale.Load( inMCScaleName );
-  aMCScaleSmear.Load( inMCScaleSmearName );
-  aDataNoCorr.Load( inDataName );
-  aDataScale.Load( inDataScaleName );
-  aDataScaleSmear.Load( inDataScaleSmearName );
-  outFile->cd();
-  //Get ZMass distributions
-  TH1F *hMCNoCorr = aMCNoCorr.GetZMass();
+  TH1F *hMCNoCorr = (TH1F* ) aMCNoCorr.GetZMass()->Clone();
   hMCNoCorr->SetLineColor( 1 );
+  outFile->cd();  
   hMCNoCorr->Write("", TObject::kOverwrite );
-  TH1F *hMCScale = aMCScale.GetZMass();
+  
+  aMCScale.Load( inMCScaleName );
+  TH1F *hMCScale = (TH1F*) aMCScale.GetZMass()->Clone();
   hMCScale->SetLineColor( 2 );
+  outFile->cd();
   hMCScale->Write("", TObject::kOverwrite );
-  TH1F *hMCScaleSmear = aMCScaleSmear.GetZMass();
+
+  aMCScaleSmear.Load( inMCScaleSmearName );
+  TH1F *hMCScaleSmear = (TH1F*) aMCScaleSmear.GetZMass()->Clone();
   hMCScaleSmear->SetLineColor( 4 );
+  outFile->cd();
   hMCScaleSmear->Write("", TObject::kOverwrite );
 
-  TH1F *hDataNoCorr = aDataNoCorr.GetZMass();
+  aDataNoCorr.Load( inDataName );
+  TH1F *hDataNoCorr = (TH1F*)  aDataNoCorr.GetZMass()->Clone();
   hDataNoCorr->SetLineColor( 1 );
+  outFile->cd();
   hDataNoCorr->Write("", TObject::kOverwrite );
-  TH1F *hDataScale = aDataScale.GetZMass();
-  hDataScale->SetLineColor( 2 );
-  hDataScale->Write("", TObject::kOverwrite );
-  TH1F *hDataScaleSmear = aDataScaleSmear.GetZMass();
-  hDataScaleSmear->SetLineColor( 4 );
-  hDataScaleSmear->Write("", TObject::kOverwrite );
+  
 
+  aDataScale.Load( inDataScaleName );
+  TH1F *hDataScale = (TH1F*) aDataScale.GetZMass()->Clone();
+  hDataScale->SetLineColor( 2 );
+  outFile->cd();
+  hDataScale->Write("", TObject::kOverwrite );
+
+  aDataScaleSmear.Load( inDataScaleSmearName );
+  TH1F *hDataScaleSmear = (TH1F*) aDataScaleSmear.GetZMass()->Clone();
+  hDataScaleSmear->SetLineColor( 4 );
+  outFile->cd();
+  hDataScaleSmear->Write("", TObject::kOverwrite );
+  
+  cout << "done" << endl;
+  
   //Create the checks plot/
   //MC distribution without correction and with scale only should be identical
   //Data distributions with just alpha or both correction must be identical
-  TH1F *hMCCompareScale = aMCNoCorr.GetZMass();
+  TH1F *hMCCompareScale = (TH1F*) hMCNoCorr->Clone();
   hMCCompareScale->Divide( hMCScale );
   hMCCompareScale->SetLabelSize(0.1, "Y");
   hMCCompareScale->SetLabelSize(0.1, "X");
@@ -90,7 +102,7 @@ int main( int argc, char* argv[] ) {
   hMCCompareScale->SetYTitle("NoCorr/NoSmearing");
   hMCCompareScale->SetTitle("");
 
-  TH1F *hMCCompareSmear = aDataScale.GetZMass();
+  TH1F *hMCCompareSmear = (TH1F*) hDataScale->Clone();
   hMCCompareSmear->Divide( hMCScale );
   hMCCompareSmear->SetLabelSize(0.1, "Y");
   hMCCompareSmear->SetLabelSize(0.1, "X");
@@ -101,7 +113,7 @@ int main( int argc, char* argv[] ) {
   hMCCompareSmear->SetYTitle("FullCorr/NoSmearing");
   hMCCompareSmear->SetTitle("");
 
-  TH1F *hDataCompareScale = aDataNoCorr.GetZMass();
+  TH1F *hDataCompareScale = (TH1F*) hDataNoCorr->Clone();
   hDataCompareScale->Divide( hDataScale );
   hDataCompareScale->SetLabelSize(0.1, "Y");
   hDataCompareScale->SetLabelSize(0.1, "X");
@@ -112,7 +124,7 @@ int main( int argc, char* argv[] ) {
   hDataCompareScale->SetYTitle("NoCorr/NoSmearing");
   hDataCompareScale->SetTitle("");
 
-  TH1F *hDataCompareSmear = aDataScale.GetZMass();
+  TH1F *hDataCompareSmear = (TH1F*) hDataScale->Clone();
   hDataCompareSmear->Divide( hDataScale );
   hDataCompareSmear->SetLabelSize(0.1, "Y");
   hDataCompareSmear->SetLabelSize(0.1, "X");
@@ -124,7 +136,7 @@ int main( int argc, char* argv[] ) {
   hDataCompareSmear->SetTitle("");
 
   TH1F *hDum = 0;
-  TH1F *hRatioNoCorr = (TH1F*)  aDataNoCorr.GetZMass()->Clone();
+  TH1F *hRatioNoCorr = (TH1F*)  hDataNoCorr->Clone();
   hRatioNoCorr->Scale( 1/ hRatioNoCorr->Integral() );
   hDum= (TH1F*) hMCNoCorr->Clone();
   hDum->Scale( 1/ hDum->Integral() );
@@ -134,7 +146,7 @@ int main( int argc, char* argv[] ) {
   hRatioNoCorr->SetLineColor( 1 );
   delete hDum; hDum = 0;
 
-  TH1F *hRatioScale = (TH1F*)  aDataScale.GetZMass()->Clone();
+  TH1F *hRatioScale = (TH1F*)  hDataScale->Clone();
   hRatioScale->Scale( 1/ hRatioScale->Integral() );
   hDum= (TH1F*) hMCScale->Clone();
   hDum->Scale( 1/ hDum->Integral() );
@@ -144,7 +156,7 @@ int main( int argc, char* argv[] ) {
   hRatioScale->SetLineColor( kRed );
   delete hDum; hDum = 0;
 
-  TH1F *hRatioScaleSmear = (TH1F*)  aDataScaleSmear.GetZMass()->Clone();
+  TH1F *hRatioScaleSmear = (TH1F*)  hDataScaleSmear->Clone();
   hRatioScaleSmear->Scale( 1/ hRatioScaleSmear->Integral() );
   hDum= (TH1F*) hMCScaleSmear->Clone();
   hDum->Scale( 1/ hDum->Integral() );
@@ -156,7 +168,8 @@ int main( int argc, char* argv[] ) {
 
   //Create canvas and pads
   TCanvas *canvas = new TCanvas();
-  TLegend *legend = 0;
+  TLegend *legend = new TLegend( 0.7, 0.8, 1, 1 );
+  legend->SetFillColor( 0 );
   TPad *padUp = new TPad( "padUp", "padUp", 0, 0.3, 1, 1 );
   padUp->SetBottomMargin(0);
   padUp->Draw();
@@ -168,8 +181,6 @@ int main( int argc, char* argv[] ) {
 
   //plots histogams
   padUp->cd();
-  legend = new TLegend( 0.7, 0.8, 1, 1 );
-  legend->SetFillColor(0);
   legend->AddEntry( hMCNoCorr, "MC No_Corr", "lpe" );
   legend->AddEntry( hMCScale, "MC No_resolution", "lpe" );
   hMCNoCorr->Draw();
@@ -181,8 +192,7 @@ int main( int argc, char* argv[] ) {
   delete legend;
 
   padUp->cd();
-  legend = new TLegend( 0.7, 0.8, 1, 1 );
-  legend->SetFillColor(0);
+  legend->Clear();
   legend->AddEntry( hMCScaleSmear, "MC Full_correction", "lpe" );
   legend->AddEntry( hMCScale, "MC No_resolution", "lpe" );
   hMCScaleSmear->Draw();
@@ -194,8 +204,7 @@ int main( int argc, char* argv[] ) {
   delete legend;
 
   padUp->cd();
-  legend = new TLegend( 0.7, 0.8, 1, 1 );
-  legend->SetFillColor(0);
+  legend->Clear();
   hDataNoCorr->Draw();
   hDataScale->Draw("SAME");
   legend->AddEntry( hDataNoCorr, "Data No_correction", "lpe" );
@@ -207,8 +216,7 @@ int main( int argc, char* argv[] ) {
   delete legend;
 
   padUp->cd();
-  legend = new TLegend( 0.7, 0.8, 1, 1 );
-  legend->SetFillColor(0);
+  legend->Clear();
   legend->AddEntry( hDataScaleSmear, "Data Full_correction", "lpe" );
   legend->AddEntry( hDataScale, "Data No_resolution", "lpe" );
   hDataScaleSmear->Draw();
@@ -222,29 +230,41 @@ int main( int argc, char* argv[] ) {
 
 
   //RatioPlot
-  legend = new TLegend( 0.7, 0.8, 1, 1 );
+  legend->Clear();
   canvas->cd();
-  //  hRatioNoCorr->Draw("e");
-  hRatioScale->Draw("e");
-  // hRatioScaleSmear->Draw("SAME E");
+  hRatioNoCorr->Draw("e");
+  hRatioScale->Draw("SAME e");
+  hRatioScaleSmear->Draw("SAME E");
   legend->AddEntry( hRatioNoCorr, "No_correction", "lpe");
   legend->AddEntry( hRatioScale, "No_resolution", "lpe");
   legend->AddEntry( hRatioScaleSmear, "Full_correction", "lpe");
   legend->Draw();
   canvas->SaveAs( TString( savingDirectory + "Ratio.pdf" ) );
 
+  legend->Clear();
   hMCNoCorr->Draw( "e");
+  legend->AddEntry( hMCNoCorr, "MC MVA Calib", "lpe");
+  legend->Draw();
   canvas->SaveAs( TString( savingDirectory + "MCNoCorr.pdf" ) );
+
   hMCScale->Draw( "e");
   canvas->SaveAs( TString( savingDirectory + "MCScale.pdf" ) );
   hMCScaleSmear->Draw( "e");
   canvas->SaveAs( TString( savingDirectory + "MCScaleSmear.pdf" ) );
+
+  legend->Clear();
   hDataNoCorr->Draw( "e");
+  legend->AddEntry( hDataNoCorr, "Data MVA Calib", "lpe");
+  legend->Draw();
+
   canvas->SaveAs( TString( savingDirectory + "DataNoCorr.pdf" ) );
   hDataScale->Draw( "e");
   canvas->SaveAs( TString( savingDirectory + "DataScale.pdf" ) );
   hDataScaleSmear->Draw( "e");
   canvas->SaveAs( TString( savingDirectory + "DataScaleSmear.pdf" ) );
+
+
+
   return 0;
 }
 
