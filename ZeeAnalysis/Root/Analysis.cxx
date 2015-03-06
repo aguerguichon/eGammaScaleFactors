@@ -558,6 +558,7 @@ int Analysis::FillSelectionTree() {
   double eta_1 = m_veGood[0]->eta();
   double phi_1 = m_veGood[0]->phi();
   double eta_cl_1 = m_veGood[0]->caloCluster()->eta();
+  double eta_calo_1 = m_veGood[0]->caloCluster()->auxdata<float>("etaCalo");
   double e1_1 = m_veGood[0]->caloCluster()->energyBE(1);
   double e2_1 = m_veGood[0]->caloCluster()->energyBE(2);
 
@@ -565,6 +566,7 @@ int Analysis::FillSelectionTree() {
   double eta_2 = m_veGood[1]->eta();
   double phi_2 = m_veGood[1]->phi();
   double eta_cl_2 = m_veGood[1]->caloCluster()->eta();
+  double eta_calo_2 = m_veGood[1]->caloCluster()->auxdata<float>("etaCalo");
   double e1_2 = m_veGood[1]->caloCluster()->energyBE(1);
   double e2_2 = m_veGood[1]->caloCluster()->energyBE(2);
 
@@ -577,6 +579,7 @@ int Analysis::FillSelectionTree() {
   m_selectionTree->SetBranchAddress( "eta_1" , &eta_1 );
   m_selectionTree->SetBranchAddress( "phi_1" , &phi_1 );
   m_selectionTree->SetBranchAddress( "eta_cl_1" , &eta_cl_1 );
+  m_selectionTree->SetBranchAddress( "eta_calo_1" , &eta_calo_1 );
   m_selectionTree->SetBranchAddress( "e1_1", &e1_1);
   m_selectionTree->SetBranchAddress( "e2_1", &e2_1);
 
@@ -584,6 +587,7 @@ int Analysis::FillSelectionTree() {
   m_selectionTree->SetBranchAddress( "eta_2" , &eta_2 );
   m_selectionTree->SetBranchAddress( "phi_2" , &phi_2 );
   m_selectionTree->SetBranchAddress( "eta_cl_2" , &eta_cl_2 );
+  m_selectionTree->SetBranchAddress( "eta_calo_2" , &eta_calo_2 );
   m_selectionTree->SetBranchAddress( "e1_2", &e1_2);
   m_selectionTree->SetBranchAddress( "e2_2", &e2_2);
 
