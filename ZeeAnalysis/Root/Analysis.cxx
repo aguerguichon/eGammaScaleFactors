@@ -60,6 +60,11 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_eventZVertex->Sumw2();
   v_hist.push_back( m_eventZVertex );
 
+  int NSel = 9;
+  m_cutFlow = new TH1F( "cutFlow", "cutFlow", NSel, 0.5, NSel+0.5);
+  m_cutFlow->GetXaxis()->SetTitle( "Cuts" );
+  m_cutFlow->GetYaxis()->SetTitle( "# Events" );
+  v_hist.push_back( m_cutFlow );
 
   if ( m_debug ) cout << "Analysis::Analysis() Done" << endl;  
 }
@@ -386,8 +391,14 @@ void Analysis::TreatEvents(int nevent) {
   m_selectionTree->Branch( "phi_2", &dummyVar );
   m_selectionTree->Branch( "eta_cl_1", &dummyVar );
   m_selectionTree->Branch( "eta_cl_2", &dummyVar );
+  m_selectionTree->Branch( "eta_calo_1", &dummyVar );
+  m_selectionTree->Branch( "eta_calo_2", &dummyVar );
   m_selectionTree->Branch( "m12",  &dummyVar );
   m_selectionTree->Branch( "weight", &dummyVar );
+  m_selectionTree->Branch( "e1_1", &dummyVar );
+  m_selectionTree->Branch( "e1_2", &dummyVar );
+  m_selectionTree->Branch( "e2_1", &dummyVar );
+  m_selectionTree->Branch( "e2_2", &dummyVar );
 
   //Loop on all TFile stored in the class
   for (unsigned int i_file = 0 ; i_file < m_fileName.size() ; i_file++) {
@@ -402,7 +413,7 @@ void Analysis::TreatEvents(int nevent) {
     //Loop on all events of the TFile
     for (int i_event = 0 ; i_event < nentries ; i_event++) {
       currentEvent++;
-      cout << "event : " << i_event << endl;
+      //      cout << "event : " << i_event << endl;
       if ( currentEvent == nevent ) return;
       if (currentEvent % 1000 == 0 ) cout << "Event : " << currentEvent << endl;
  
@@ -424,6 +435,7 @@ void Analysis::TreatEvents(int nevent) {
       m_EgammaCalibrationAndSmearingTool->forceScaleCorrection( m_doScaleFactor );
       
       //GRL
+      m_cutFlow->Fill( 1 );
       if ( ! m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {//test if is data
 	if ( !m_grl->passRunLB(*m_eventInfo) ) continue;  //passes the GRL
 	if ( ( m_eventInfo->errorState(xAOD::EventInfo::LAr)==xAOD::EventInfo::Error ) 
@@ -431,7 +443,8 @@ void Analysis::TreatEvents(int nevent) {
 	     || (m_eventInfo->isEventFlagBitSet(xAOD::EventInfo::Core, 18) )  )
 	  continue;
       }
-	  
+      m_cutFlow->Fill( 2 );
+
       //      Make the electron selection and fill m_eGoodContainer
       int err = (int) PassSelection();
       if ( m_debug ) cout << "PassSelection : " << err << endl;
@@ -474,13 +487,13 @@ bool Analysis::PassSelection() {
 
   //Request exactly two electrons
   if ( m_veGood.size() != 2 ) return false;
-
+  m_cutFlow->Fill( 7 );
   //  Check the sign of the two electrons
   if ( m_veGood[0]->charge() *  m_veGood[1]->charge() > 0 ) return false;
-
+  m_cutFlow->Fill( 8 );
   //Cut on the position of the primary Vertex
   if ( fabs( (*m_ZVertex)[0]->z() ) > 150 ) return false;
-
+  m_cutFlow->Fill( 9 );
 
   //if (ComputeZMass( m_veGood ) > 100 || ComputeZMass( m_veGood ) < 80) return false;
   if ( m_debug ) cout << "Analysis::PassSelection done" << endl;
@@ -494,8 +507,9 @@ void Analysis::MakeElectronCut() {
 
   for ( xAOD::ElectronContainer::iterator eContItr = (m_eShallowContainer.first)->begin(); eContItr != (m_eShallowContainer.first)->end(); eContItr++ ) {
     // //Calibrate this new electron
+    //    cout << (*eContItr)->pt() << " " ;
     m_EgammaCalibrationAndSmearingTool->applyCorrection( **eContItr, m_eventInfo);
-
+    //cout << (*eContItr)->pt() << endl;
     //    (**eContItr).setPt( (**eContItr).pt() * 0.998 );
     // //Make the selection of electron 
     if ( !isGoodElectron( (**eContItr) ) ) continue;
@@ -514,18 +528,22 @@ bool Analysis::isGoodElectron( xAOD::Electron const & el ) {
   if ( m_debug ) cout << "Analysis::isGoodElectron" << endl;
 
   m_elEta->Fill( el.eta() );
-  m_elPt->Fill( el.pt() );
+  m_elPt->Fill( el.pt() /1000 );
 
   //kinematical cuts on electrons
   if ( fabs( el.eta() ) > 2.47 ) return false;
+  m_cutFlow->Fill( 3 );
   if ( el.pt() < 27e3 ) return false;
-
+  m_cutFlow->Fill( 4 );
   //  Cut on the quality of the electron
   bool selected = false;
-  if ( ! el.passSelection(selected, "Medium") ) return false;
+  //  if ( ! el.passSelection(selected, "Medium") ) return false;
+  el.passSelection(selected, "Medium");
   if ( !selected ) return false;
+  m_cutFlow->Fill( 5 );
   //  OQ cut
-  if ( el.isGoodOQ( xAOD::EgammaParameters::BADCLUSELECTRON ) ) return false;
+  if ( !el.isGoodOQ( xAOD::EgammaParameters::BADCLUSELECTRON ) ) return false;
+  m_cutFlow->Fill( 6 );
 
   if ( m_debug ) cout << "Analysis::isGoodElectron done" << endl;
   return true;
@@ -553,7 +571,6 @@ int Analysis::FillSelectionTree() {
   if ( m_debug ) cout << "Analysis::FillSelectionTree" << endl;
   
   if ( m_veGood.size() != 2 ) return 1;
-  cout << "good size" << endl;
   double pt_1 = m_veGood[0]->pt();
   double eta_1 = m_veGood[0]->eta();
   double phi_1 = m_veGood[0]->phi();

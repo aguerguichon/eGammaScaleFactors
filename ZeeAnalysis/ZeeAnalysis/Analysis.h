@@ -205,5 +205,7 @@ class Analysis
   /**\brief TFile to save the content of the analysis
    */
   TFile *m_logFile;
+
+  TH1F* m_cutFlow;
 };
 #endif
