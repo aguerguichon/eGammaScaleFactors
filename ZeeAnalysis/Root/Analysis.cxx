@@ -448,8 +448,8 @@ void Analysis::TreatEvents(int nevent) {
 
       //Retrieve the electron container                  
       //RELEASE      
-           if ( ! m_tevent.retrieve( m_eContainer, "Electrons" ).isSuccess() ){ cout << "Can not retrieve ElectronContainer : ElectronCollection" << endl; exit(1); }// if retrieve                                                                 
-      // if ( ! m_tevent.retrieve( m_eContainer, "ElectronCollection" ).isSuccess() ){ cout << "Can not retrieve ElectronContainer : ElectronCollection" << endl; exit(1); }// if retrieve                                                                 
+      //     if ( ! m_tevent.retrieve( m_eContainer, "Electrons" ).isSuccess() ){ cout << "Can not retrieve ElectronContainer : ElectronCollection" << endl; exit(1); }// if retrieve                                                                 
+       if ( ! m_tevent.retrieve( m_eContainer, "ElectronCollection" ).isSuccess() ){ cout << "Can not retrieve ElectronContainer : ElectronCollection" << endl; exit(1); }// if retrieve                                                                 
       if ( ! m_tevent.retrieve( m_eventInfo, "EventInfo" ).isSuccess() ){ cout << "Can Not retrieve EventInfo" << endl; exit(1); }
       if ( ! m_tevent.retrieve( m_ZVertex, "PrimaryVertices" ).isSuccess() ){ cout << "Can Not retrieve Vertex Info" << endl; exit(1); }
 
@@ -608,8 +608,8 @@ int Analysis::FillSelectionTree() {
   double eta_1 = m_veGood[0]->eta();
   double phi_1 = m_veGood[0]->phi();
   double eta_cl_1 = m_veGood[0]->caloCluster()->eta();
-  //double eta_calo_1 = m_veGood[0]->caloCluster()->auxdata<float>("etaCalo");
-    double eta_calo_1; m_veGood[0]->caloCluster()->retrieveMoment(xAOD::CaloCluster::ETACALOFRAME,eta_calo_1); 
+  double eta_calo_1 = m_veGood[0]->caloCluster()->auxdata<float>("etaCalo");
+  //  double eta_calo_1; m_veGood[0]->caloCluster()->retrieveMoment(xAOD::CaloCluster::ETACALOFRAME,eta_calo_1); 
   double e1_1 = m_veGood[0]->caloCluster()->energyBE(1);
   double e2_1 = m_veGood[0]->caloCluster()->energyBE(2);
   double energy_1 = m_veGood[0]->e();
@@ -620,9 +620,9 @@ int Analysis::FillSelectionTree() {
   double eta_2 = m_veGood[1]->eta();
   double phi_2 = m_veGood[1]->phi();
   double eta_cl_2 = m_veGood[1]->caloCluster()->eta();
-  //double eta_calo_2 = m_veGood[1]->caloCluster()->auxdata<float>("etaCalo");
-    double eta_calo_2; m_veGood[1]->caloCluster()->retrieveMoment(xAOD::CaloCluster::ETACALOFRAME,eta_calo_1); 
-    double e1_2 = m_veGood[1]->caloCluster()->energyBE(1);
+  double eta_calo_2 = m_veGood[1]->caloCluster()->auxdata<float>("etaCalo");
+  //  double eta_calo_2; m_veGood[1]->caloCluster()->retrieveMoment(xAOD::CaloCluster::ETACALOFRAME,eta_calo_1); 
+  double e1_2 = m_veGood[1]->caloCluster()->energyBE(1);
   double e2_2 = m_veGood[1]->caloCluster()->energyBE(2);
   double energy_2 = m_veGood[1]->e();
   double e_raw_sampl1_2 = m_veGood[1]->caloCluster()->eSample( CaloSampling::CaloSample::EMB1  );
