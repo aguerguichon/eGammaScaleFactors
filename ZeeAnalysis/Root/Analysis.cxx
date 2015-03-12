@@ -8,6 +8,7 @@
 #include <boost/program_options.hpp>
 #include "TChain.h"
 #include "xAODEgamma/EgammaDefs.h"
+#include "CaloGeoHelpers/CaloSampling.h"
 
 using std::cout;
 using std::endl;
@@ -60,10 +61,18 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_eventZVertex->Sumw2();
   v_hist.push_back( m_eventZVertex );
 
-  int NSel = 9;
-  m_cutFlow = new TH1F( "cutFlow", "cutFlow", NSel, 0.5, NSel+0.5);
+  m_cutFlow = new TH1F( "cutFlow", "cutFlow", 9, 0.5, 9+0.5);
   m_cutFlow->GetXaxis()->SetTitle( "Cuts" );
   m_cutFlow->GetYaxis()->SetTitle( "# Events" );
+  m_cutFlow->GetXaxis()->SetBinLabel( 1, "init" );
+  m_cutFlow->GetXaxis()->SetBinLabel( 2, "GRL" );
+  m_cutFlow->GetXaxis()->SetBinLabel( 3, "eta" );
+  m_cutFlow->GetXaxis()->SetBinLabel( 4, "pt" );
+  m_cutFlow->GetXaxis()->SetBinLabel( 5, "mediumID" );
+  m_cutFlow->GetXaxis()->SetBinLabel( 6, "OQ" );
+  m_cutFlow->GetXaxis()->SetBinLabel( 7, "2el" );
+  m_cutFlow->GetXaxis()->SetBinLabel( 8, "charge" );
+  m_cutFlow->GetXaxis()->SetBinLabel( 9, "ZVertex" );
   v_hist.push_back( m_cutFlow );
 
   if ( m_debug ) cout << "Analysis::Analysis() Done" << endl;  
@@ -368,8 +377,8 @@ void Analysis::TreatEvents(int nevent) {
   //Setup the GRL 
   m_grl = new GoodRunsListSelectionTool("GoodRunsListSelectionTool");
   std::vector<std::string> vecStringGRL;
-  //  vecStringGRL.push_back("data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml");
   vecStringGRL.push_back("data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml");
+  //  vecStringGRL.push_back("/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml");
   m_grl->setProperty( "GoodRunsListVec", vecStringGRL);
   m_grl->setProperty("PassThrough", false); // if true (default) will ignore result of GRL and will just pass all events
   if (!m_grl->initialize().isSuccess()) { // check this isSuccess
@@ -379,32 +388,46 @@ void Analysis::TreatEvents(int nevent) {
 
   //Setup m_SelectionTree
   double dummyVar = -99;
+  unsigned long long dummyLong = 0;
   m_selectionTree = new TTree( TString( m_name.c_str() ) + "_selectionTree", "selectionTree" ); 
   m_selectionTree->SetDirectory( 0 );
+
+  m_selectionTree->Branch( "runNumber", &dummyLong );
+  m_selectionTree->Branch( "eventNumber", &dummyLong );
   m_selectionTree->Branch( "energy_1", &dummyVar );
-  m_selectionTree->Branch( "energy_2", &dummyVar );
+  m_selectionTree->Branch( "e_raw_sampl1_1", &dummyVar );
+  m_selectionTree->Branch( "e_raw_sampl2_1", &dummyVar );
   m_selectionTree->Branch( "pt_1" , &dummyVar );
-  m_selectionTree->Branch( "pt_2" , &dummyVar );
   m_selectionTree->Branch( "eta_1", &dummyVar );
-  m_selectionTree->Branch( "eta_2", &dummyVar );
   m_selectionTree->Branch( "phi_1", &dummyVar );
-  m_selectionTree->Branch( "phi_2", &dummyVar );
   m_selectionTree->Branch( "eta_cl_1", &dummyVar );
-  m_selectionTree->Branch( "eta_cl_2", &dummyVar );
   m_selectionTree->Branch( "eta_calo_1", &dummyVar );
-  m_selectionTree->Branch( "eta_calo_2", &dummyVar );
+  m_selectionTree->Branch( "e1_1", &dummyVar );
+  m_selectionTree->Branch( "e2_1", &dummyVar );
+  
+  m_selectionTree->Branch( "energy_2", &dummyVar );
+  m_selectionTree->Branch( "e_raw_sampl1_2", &dummyVar );
+  m_selectionTree->Branch( "e_raw_sampl2_2", &dummyVar );
+  m_selectionTree->Branch( "pt_2" , &dummyVar );
+  m_selectionTree->Branch( "eta_2", &dummyVar );
+  m_selectionTree->Branch( "phi_2", &dummyVar );
+  m_selectionTree->Branch( "eta_cl_2", &dummyVar );
+  m_selectionTree->Branch( "eta_calo_2", &dummyVar ); 
+  m_selectionTree->Branch( "e1_2", &dummyVar );
+  m_selectionTree->Branch( "e2_2", &dummyVar );
+
   m_selectionTree->Branch( "m12",  &dummyVar );
   m_selectionTree->Branch( "weight", &dummyVar );
-  m_selectionTree->Branch( "e1_1", &dummyVar );
-  m_selectionTree->Branch( "e1_2", &dummyVar );
-  m_selectionTree->Branch( "e2_1", &dummyVar );
-  m_selectionTree->Branch( "e2_2", &dummyVar );
+
 
   //Loop on all TFile stored in the class
   for (unsigned int i_file = 0 ; i_file < m_fileName.size() ; i_file++) {
-    cout << "file : " << i_file << endl;
+    cout << "file : " << i_file << " " << m_tfile->GetName() << endl;
     //Set the new file in the current file pointer
-    delete m_tfile; m_tfile = 0;
+    if ( m_tfile ) { 
+      delete m_tfile; 
+      m_tfile = 0;
+    }
     m_tfile = TFile::Open( m_fileName[i_file].c_str() );
     // Set the TEvent on the current TFile
     m_tevent.readFrom( m_tfile ).ignore();
@@ -415,27 +438,36 @@ void Analysis::TreatEvents(int nevent) {
       currentEvent++;
       //      cout << "event : " << i_event << endl;
       if ( currentEvent == nevent ) return;
-      if (currentEvent % 1000 == 0 ) cout << "Event : " << currentEvent << endl;
- 
+      if (currentEvent % 1000 == 0 ) {
+	//cout << "Event : " << currentEvent << endl;
+	cout << m_eventInfo->runNumber() << " " << m_eventInfo->eventNumber()  << endl;
+      }
       // Read event 
       m_tevent.getEntry( i_event );
 
+
       //Retrieve the electron container                  
-      if ( ! m_tevent.retrieve( m_eContainer, "ElectronCollection" ).isSuccess() ){ cout << "Can not retrieve ElectronContainer : ElectronCollection" << endl; exit(1); }// if retrieve                                                                 
+      //RELEASE      
+           if ( ! m_tevent.retrieve( m_eContainer, "Electrons" ).isSuccess() ){ cout << "Can not retrieve ElectronContainer : ElectronCollection" << endl; exit(1); }// if retrieve                                                                 
+      // if ( ! m_tevent.retrieve( m_eContainer, "ElectronCollection" ).isSuccess() ){ cout << "Can not retrieve ElectronContainer : ElectronCollection" << endl; exit(1); }// if retrieve                                                                 
       if ( ! m_tevent.retrieve( m_eventInfo, "EventInfo" ).isSuccess() ){ cout << "Can Not retrieve EventInfo" << endl; exit(1); }
       if ( ! m_tevent.retrieve( m_ZVertex, "PrimaryVertices" ).isSuccess() ){ cout << "Can Not retrieve Vertex Info" << endl; exit(1); }
+
+      // if ( ! i_event || i_event == nentries-1 ) {
+      // 	cout << m_eventInfo->eventNumber() << "  " << m_tfile->GetName() << endl;
+      // }
 
       //Create a shallow copy
       // Allow to modify electrons properties for calibration
       m_eShallowContainer = xAOD::shallowCopyContainer( *m_eContainer );
 
       //Initialize calibration Tool
-      m_EgammaCalibrationAndSmearingTool->setDefaultConfiguration( m_eventInfo );
+      //      m_EgammaCalibrationAndSmearingTool->setDefaultConfiguration( m_eventInfo );
       m_EgammaCalibrationAndSmearingTool->forceSmearing( m_doSmearing );
       m_EgammaCalibrationAndSmearingTool->forceScaleCorrection( m_doScaleFactor );
       
       //GRL
-      m_cutFlow->Fill( 1 );
+      m_cutFlow->Fill( "init", 1 );
       if ( ! m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {//test if is data
 	if ( !m_grl->passRunLB(*m_eventInfo) ) continue;  //passes the GRL
 	if ( ( m_eventInfo->errorState(xAOD::EventInfo::LAr)==xAOD::EventInfo::Error ) 
@@ -443,7 +475,7 @@ void Analysis::TreatEvents(int nevent) {
 	     || (m_eventInfo->isEventFlagBitSet(xAOD::EventInfo::Core, 18) )  )
 	  continue;
       }
-      m_cutFlow->Fill( 2 );
+      m_cutFlow->Fill( "GRL", 1 );
 
       //      Make the electron selection and fill m_eGoodContainer
       int err = (int) PassSelection();
@@ -487,13 +519,13 @@ bool Analysis::PassSelection() {
 
   //Request exactly two electrons
   if ( m_veGood.size() != 2 ) return false;
-  m_cutFlow->Fill( 7 );
+  m_cutFlow->Fill( "2el", 1 );
   //  Check the sign of the two electrons
   if ( m_veGood[0]->charge() *  m_veGood[1]->charge() > 0 ) return false;
-  m_cutFlow->Fill( 8 );
+  m_cutFlow->Fill( "charge", 1 );
   //Cut on the position of the primary Vertex
   if ( fabs( (*m_ZVertex)[0]->z() ) > 150 ) return false;
-  m_cutFlow->Fill( 9 );
+  m_cutFlow->Fill( "ZVertex", 1 );
 
   //if (ComputeZMass( m_veGood ) > 100 || ComputeZMass( m_veGood ) < 80) return false;
   if ( m_debug ) cout << "Analysis::PassSelection done" << endl;
@@ -508,7 +540,8 @@ void Analysis::MakeElectronCut() {
   for ( xAOD::ElectronContainer::iterator eContItr = (m_eShallowContainer.first)->begin(); eContItr != (m_eShallowContainer.first)->end(); eContItr++ ) {
     // //Calibrate this new electron
     //    cout << (*eContItr)->pt() << " " ;
-    m_EgammaCalibrationAndSmearingTool->applyCorrection( **eContItr, m_eventInfo);
+    //    m_EgammaCalibrationAndSmearingTool->applyCorrection( **eContItr, m_eventInfo);
+    m_EgammaCalibrationAndSmearingTool->applyCorrection( **eContItr );
     //cout << (*eContItr)->pt() << endl;
     //    (**eContItr).setPt( (**eContItr).pt() * 0.998 );
     // //Make the selection of electron 
@@ -532,18 +565,18 @@ bool Analysis::isGoodElectron( xAOD::Electron const & el ) {
 
   //kinematical cuts on electrons
   if ( fabs( el.eta() ) > 2.47 ) return false;
-  m_cutFlow->Fill( 3 );
+  m_cutFlow->Fill( "eta", 1 );
   if ( el.pt() < 27e3 ) return false;
-  m_cutFlow->Fill( 4 );
+  m_cutFlow->Fill( "pt", 1 );
   //  Cut on the quality of the electron
   bool selected = false;
   //  if ( ! el.passSelection(selected, "Medium") ) return false;
   el.passSelection(selected, "Medium");
   if ( !selected ) return false;
-  m_cutFlow->Fill( 5 );
+  m_cutFlow->Fill( "mediumID", 1 );
   //  OQ cut
   if ( !el.isGoodOQ( xAOD::EgammaParameters::BADCLUSELECTRON ) ) return false;
-  m_cutFlow->Fill( 6 );
+  m_cutFlow->Fill( "OQ", 1 );
 
   if ( m_debug ) cout << "Analysis::isGoodElectron done" << endl;
   return true;
@@ -569,29 +602,43 @@ void Analysis::Divide( Analysis  &analysis ) {
 //=======================================================================
 int Analysis::FillSelectionTree() {
   if ( m_debug ) cout << "Analysis::FillSelectionTree" << endl;
-  
+  //RELEASE
   if ( m_veGood.size() != 2 ) return 1;
   double pt_1 = m_veGood[0]->pt();
   double eta_1 = m_veGood[0]->eta();
   double phi_1 = m_veGood[0]->phi();
   double eta_cl_1 = m_veGood[0]->caloCluster()->eta();
-  double eta_calo_1 = m_veGood[0]->caloCluster()->auxdata<float>("etaCalo");
+  //double eta_calo_1 = m_veGood[0]->caloCluster()->auxdata<float>("etaCalo");
+    double eta_calo_1; m_veGood[0]->caloCluster()->retrieveMoment(xAOD::CaloCluster::ETACALOFRAME,eta_calo_1); 
   double e1_1 = m_veGood[0]->caloCluster()->energyBE(1);
   double e2_1 = m_veGood[0]->caloCluster()->energyBE(2);
+  double energy_1 = m_veGood[0]->e();
+  double e_raw_sampl1_1 = m_veGood[0]->caloCluster()->eSample( CaloSampling::CaloSample::EMB1  );
+  double e_raw_sampl2_1 = m_veGood[0]->caloCluster()->eSample( CaloSampling::CaloSample::EMB2  );
 
   double pt_2 = m_veGood[1]->pt();
   double eta_2 = m_veGood[1]->eta();
   double phi_2 = m_veGood[1]->phi();
   double eta_cl_2 = m_veGood[1]->caloCluster()->eta();
-  double eta_calo_2 = m_veGood[1]->caloCluster()->auxdata<float>("etaCalo");
-  double e1_2 = m_veGood[1]->caloCluster()->energyBE(1);
+  //double eta_calo_2 = m_veGood[1]->caloCluster()->auxdata<float>("etaCalo");
+    double eta_calo_2; m_veGood[1]->caloCluster()->retrieveMoment(xAOD::CaloCluster::ETACALOFRAME,eta_calo_1); 
+    double e1_2 = m_veGood[1]->caloCluster()->energyBE(1);
   double e2_2 = m_veGood[1]->caloCluster()->energyBE(2);
+  double energy_2 = m_veGood[1]->e();
+  double e_raw_sampl1_2 = m_veGood[1]->caloCluster()->eSample( CaloSampling::CaloSample::EMB1  );
+  double e_raw_sampl2_2 = m_veGood[1]->caloCluster()->eSample( CaloSampling::CaloSample::EMB2  );
 
+  unsigned long long runNumber = m_eventInfo->runNumber();
+  unsigned long long eventNumber = m_eventInfo->eventNumber();
   double mass = ComputeZMass( m_veGood );
   double weight = 1;
 
   m_selectionTree->SetBranchStatus( "*", 1);
-
+  m_selectionTree->SetBranchAddress( "runNumber", &runNumber );
+  m_selectionTree->SetBranchAddress( "eventNumber", &eventNumber );
+  m_selectionTree->SetBranchAddress( "energy_1" , &energy_1 );
+  m_selectionTree->SetBranchAddress( "e_raw_sampl1_1" , &e_raw_sampl1_1 );
+  m_selectionTree->SetBranchAddress( "e_raw_sampl2_1" , &e_raw_sampl2_1 );
   m_selectionTree->SetBranchAddress( "pt_1" , &pt_1 );
   m_selectionTree->SetBranchAddress( "eta_1" , &eta_1 );
   m_selectionTree->SetBranchAddress( "phi_1" , &phi_1 );
@@ -600,6 +647,9 @@ int Analysis::FillSelectionTree() {
   m_selectionTree->SetBranchAddress( "e1_1", &e1_1);
   m_selectionTree->SetBranchAddress( "e2_1", &e2_1);
 
+  m_selectionTree->SetBranchAddress( "energy_2" , &energy_2 );
+  m_selectionTree->SetBranchAddress( "e_raw_sampl1_2" , &e_raw_sampl1_2 );
+  m_selectionTree->SetBranchAddress( "e_raw_sampl2_2" , &e_raw_sampl2_2 );
   m_selectionTree->SetBranchAddress( "pt_2" , &pt_2 );
   m_selectionTree->SetBranchAddress( "eta_2" , &eta_2 );
   m_selectionTree->SetBranchAddress( "phi_2" , &phi_2 );
