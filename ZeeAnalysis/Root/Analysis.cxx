@@ -439,8 +439,8 @@ void Analysis::TreatEvents(int nevent) {
       //      cout << "event : " << i_event << endl;
       if ( currentEvent == nevent ) return;
       if (currentEvent % 1000 == 0 ) {
-	//cout << "Event : " << currentEvent << endl;
-	cout << m_eventInfo->runNumber() << " " << m_eventInfo->eventNumber()  << endl;
+	cout << "Event : " << currentEvent << endl;
+	//cout << m_eventInfo->runNumber() << " " << m_eventInfo->eventNumber()  << endl;
       }
       // Read event 
       m_tevent.getEntry( i_event );
@@ -541,7 +541,7 @@ void Analysis::MakeElectronCut() {
     // //Calibrate this new electron
     //    cout << (*eContItr)->pt() << " " ;
     //    m_EgammaCalibrationAndSmearingTool->applyCorrection( **eContItr, m_eventInfo);
-    m_EgammaCalibrationAndSmearingTool->applyCorrection( **eContItr );
+    //    m_EgammaCalibrationAndSmearingTool->applyCorrection( **eContItr );
     //cout << (*eContItr)->pt() << endl;
     //    (**eContItr).setPt( (**eContItr).pt() * 0.998 );
     // //Make the selection of electron 
