@@ -541,7 +541,7 @@ void Analysis::MakeElectronCut() {
     // //Calibrate this new electron
     //    cout << (*eContItr)->pt() << " " ;
     //    m_EgammaCalibrationAndSmearingTool->applyCorrection( **eContItr, m_eventInfo);
-    m_EgammaCalibrationAndSmearingTool->applyCorrection( **eContItr );
+    //    m_EgammaCalibrationAndSmearingTool->applyCorrection( **eContItr );
     //cout << (*eContItr)->pt() << endl;
     //    (**eContItr).setPt( (**eContItr).pt() * 0.998 );
     // //Make the selection of electron 
