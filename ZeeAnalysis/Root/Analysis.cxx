@@ -539,10 +539,8 @@ void Analysis::MakeElectronCut() {
 
   for ( xAOD::ElectronContainer::iterator eContItr = (m_eShallowContainer.first)->begin(); eContItr != (m_eShallowContainer.first)->end(); eContItr++ ) {
     // //Calibrate this new electron
-    //    cout << (*eContItr)->pt() << " " ;
-    //    m_EgammaCalibrationAndSmearingTool->applyCorrection( **eContItr, m_eventInfo);
-    //    m_EgammaCalibrationAndSmearingTool->applyCorrection( **eContItr );
-    //cout << (*eContItr)->pt() << endl;
+    m_EgammaCalibrationAndSmearingTool->applyCorrection( **eContItr );
+
     //    (**eContItr).setPt( (**eContItr).pt() * 0.998 );
     // //Make the selection of electron 
     if ( !isGoodElectron( (**eContItr) ) ) continue;
