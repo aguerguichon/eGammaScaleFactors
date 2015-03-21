@@ -540,7 +540,7 @@ void Analysis::MakeElectronCut() {
   for ( xAOD::ElectronContainer::iterator eContItr = (m_eShallowContainer.first)->begin(); eContItr != (m_eShallowContainer.first)->end(); eContItr++ ) {
     // //Calibrate this new electron
     //    cout << (*eContItr)->pt() << " " ;
-    //    m_EgammaCalibrationAndSmearingTool->applyCorrection( **eContItr );
+    m_EgammaCalibrationAndSmearingTool->applyCorrection( **eContItr );
         //cout << (*eContItr)->pt() << endl;
     //    (**eContItr).setPt( (**eContItr).pt() * 0.998 );
     // //Make the selection of electron 
@@ -607,8 +607,8 @@ int Analysis::FillSelectionTree() {
   double eta_1 = m_veGood[0]->eta();
   double phi_1 = m_veGood[0]->phi();
   double eta_cl_1 = m_veGood[0]->caloCluster()->eta();
-  //double eta_calo_1 = m_veGood[0]->caloCluster()->auxdata<float>("etaCalo");
-  double eta_calo_1 = m_veGood[0]->caloCluster()->retrieveMoment(xAOD::CaloCluster::ETACALOFRAME,eta_calo_1); 
+  //Do not put = between eta_calo_1 and m_veGood, the function retrieveMoment fill the value
+  double eta_calo_1; m_veGood[0]->caloCluster()->retrieveMoment(xAOD::CaloCluster::ETACALOFRAME,eta_calo_1); 
   double e1_1 = m_veGood[0]->caloCluster()->energyBE(1);
   double e2_1 = m_veGood[0]->caloCluster()->energyBE(2);
   double energy_1 = m_veGood[0]->e();
@@ -619,8 +619,7 @@ int Analysis::FillSelectionTree() {
   double eta_2 = m_veGood[1]->eta();
   double phi_2 = m_veGood[1]->phi();
   double eta_cl_2 = m_veGood[1]->caloCluster()->eta();
-  //double eta_calo_2 = m_veGood[1]->caloCluster()->auxdata<float>("etaCalo");
-  double eta_calo_2 = m_veGood[1]->caloCluster()->retrieveMoment(xAOD::CaloCluster::ETACALOFRAME,eta_calo_1); 
+  double eta_calo_2; m_veGood[1]->caloCluster()->retrieveMoment(xAOD::CaloCluster::ETACALOFRAME,eta_calo_2); 
   double e1_2 = m_veGood[1]->caloCluster()->energyBE(1);
   double e2_2 = m_veGood[1]->caloCluster()->energyBE(2);
   double energy_2 = m_veGood[1]->e();
