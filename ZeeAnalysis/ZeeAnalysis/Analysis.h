@@ -15,6 +15,7 @@ using std::vector;
 #include "xAODCore/ShallowCopy.h"
 #include "TTree.h"
 #include "xAODTracking/VertexContainer.h"
+#include "ElectronPhotonSelectorTools/AsgElectronLikelihoodTool.h"
 class GoodRunsListSelectionTool;
 
 /**\class < Analysis > [<Analysis.h>]
@@ -163,6 +164,7 @@ class Analysis
   TH1F *m_elPt;
   TH1F *m_eventZVertex;
 
+  AsgElectronLikelihoodTool* m_LHToolMedium2015;
   /**\brief TTree containing minimal information of selected events
    */
   TTree *m_selectionTree;
@@ -194,7 +196,6 @@ class Analysis
    */
   bool PassSelection( );
   void MakeElectronCut( );
-  bool isGoodElectron( xAOD::Electron const & el);
 
   /**\brief Fill the TTree with events passing the selection
      \return 0 Success return

@@ -25,7 +25,7 @@ int main( int argc, char* argv[] ) {
   int doSmearing, doScale;
   desc.add_options()
     ("help", "Display this help message")
-    ("outName", po::value<string >(&outName)->default_value("/sps/atlas/c/cgoudet/Calibration/TestAnalysis.root") , "Name of the output file")
+    ("outName", po::value<string >(&outName)->default_value("/sps/atlas/c/cgoudet/Calibration/DataxAOD/TestAnalysis.root") , "Name of the output file")
     ("infile", po::value< vector< string > >(&infile), "The name of xAOD rootfiles")
     ("anaName", po::value< string >( &anaName )->default_value( "Analysis" ), "Name of the object")
     ("doSmearing", po::value<int >( &doSmearing )->default_value( false )->implicit_value( true ), "Switch on the smearing")

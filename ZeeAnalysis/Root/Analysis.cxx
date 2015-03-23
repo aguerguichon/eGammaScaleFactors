@@ -32,6 +32,7 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_EgammaCalibrationAndSmearingTool = 0;
   m_grl = 0;
   m_selectionTree = 0;
+  m_LHToolMedium2015 = 0;
 
   m_eventInfo = 0;
   m_tfile = 0;
@@ -373,7 +374,14 @@ void Analysis::TreatEvents(int nevent) {
   m_EgammaCalibrationAndSmearingTool->setProperty("ESModel", "es2012c"); 
   m_EgammaCalibrationAndSmearingTool->setProperty("ResolutionType", "SigmaEff90"); 
   m_EgammaCalibrationAndSmearingTool->initialize();
-  
+
+  //Setup the electron ID tool  
+  m_LHToolMedium2015   = new AsgElectronLikelihoodTool ("m_LHToolMedium2015"); 
+  m_LHToolMedium2015  ->setProperty("primaryVertexContainer","PrimaryVertices");
+  string confDir = "ElectronPhotonSelectorTools/offline/mc15_20150224/";
+  m_LHToolMedium2015->setProperty("ConfigFile",confDir+"ElectronLikelihoodMediumOfflineConfig2015.conf");
+  m_LHToolMedium2015   ->initialize();
+
   //Setup the GRL 
   m_grl = new GoodRunsListSelectionTool("GoodRunsListSelectionTool");
   std::vector<std::string> vecStringGRL;
@@ -536,16 +544,30 @@ bool Analysis::PassSelection() {
 //Make selection on electron level
 void Analysis::MakeElectronCut() {
   if ( m_debug ) cout << "Analysis::MakeElectronCut" << endl;
-
+  
   for ( xAOD::ElectronContainer::iterator eContItr = (m_eShallowContainer.first)->begin(); eContItr != (m_eShallowContainer.first)->end(); eContItr++ ) {
-    // //Calibrate this new electron
+
+    //  Cut on the quality of the **eContItrectron
+    if ( !m_LHToolMedium2015->accept( **eContItr ) ) continue;
+    m_cutFlow->Fill( "mediumID", 1 );
+
+    //Calibrate this new electron
     m_EgammaCalibrationAndSmearingTool->applyCorrection( **eContItr );
-
-    //    (**eContItr).setPt( (**eContItr).pt() * 0.998 );
-    // //Make the selection of electron 
-    if ( !isGoodElectron( (**eContItr) ) ) continue;
-    //Fill the vector of good electrons
-
+    
+    m_elEta->Fill( (*eContItr)->eta() );
+    m_elPt->Fill( (*eContItr)->pt() /1000 );
+    
+    //kinematical cuts on electrons
+    if ( fabs( (*eContItr)->eta() ) > 2.47 ) continue;
+    m_cutFlow->Fill( "eta", 1 );
+    
+    if ( (*eContItr)->pt() < 27e3 ) continue;
+    m_cutFlow->Fill( "pt", 1 );
+    
+    //  OQ cut
+    if ( !(*eContItr)->isGoodOQ( xAOD::EgammaParameters::BADCLUSELECTRON ) ) continue;
+    m_cutFlow->Fill( "OQ", 1 );
+    
     m_veGood.push_back( 0 );
     m_veGood.back() = *eContItr;
   }
@@ -553,32 +575,6 @@ void Analysis::MakeElectronCut() {
   if ( m_debug ) cout << "Analysis::MakeElectronCut done" << endl;
 }//MakeKincut
 
-//==================================================================
-
-bool Analysis::isGoodElectron( xAOD::Electron const & el ) {
-  if ( m_debug ) cout << "Analysis::isGoodElectron" << endl;
-
-  m_elEta->Fill( el.eta() );
-  m_elPt->Fill( el.pt() /1000 );
-
-  //kinematical cuts on electrons
-  if ( fabs( el.eta() ) > 2.47 ) return false;
-  m_cutFlow->Fill( "eta", 1 );
-  if ( el.pt() < 27e3 ) return false;
-  m_cutFlow->Fill( "pt", 1 );
-  //  Cut on the quality of the electron
-  bool selected = false;
-  //  if ( ! el.passSelection(selected, "Medium") ) return false;
-  el.passSelection(selected, "Medium");
-  if ( !selected ) return false;
-  m_cutFlow->Fill( "mediumID", 1 );
-  //  OQ cut
-  if ( !el.isGoodOQ( xAOD::EgammaParameters::BADCLUSELECTRON ) ) return false;
-  m_cutFlow->Fill( "OQ", 1 );
-
-  if ( m_debug ) cout << "Analysis::isGoodElectron done" << endl;
-  return true;
-}
 
 //========================================================================
 void Analysis::Divide( Analysis  &analysis ) {
