@@ -164,7 +164,7 @@ class Analysis
   TH1F *m_elPt;
   TH1F *m_eventZVertex;
 
-  AsgElectronLikelihoodTool* m_LHToolMedium2015;
+  AsgElectronLikelihoodTool* m_LHToolMedium2012;
   /**\brief TTree containing minimal information of selected events
    */
   TTree *m_selectionTree;

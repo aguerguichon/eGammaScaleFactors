@@ -32,7 +32,7 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_EgammaCalibrationAndSmearingTool = 0;
   m_grl = 0;
   m_selectionTree = 0;
-  m_LHToolMedium2015 = 0;
+  m_LHToolMedium2012 = 0;
 
   m_eventInfo = 0;
   m_tfile = 0;
@@ -376,11 +376,11 @@ void Analysis::TreatEvents(int nevent) {
   m_EgammaCalibrationAndSmearingTool->initialize();
 
   //Setup the electron ID tool  
-  m_LHToolMedium2015   = new AsgElectronLikelihoodTool ("m_LHToolMedium2015"); 
-  m_LHToolMedium2015  ->setProperty("primaryVertexContainer","PrimaryVertices");
+  m_LHToolMedium2012   = new AsgElectronLikelihoodTool ("m_LHToolMedium2012"); 
+  m_LHToolMedium2012  ->setProperty("primaryVertexContainer","PrimaryVertices");
   string confDir = "ElectronPhotonSelectorTools/offline/mc15_20150224/";
-  m_LHToolMedium2015->setProperty("ConfigFile",confDir+"ElectronLikelihoodMediumOfflineConfig2015.conf");
-  m_LHToolMedium2015   ->initialize();
+  m_LHToolMedium2012->setProperty("ConfigFile",confDir+"ElectronLikelihoodMediumOfflineConfig2012.conf");
+  m_LHToolMedium2012   ->initialize();
 
   //Setup the GRL 
   m_grl = new GoodRunsListSelectionTool("GoodRunsListSelectionTool");
@@ -548,7 +548,7 @@ void Analysis::MakeElectronCut() {
   for ( xAOD::ElectronContainer::iterator eContItr = (m_eShallowContainer.first)->begin(); eContItr != (m_eShallowContainer.first)->end(); eContItr++ ) {
 
     //  Cut on the quality of the **eContItrectron
-    if ( !m_LHToolMedium2015->accept( **eContItr ) ) continue;
+    if ( !m_LHToolMedium2012->accept( **eContItr ) ) continue;
     m_cutFlow->Fill( "mediumID", 1 );
 
     //Calibrate this new electron
