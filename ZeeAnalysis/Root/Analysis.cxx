@@ -33,7 +33,7 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_grl = 0;
   m_selectionTree = 0;
   m_LHToolMedium2012 = 0;
-
+  m_ZVertex = 0;
   m_eventInfo = 0;
   m_tfile = 0;
 
@@ -130,15 +130,31 @@ Analysis::Analysis( string name, vector< string > v_infileName, string outputFil
 //===============================================
 Analysis::~Analysis() {
 
-  for ( unsigned int ihist = 0; ihist < v_hist.size(); ihist++ ) {
-    delete v_hist[ihist];
+  while ( v_hist.size() ) {
+    delete v_hist.back();
+    v_hist.back() = 0;
+    v_hist.pop_back();
+  }
+  
+  if ( m_EgammaCalibrationAndSmearingTool )  delete  m_EgammaCalibrationAndSmearingTool;
+  if ( m_grl )  delete m_grl;
+  if ( m_LHToolMedium2012 ) delete m_LHToolMedium2012;
+  if ( m_selectionTree ) delete m_selectionTree;
+  if ( m_eContainer ) delete m_eContainer;
+  if ( m_ZVertex ) delete m_ZVertex;
+  if ( m_eventInfo ) delete m_eventInfo;
+
+  if ( m_tfile ) {
+    m_tfile->Close();
+    delete m_tfile;
+    m_tfile = 0;
   }
 
-  delete  m_EgammaCalibrationAndSmearingTool;
-  if ( m_tfile ) m_tfile->Close();
-
-  if( m_grl ) {
-    delete m_grl; m_grl = 0; }
+  if ( m_logFile ) {
+    m_logFile->Close();
+    delete m_logFile;
+    m_logFile = 0;
+  }
 
 }//~Analysis
 
@@ -151,7 +167,7 @@ void Analysis::AddFile( string infileName ) {
     // Open the input file:                                                        
     m_fileName.push_back( infileName );
     if ( m_tfile ) {
-      m_tfile->Close();
+      //      m_tfile->Close();
       delete m_tfile;
       m_tfile = 0;}
     m_tfile = TFile::Open( m_fileName.back().c_str() );
@@ -245,10 +261,9 @@ void Analysis::Save( ) {
     v_hist[ihist]->Write( "", TObject::kOverwrite );
   }
 
-  char buffer_name[100];
-  sprintf( buffer_name, "%s", m_name.c_str() );
+  TString bufferName = TString::Format( "%s", m_name.c_str() );
   TTree * treeout = new TTree( "InfoTree" , "InfoTree" );
-  treeout->Branch( "m_name", &buffer_name, "m_name/C" );
+  treeout->Branch( "m_name", &bufferName, "m_name/C" );
   treeout->Branch( "m_numEvent", &m_numEvent, "m_numEvent/I" );
   treeout->Branch( "m_goodEvent", &m_goodEvent, "m_goodEvent/I" );
   treeout->Branch( "m_doScaleFactor", &m_doScaleFactor);
@@ -256,6 +271,8 @@ void Analysis::Save( ) {
 
   treeout->Fill();
   treeout->Write( "", TObject::kOverwrite );
+  delete treeout;
+  treeout = 0;
 
   //Save Ntuple
   m_selectionTree->Write( "", TObject::kOverwrite );
@@ -265,67 +282,58 @@ void Analysis::Save( ) {
 
 
 //========================================================================
-void Analysis::Load( string fileName ) {
+int Analysis::Load( string fileName ) {
 
-  try {
-    //Open the storing root file
-    TFile *infile = TFile::Open( fileName.c_str() );
-    if ( !infile ) throw -1;
-    if ( m_debug ) cout << "file " << fileName << " opened" << endl;
+  //Open the storing root file
+  TFile *infile = TFile::Open( fileName.c_str() );
+  if ( !infile ) return 1;
+  if ( m_debug ) cout << "file " << fileName << " opened" << endl;
 
-    // Read Analysis info from Info Tree
-    if ( infile->Get( "InfoTree" ) ){
-      if ( m_debug ) cout << "Read Info Tree" << endl;
-      char buffer_name[100];
-      TTree *treeout = (TTree*) infile->Get( "InfoTree" );
-      treeout->SetBranchStatus( "*", 1);
-      treeout->SetBranchAddress( "m_name", &buffer_name);
-      treeout->SetBranchAddress( "m_numEvent", &m_numEvent);
-      treeout->SetBranchAddress( "m_goodEvent", &m_goodEvent);
-      treeout->SetBranchAddress( "m_doScaleFactor", &m_doScaleFactor );      
-      treeout->SetBranchAddress( "m_doSmearing", &m_doSmearing );      
-      treeout->GetEntry(0);
-      m_name = string( buffer_name );
-      delete treeout;
-    }
-    else throw -2;
-
-    for (unsigned int ihist = 0; ihist < v_hist.size() ; ihist++) {
-      string buffer = v_hist[ihist]->GetTitle();
-      if ( infile->Get( TString(m_name + "_" + v_hist[ihist]->GetTitle() ) ) ) {
-	delete v_hist[ihist];
-	//make a copy of the input histogram
-	v_hist[ihist] = (TH1F*) infile->Get( TString(m_name + "_" + buffer ) )->Clone();  
-	v_hist[ihist]->SetDirectory( 0 );
-	if ( m_debug ) cout << "Loaded histogram : " << v_hist[ihist]->GetName() << endl;
-      }
-      else throw (int) ihist;
-    }//for
-
-    if ( m_selectionTree ) delete m_selectionTree;
-    m_selectionTree = (TTree* ) infile->Get( TString( m_name + "_selectionTree" ) );
-    if ( !m_selectionTree ) throw -3;
-    else m_selectionTree->SetDirectory( 0 );
-    infile->Close();
-  }//try
-  catch (int code) {
-    switch (code) {
-    case -1 : 
-      cout << "TFile Not found" << endl;
-      break;
-    case -2 :
-      cout << "InfoTree do not exist" << endl;
-      break;
-    default : 
-      cout << "Histogram not found" << endl;
-      break;
-    case -3 :
-      cout << "selectionTree not found" << endl;
-      break;
-    }
+  // Read Analysis info from Info Tree
+  if ( infile->Get( "InfoTree" ) ){
+    if ( m_debug ) cout << "Read Info Tree" << endl;
+    char buffer_name[100];
+    TTree *treeout = (TTree*) infile->Get( "InfoTree" );
+    treeout->SetBranchStatus( "*", 1);
+    treeout->SetBranchAddress( "m_name", &buffer_name);
+    treeout->SetBranchAddress( "m_numEvent", &m_numEvent);
+    treeout->SetBranchAddress( "m_goodEvent", &m_goodEvent);
+    treeout->SetBranchAddress( "m_doScaleFactor", &m_doScaleFactor );      
+    treeout->SetBranchAddress( "m_doSmearing", &m_doSmearing );      
+    treeout->GetEntry(0);
+    m_name = string( buffer_name );
+    delete treeout;
+    treeout = 0;
   }
+  else return 2;
+  
+  for (unsigned int ihist = 0; ihist < v_hist.size() ; ihist++) {
+    string histName = m_name + "_" + v_hist[ihist]->GetTitle();
+    delete v_hist[ihist];
 
-  //  cout << "Loaded : " << fileName << endl;
+    if ( !infile->Get( histName.c_str() ) ) {
+      cout << histName << " was not found" << endl;
+      return 3;
+    }
+    
+    v_hist[ihist] = (TH1F*) infile->Get( histName.c_str() )->Clone();  
+    v_hist[ihist]->SetDirectory( 0 );
+    if ( m_debug ) cout << "Loaded histogram : " << v_hist[ihist]->GetName() << endl;
+      
+  }//for ihist
+
+
+  if ( m_selectionTree ) delete m_selectionTree;
+  m_selectionTree = (TTree* ) infile->Get( TString( m_name + "_selectionTree" ) );
+  if ( !m_selectionTree ) return 4;
+  m_selectionTree->SetDirectory( 0 );
+
+  infile->Close("R");
+  delete infile;
+  infile = 0;
+
+  if ( m_debug ) cout << "Loaded : " << fileName << endl;
+  return 0;
 }//Load
 
 
@@ -503,8 +511,13 @@ void Analysis::TreatEvents(int nevent) {
       // Free the memory from copy
       if ( m_eShallowContainer.first )  delete m_eShallowContainer.first;
       if ( m_eShallowContainer.second ) delete m_eShallowContainer.second;
+
       //Reset elecron vector to size 0
-      m_veGood.clear();
+      while ( m_veGood.size() ) {
+	delete m_veGood.back();
+	m_veGood.pop_back();
+      }
+
     }//for i_event    
   }//for i_file
 
