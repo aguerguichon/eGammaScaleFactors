@@ -51,9 +51,8 @@ int main( int argc, char* argv[] ) {
     Analysis tmp_ana;
     tmp_ana.Load( infile[1] );
 
-    cout << "Divide" << endl;
     final_analysis.Divide( tmp_ana );
-    cout << "Divided" << endl;
+
   }
   else {
     //Load input files into an analysis
@@ -66,7 +65,6 @@ int main( int argc, char* argv[] ) {
 	dummy_analysis.Load( infile[i] );
 	if ( dummy_analysis.GetNEvents() < 0 ) cout << infile[i] << endl; 
 	final_analysis.Add( dummy_analysis );
-	//	if ( final_analysis.GetGoodEvents() > 50000 ) break;
       }
     }
   }

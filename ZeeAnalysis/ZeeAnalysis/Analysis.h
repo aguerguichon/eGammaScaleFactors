@@ -89,7 +89,7 @@ class Analysis
      - Loading the histograms
      - Loading event counters
   */
-  void Load( string fileName = "");
+  int Load( string fileName = "");
 
   //plot and save histograms results
   void PlotResult(string fileName="");
@@ -141,7 +141,6 @@ class Analysis
 
   vector< string > m_fileName; // Contains all Files Names which will be read by 
   xAOD::TEvent m_tevent;
-  xAOD::TStore *m_tstore;
 
   //Name of the object
   //This name will be displayed in the namme and title of all output histograms
