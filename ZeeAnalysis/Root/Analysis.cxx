@@ -19,7 +19,7 @@ namespace po = boost::program_options;
 
 Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess), 
 		       m_debug( false), m_numEvent(0), m_goodEvent(0), 
-		       m_doSmearing(false), m_doScaleFactor(false)
+		       m_doSmearing(false), m_doScaleFactor(false), m_weight(1)
 {
   if ( m_debug ) cout << "Analysis::Analysis()" << endl;
   //  cout << "m_debug : " << m_debug << endl;
@@ -36,6 +36,7 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_ZVertex = 0;
   m_eventInfo = 0;
   m_tfile = 0;
+  m_electronSF = 0;
 
   //Initialize histograms
   m_ZMass = new TH1F ("ZMass", "ZMass", 40, 80, 100); //Masses in GeV
@@ -390,6 +391,14 @@ void Analysis::TreatEvents(int nevent) {
   m_LHToolMedium2012->setProperty("ConfigFile",confDir+"ElectronLikelihoodMediumOfflineConfig2012.conf");
   m_LHToolMedium2012   ->initialize();
 
+  m_electronSF = new AsgElectronEfficiencyCorrectionTool("AsgElectronEfficiencyCorrectionTool");
+  std::vector<std::string> inputFiles{"efficiencySF.offline.RecoTrk.2015.13TeV.rel19.GEO21.v01.root",
+      "efficiencySF.offline.XXX.2015.13TeV.rel19.GEO21.v01.root "} ;
+  m_electronSF->setProperty("CorrectionFileNameList",inputFiles);
+  //set datatype, 0-Data(or dont use the tool - faster), 1-FULLSIM, 3-AF2
+  m_electronSF->setProperty("ForceDataType",2);
+  m_electronSF->initialize();
+
   //Setup the GRL 
   m_grl = new GoodRunsListSelectionTool("GoodRunsListSelectionTool");
   std::vector<std::string> vecStringGRL;
@@ -517,7 +526,8 @@ void Analysis::TreatEvents(int nevent) {
 	delete m_veGood.back();
 	m_veGood.pop_back();
       }
-
+      m_veGoodWeight.clear();
+      m_weight=1;
     }//for i_event    
   }//for i_file
 
@@ -557,8 +567,9 @@ bool Analysis::PassSelection() {
 //Make selection on electron level
 void Analysis::MakeElectronCut() {
   if ( m_debug ) cout << "Analysis::MakeElectronCut" << endl;
-  
+
   for ( xAOD::ElectronContainer::iterator eContItr = (m_eShallowContainer.first)->begin(); eContItr != (m_eShallowContainer.first)->end(); eContItr++ ) {
+    double efficiencyScaleFactor = 1;
 
     //  Cut on the quality of the **eContItrectron
     if ( !m_LHToolMedium2012->accept( **eContItr ) ) continue;
@@ -566,6 +577,8 @@ void Analysis::MakeElectronCut() {
 
     //Calibrate this new electron
     m_EgammaCalibrationAndSmearingTool->applyCorrection( **eContItr );
+
+//    m_electronSF->getEfficiencyScaleFactor(**eContItr,efficiencyScaleFactor);
     
     m_elEta->Fill( (*eContItr)->eta() );
     m_elPt->Fill( (*eContItr)->pt() /1000 );
@@ -583,6 +596,7 @@ void Analysis::MakeElectronCut() {
     
     m_veGood.push_back( 0 );
     m_veGood.back() = *eContItr;
+    m_veGoodWeight.push_back( efficiencyScaleFactor );
   }
 
   if ( m_debug ) cout << "Analysis::MakeElectronCut done" << endl;
@@ -637,7 +651,7 @@ int Analysis::FillSelectionTree() {
   unsigned long long runNumber = m_eventInfo->runNumber();
   unsigned long long eventNumber = m_eventInfo->eventNumber();
   double mass = ComputeZMass( m_veGood );
-  double weight = 1;
+  double weight = m_veGoodWeight[0]*m_veGoodWeight[1]*m_weight;
 
   m_selectionTree->SetBranchStatus( "*", 1);
   m_selectionTree->SetBranchAddress( "runNumber", &runNumber );

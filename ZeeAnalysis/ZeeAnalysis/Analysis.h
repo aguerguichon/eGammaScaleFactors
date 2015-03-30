@@ -16,6 +16,7 @@ using std::vector;
 #include "TTree.h"
 #include "xAODTracking/VertexContainer.h"
 #include "ElectronPhotonSelectorTools/AsgElectronLikelihoodTool.h"
+#include "ElectronEfficiencyCorrection/AsgElectronEfficiencyCorrectionTool.h"
 class GoodRunsListSelectionTool;
 
 /**\class < Analysis > [<Analysis.h>]
@@ -163,7 +164,7 @@ class Analysis
   TH1F *m_elPt;
   TH1F *m_eventZVertex;
 
-  AsgElectronLikelihoodTool* m_LHToolMedium2012;
+
   /**\brief TTree containing minimal information of selected events
    */
   TTree *m_selectionTree;
@@ -184,9 +185,11 @@ class Analysis
   //Electron calibration tool
   CP::EgammaCalibrationAndSmearingTool *m_EgammaCalibrationAndSmearingTool;
   const xAOD::EventInfo* m_eventInfo;
-
+  AsgElectronLikelihoodTool* m_LHToolMedium2012;
+  AsgElectronEfficiencyCorrectionTool * m_electronSF;
   vector< xAOD::Electron* > m_veGood;
-
+  vector< double > m_veGoodWeight;
+  double m_weight; 
   // Current read file 
   // Opening one file at a time and deleting others allow to have more files in the job
   TFile* m_tfile;
