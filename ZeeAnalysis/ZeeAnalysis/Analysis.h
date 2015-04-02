@@ -17,6 +17,7 @@ using std::vector;
 #include "xAODTracking/VertexContainer.h"
 #include "ElectronPhotonSelectorTools/AsgElectronLikelihoodTool.h"
 #include "ElectronEfficiencyCorrection/AsgElectronEfficiencyCorrectionTool.h"
+#include "ElectronPhotonSelectorTools/AsgElectronIsEMSelector.h"
 class GoodRunsListSelectionTool;
 
 /**\class < Analysis > [<Analysis.h>]
@@ -187,6 +188,8 @@ class Analysis
   const xAOD::EventInfo* m_eventInfo;
   AsgElectronLikelihoodTool* m_LHToolMedium2012;
   AsgElectronEfficiencyCorrectionTool * m_electronSF;
+  AsgElectronIsEMSelector* m_cutBasedElID;
+
   vector< xAOD::Electron* > m_veGood;
   vector< double > m_veGoodWeight;
   double m_weight; 

@@ -37,6 +37,7 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_eventInfo = 0;
   m_tfile = 0;
   m_electronSF = 0;
+  m_cutBasedElID = 0;
 
   //Initialize histograms
   m_ZMass = new TH1F ("ZMass", "ZMass", 40, 80, 100); //Masses in GeV
@@ -389,7 +390,13 @@ void Analysis::TreatEvents(int nevent) {
   m_LHToolMedium2012  ->setProperty("primaryVertexContainer","PrimaryVertices");
   string confDir = "ElectronPhotonSelectorTools/offline/mc15_20150224/";
   m_LHToolMedium2012->setProperty("ConfigFile",confDir+"ElectronLikelihoodMediumOfflineConfig2012.conf");
-  m_LHToolMedium2012   ->initialize();
+  m_LHToolMedium2012->initialize();
+
+
+  m_cutBasedElID = new  AsgElectronIsEMSelector("cutBasedElID"); // create the selector
+  // set the config file that contains the cuts on the shower shapes 
+  m_cutBasedElID->setProperty("ConfigFile",confDir+"ElectronIsEMMediumSelectorCutDefs2012.conf"); 
+  m_cutBasedElID->initialize();
 
   m_electronSF = new AsgElectronEfficiencyCorrectionTool("AsgElectronEfficiencyCorrectionTool");
   std::vector<std::string> inputFiles{"efficiencySF.offline.RecoTrk.2015.13TeV.rel19.GEO21.v01.root",
@@ -573,6 +580,7 @@ void Analysis::MakeElectronCut() {
 
     //  Cut on the quality of the **eContItrectron
     if ( !m_LHToolMedium2012->accept( **eContItr ) ) continue;
+    //if ( !m_cutBasedElID->accept( **eContItr ) ) continue;
     m_cutFlow->Fill( "mediumID", 1 );
 
     //Calibrate this new electron
