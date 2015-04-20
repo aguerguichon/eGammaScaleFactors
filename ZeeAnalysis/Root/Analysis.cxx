@@ -10,6 +10,7 @@
 #include "xAODEgamma/EgammaDefs.h"
 #include "CaloGeoHelpers/CaloSampling.h"
 
+
 using std::cout;
 using std::endl;
 using std::vector;
@@ -36,8 +37,6 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_ZVertex = 0;
   m_eventInfo = 0;
   m_tfile = 0;
-  m_electronSF = 0;
-  m_cutBasedElID = 0;
 
   //Initialize histograms
   m_ZMass = new TH1F ("ZMass", "ZMass", 40, 80, 100); //Masses in GeV
@@ -189,25 +188,6 @@ void Analysis::AddFile( string infileName ) {
 }//Addfile
 
 //=====================================================
-// void Analysis::Configure( string configFile ) {
-  
-  //Define the properties we will load from configFile
-  //po::options_description desc;
-  // desc.add_options()
-  //   ("EGammaCalibTool.doSmearing", po::value< bool >( &m_doSmearing ), "Choose MC smearing" )
-  //   ("EGammaCalibTool.doScaleFactor", po::value< bool >( &m_doScaleFactor ), "Choose data scaling" )
-  //   ;
-  
-  // // Load setting file.
-  // po::variables_map vm;
-  // std::ifstream settings_file( configFile.c_str() , std::ifstream::in );
-  // po::store( po::parse_config_file( settings_file , desc ), vm );
-  // po::notify( vm );
-  
-//}
-
-
-//======================================================
 void Analysis::ResetTEvent() {
   if ( m_debug ) cout << "Analysis::ResetTevent" << endl;
   delete m_tfile;
@@ -229,13 +209,6 @@ void Analysis::SetName( string name ) {
   m_selectionTree->SetName( TString (m_name + "_" + m_selectionTree->GetTitle() ) ); 
 }
 
-string Analysis::GetName() const { return m_name; }
-int Analysis::GetGoodEvents() const {return m_goodEvent; }
-int Analysis::GetNEvents() const { return m_numEvent; }
-
-void Analysis::SetDebug( bool debug ) { m_debug = debug; }
-void Analysis::SetDoScaleFactor( bool doScale ) { m_doScaleFactor = doScale;}
-void Analysis::SetDoSmearing( bool doSmearing ) { m_doSmearing = doSmearing; }
 //=======================================================
 void Analysis::PlotResult(string fileName) {
 
@@ -386,25 +359,12 @@ void Analysis::TreatEvents(int nevent) {
   m_EgammaCalibrationAndSmearingTool->initialize();
 
   //Setup the electron ID tool  
-  m_LHToolMedium2012   = new AsgElectronLikelihoodTool ("m_LHToolMedium2012"); 
-  m_LHToolMedium2012  ->setProperty("primaryVertexContainer","PrimaryVertices");
+  m_LHToolMedium2012 = new AsgElectronLikelihoodTool ("m_LHToolMedium2012"); 
+  // initialize the primary vertex container for the tool to have access to the number of vertices used to adapt cuts based on the pileup
+  m_LHToolMedium2012->setProperty("primaryVertexContainer","PrimaryVertices");
   string confDir = "ElectronPhotonSelectorTools/offline/mc15_20150224/";
   m_LHToolMedium2012->setProperty("ConfigFile",confDir+"ElectronLikelihoodMediumOfflineConfig2012.conf");
   m_LHToolMedium2012->initialize();
-
-
-  m_cutBasedElID = new  AsgElectronIsEMSelector("cutBasedElID"); // create the selector
-  // set the config file that contains the cuts on the shower shapes 
-  m_cutBasedElID->setProperty("ConfigFile",confDir+"ElectronIsEMMediumSelectorCutDefs2012.conf"); 
-  m_cutBasedElID->initialize();
-
-  m_electronSF = new AsgElectronEfficiencyCorrectionTool("AsgElectronEfficiencyCorrectionTool");
-  std::vector<std::string> inputFiles{"efficiencySF.offline.RecoTrk.2015.13TeV.rel19.GEO21.v01.root",
-      "efficiencySF.offline.XXX.2015.13TeV.rel19.GEO21.v01.root "} ;
-  m_electronSF->setProperty("CorrectionFileNameList",inputFiles);
-  //set datatype, 0-Data(or dont use the tool - faster), 1-FULLSIM, 3-AF2
-  m_electronSF->setProperty("ForceDataType",2);
-  m_electronSF->initialize();
 
   //Setup the GRL 
   m_grl = new GoodRunsListSelectionTool("GoodRunsListSelectionTool");
@@ -580,14 +540,12 @@ void Analysis::MakeElectronCut() {
 
     //  Cut on the quality of the **eContItrectron
     if ( !m_LHToolMedium2012->accept( **eContItr ) ) continue;
-    //if ( !m_cutBasedElID->accept( **eContItr ) ) continue;
+
     m_cutFlow->Fill( "mediumID", 1 );
 
     //Calibrate this new electron
     m_EgammaCalibrationAndSmearingTool->applyCorrection( **eContItr );
 
-//    m_electronSF->getEfficiencyScaleFactor(**eContItr,efficiencyScaleFactor);
-    
     m_elEta->Fill( (*eContItr)->eta() );
     m_elPt->Fill( (*eContItr)->pt() /1000 );
     

@@ -16,8 +16,6 @@ using std::vector;
 #include "TTree.h"
 #include "xAODTracking/VertexContainer.h"
 #include "ElectronPhotonSelectorTools/AsgElectronLikelihoodTool.h"
-#include "ElectronEfficiencyCorrection/AsgElectronEfficiencyCorrectionTool.h"
-#include "ElectronPhotonSelectorTools/AsgElectronIsEMSelector.h"
 class GoodRunsListSelectionTool;
 
 /**\class < Analysis > [<Analysis.h>]
@@ -78,11 +76,16 @@ class Analysis
    */
   void Divide ( Analysis & analysis );
 
+  string GetName() const { return m_name; }
+  int GetGoodEvents() const {return m_goodEvent; }
+  int GetNEvents() const { return m_numEvent; }
+
+  void SetDebug( bool debug ) { m_debug = debug; }
+  void SetDoScaleFactor( bool doScale ) { m_doScaleFactor = doScale;}
+  void SetDoSmearing( bool doSmearing ) { m_doSmearing = doSmearing; }
+  
   TH1F* GetZMass() const;
 
-  string GetName() const;
-  int GetNEvents() const;
-  int GetGoodEvents() const;
   /**\brief Create an Analysis object from a ROOT file saving
      \param fileName ROOT file created by Analysis::Save 
 
@@ -114,12 +117,6 @@ class Analysis
   */  
   void SetName(string name);
 
-  void SetDoSmearing( bool doSmearing );
-  void SetDoScaleFactor( bool doScale );
-
-  /**\brief Set debug mode
-   */
-  void SetDebug( bool debug );
 
   /**\brief Event per event analysis
      \param nevent Number of events to run over
@@ -134,7 +131,7 @@ class Analysis
   */
   void TreatEvents(int nevent=0);
 
-
+  bool IsMedium(const xAOD::Electron* el ) const;
  private :
   //I assume that the TEvent can only read one fiel at the time
   //and it can not concatenate multiple files
@@ -187,8 +184,6 @@ class Analysis
   CP::EgammaCalibrationAndSmearingTool *m_EgammaCalibrationAndSmearingTool;
   const xAOD::EventInfo* m_eventInfo;
   AsgElectronLikelihoodTool* m_LHToolMedium2012;
-  AsgElectronEfficiencyCorrectionTool * m_electronSF;
-  AsgElectronIsEMSelector* m_cutBasedElID;
 
   vector< xAOD::Electron* > m_veGood;
   vector< double > m_veGoodWeight;
