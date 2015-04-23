@@ -1,15 +1,13 @@
-#input=data12_8TeV.periodB.physics_Egamma.PhysCont.AOD.repro16_v05/
-input=data12_8TeV.periodAllYear.physics_Egamma.PhysCont.DAOD_ZEE.repro17_v01/
-
+input=mc14_8TeV.129680.PowhegPythia8_AU2CT10_Zee_DiLeptonFilter.merge.AOD.e1861_s1933_s1911_r6241_r6197/
 outFileName=Ntuple.root
-version=2
+version=3
+
 doScale=0
 doSmearing=0
 options=""
 #Do not put usercgoudet nor version
-outDatasetName="data_8TeV_Zee_v05"
-#MC_8TeV_DZee"
-#data_8TeV_DZee_rel20"
+outDatasetName="Data_8TeV_Zee_Dilepton_Rel20"
+
 
 
 #=============================
@@ -46,8 +44,9 @@ echo ${outDatasetName}
 prun  \
 --exec "RunZee \`echo %IN | sed 's/,/ /g'\` --outName ${outFileName} --doScale ${doScale} --doSmearing ${doSmearing}"  \
 --outDS user.cgoudet.${outDatasetName}_${version}/ \
---inDS ${input} \
+--inDS `cat lineFile.txt` \
 --outputs ${outFileName} \
 --useRootCore \
 ${options}
 
+#--inDS ${input} \

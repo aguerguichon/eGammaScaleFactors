@@ -57,13 +57,15 @@ int main( int argc, char* argv[] ) {
   else {
     //Load input files into an analysis
     for (unsigned int i = 0; i < infile.size(); i++ ) {
+	cout << infile[i] << endl;
       if (!i) {
+	final_analysis.SetName( "Analysis" );
 	final_analysis.Load( infile[0] );
 	final_analysis.SetName( name );}
       else {
 	Analysis dummy_analysis;
+	dummy_analysis.SetName( "Analysis" );
 	dummy_analysis.Load( infile[i] );
-	if ( dummy_analysis.GetNEvents() < 0 ) cout << infile[i] << endl; 
 	final_analysis.Add( dummy_analysis );
       }
     }

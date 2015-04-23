@@ -19,7 +19,7 @@ namespace po = boost::program_options;
 
 
 Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess), 
-		       m_debug( false), m_numEvent(0), m_goodEvent(0), 
+		       m_debug( false), m_numEvent(0), m_goodEvent(0), m_name( "Analysis" ),
 		       m_doSmearing(false), m_doScaleFactor(false), m_weight(1)
 {
   if ( m_debug ) cout << "Analysis::Analysis()" << endl;
@@ -68,9 +68,9 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_cutFlow->GetYaxis()->SetTitle( "# Events" );
   m_cutFlow->GetXaxis()->SetBinLabel( 1, "init" );
   m_cutFlow->GetXaxis()->SetBinLabel( 2, "GRL" );
-  m_cutFlow->GetXaxis()->SetBinLabel( 3, "eta" );
-  m_cutFlow->GetXaxis()->SetBinLabel( 4, "pt" );
-  m_cutFlow->GetXaxis()->SetBinLabel( 5, "mediumID" );
+  m_cutFlow->GetXaxis()->SetBinLabel( 4, "eta" );
+  m_cutFlow->GetXaxis()->SetBinLabel( 5, "pt" );
+  m_cutFlow->GetXaxis()->SetBinLabel( 3, "mediumID" );
   m_cutFlow->GetXaxis()->SetBinLabel( 6, "OQ" );
   m_cutFlow->GetXaxis()->SetBinLabel( 7, "2el" );
   m_cutFlow->GetXaxis()->SetBinLabel( 8, "charge" );
@@ -84,7 +84,7 @@ Analysis::Analysis( string name , string outputFile ) : Analysis() {
   if ( m_debug ) cout << "Analysis::Analysis( string name , string outputFile )" << endl;
   m_name = name;
   for (unsigned int ihist = 0; ihist < v_hist.size() ; ihist++) {
-    v_hist[ihist]->SetName( TString( m_name + "_" + v_hist[ihist]->GetName() ) );
+    if ( v_hist[ihist] ) v_hist[ihist]->SetName( TString( m_name + "_" + v_hist[ihist]->GetName() ) );
   }
 
   m_logFile = new TFile( outputFile.c_str(), "RECREATE" );  
@@ -141,9 +141,9 @@ Analysis::~Analysis() {
   if ( m_grl )  delete m_grl;
   if ( m_LHToolMedium2012 ) delete m_LHToolMedium2012;
   if ( m_selectionTree ) delete m_selectionTree;
-  if ( m_eContainer ) delete m_eContainer;
-  if ( m_ZVertex ) delete m_ZVertex;
-  if ( m_eventInfo ) delete m_eventInfo;
+  //  if ( m_eContainer ) delete m_eContainer;
+  //if ( m_ZVertex ) delete m_ZVertex;
+  //if ( m_eventInfo ) delete m_eventInfo;
 
   if ( m_tfile ) {
     m_tfile->Close();
@@ -198,15 +198,16 @@ void Analysis::ResetTEvent() {
 
 //=======================================================
 void Analysis::SetName( string name ) { 
+  if ( m_debug ) cout << "Analysis::SetName" << endl;
   m_name = name; 
   if ( m_debug )  cout << "Changed name : " << m_name << endl;
 
   for (unsigned int ihist = 0; ihist < v_hist.size(); ihist++ ) {
-    v_hist[ihist]->SetName( TString( m_name + "_" + v_hist[ihist]->GetTitle() ) );
-    if ( m_debug )   cout << v_hist[ihist]->GetName() << endl;
+    if ( v_hist[ihist] ) v_hist[ihist]->SetName( TString( m_name + "_" + v_hist[ihist]->GetTitle() ) );
+    if ( m_debug && v_hist[ihist])   cout << v_hist[ihist]->GetName() << endl;
   }
 
-  m_selectionTree->SetName( TString (m_name + "_" + m_selectionTree->GetTitle() ) ); 
+  if ( m_selectionTree ) m_selectionTree->SetName( TString (m_name + "_" + m_selectionTree->GetTitle() ) ); 
 }
 
 //=======================================================
@@ -276,7 +277,7 @@ int Analysis::Load( string fileName ) {
     treeout->SetBranchAddress( "m_doScaleFactor", &m_doScaleFactor );      
     treeout->SetBranchAddress( "m_doSmearing", &m_doSmearing );      
     treeout->GetEntry(0);
-    m_name = string( buffer_name );
+    //    m_name = string( buffer_name );
     delete treeout;
     treeout = 0;
   }
@@ -440,21 +441,15 @@ void Analysis::TreatEvents(int nevent) {
 
       //Retrieve the electron container                  
       //RELEASE      
-      //     if ( ! m_tevent.retrieve( m_eContainer, "Electrons" ).isSuccess() ){ cout << "Can not retrieve ElectronContainer : ElectronCollection" << endl; exit(1); }// if retrieve                                                                 
       if ( ! m_tevent.retrieve( m_eContainer, "Electrons" ).isSuccess() ){ cout << "Can not retrieve ElectronContainer : ElectronCollection" << endl; exit(1); }// if retrieve                                                                 
       if ( ! m_tevent.retrieve( m_eventInfo, "EventInfo" ).isSuccess() ){ cout << "Can Not retrieve EventInfo" << endl; exit(1); }
       if ( ! m_tevent.retrieve( m_ZVertex, "PrimaryVertices" ).isSuccess() ){ cout << "Can Not retrieve Vertex Info" << endl; exit(1); }
-
-      // if ( ! i_event || i_event == nentries-1 ) {
-      // 	cout << m_eventInfo->eventNumber() << "  " << m_tfile->GetName() << endl;
-      // }
 
       //Create a shallow copy
       // Allow to modify electrons properties for calibration
       m_eShallowContainer = xAOD::shallowCopyContainer( *m_eContainer );
 
       //Initialize calibration Tool
-      //      m_EgammaCalibrationAndSmearingTool->setDefaultConfiguration( m_eventInfo );
       m_EgammaCalibrationAndSmearingTool->forceSmearing( m_doSmearing );
       m_EgammaCalibrationAndSmearingTool->forceScaleCorrection( m_doScaleFactor );
       
@@ -472,17 +467,16 @@ void Analysis::TreatEvents(int nevent) {
       //      Make the electron selection and fill m_eGoodContainer
       int err = (int) PassSelection();
       if ( m_debug ) cout << "PassSelection : " << err << endl;
-      if ( err )  {
-	m_goodEvent++;
-	//Should not contain events in bin 0
+      if ( err )  { //Pass selection return a boolean 
 
-	m_ZMass->Fill( ComputeZMass( m_veGood ) );
-
-	if ( FillSelectionTree() ) {
-	  cout << "Error Filling selectionTree" << endl;
-	  exit(2);
-	}
+      m_goodEvent++;
+      //Should not contain events in bin 0
+      m_ZMass->Fill( ComputeZMass( m_veGood ) );
+      if ( FillSelectionTree() ) {
+	cout << "Error Filling selectionTree" << endl;
+	exit(2);
       }
+      }      
 
       // Free the memory from copy
       if ( m_eShallowContainer.first )  delete m_eShallowContainer.first;
@@ -490,7 +484,7 @@ void Analysis::TreatEvents(int nevent) {
 
       //Reset elecron vector to size 0
       while ( m_veGood.size() ) {
-	delete m_veGood.back();
+	//delete m_veGood.back();
 	m_veGood.pop_back();
       }
       m_veGoodWeight.clear();
