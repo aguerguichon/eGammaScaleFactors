@@ -72,6 +72,6 @@ int main( int argc, char* argv[] ) {
   }
   cout << "NGoodEvents : " << final_analysis.GetGoodEvents() << endl;
   final_analysis.Save();
-
+  cout << "Saved" << endl;
   return 0;
 }

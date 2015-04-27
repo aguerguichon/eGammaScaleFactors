@@ -240,8 +240,8 @@ void Analysis::Save( ) {
   TString bufferName = TString::Format( "%s", m_name.c_str() );
   TTree * treeout = new TTree( "InfoTree" , "InfoTree" );
   treeout->Branch( "m_name", &bufferName, "m_name/C" );
-  treeout->Branch( "m_numEvent", &m_numEvent, "m_numEvent/I" );
-  treeout->Branch( "m_goodEvent", &m_goodEvent, "m_goodEvent/I" );
+  treeout->Branch( "m_numEvent", &m_numEvent, "m_numEvent/l" );
+  treeout->Branch( "m_goodEvent", &m_goodEvent, "m_goodEvent/l" );
   treeout->Branch( "m_doScaleFactor", &m_doScaleFactor);
   treeout->Branch( "m_doSmearing", &m_doSmearing);
 

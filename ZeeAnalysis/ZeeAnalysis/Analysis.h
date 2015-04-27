@@ -149,8 +149,8 @@ class Analysis
   bool m_debug;
 
   //Counters of events
-  int m_numEvent;
-  int m_goodEvent;
+  unsigned long long int m_numEvent;
+  unsigned long long int m_goodEvent;
 
   //Configuration attributes
   bool m_doSmearing;
