@@ -131,7 +131,7 @@ class Analysis
   */
   void TreatEvents(int nevent=0);
 
-  bool IsMedium(const xAOD::Electron* el ) const;
+  //  bool IsMedium(const xAOD::Electron* el ) const;
  private :
   //I assume that the TEvent can only read one fiel at the time
   //and it can not concatenate multiple files
@@ -141,16 +141,20 @@ class Analysis
   vector< string > m_fileName; // Contains all Files Names which will be read by 
   xAOD::TEvent m_tevent;
 
+  //debug mode
+  bool m_debug;
+
   //Name of the object
   //This name will be displayed in the namme and title of all output histograms
   string m_name;
 
-  //debug mode
-  bool m_debug;
+
 
   //Counters of events
   unsigned long long int m_numEvent;
   unsigned long long int m_goodEvent;
+  /* int m_numEvent; */
+  /* int m_goodEvent; */
 
   //Configuration attributes
   bool m_doSmearing;
@@ -176,9 +180,7 @@ class Analysis
   const xAOD::VertexContainer *m_ZVertex;
 
   //GRL
-#ifndef __CINT__
   GoodRunsListSelectionTool *m_grl; 
-#endif // not __CINT__
     
   //Electron calibration tool
   CP::EgammaCalibrationAndSmearingTool *m_EgammaCalibrationAndSmearingTool;

@@ -19,7 +19,7 @@ namespace po = boost::program_options;
 
 
 Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess), 
-		       m_debug( false), m_numEvent(0), m_goodEvent(0), m_name( "Analysis" ),
+		       m_debug( false), m_name( "Analysis" ), m_numEvent(0), m_goodEvent(0),
 		       m_doSmearing(false), m_doScaleFactor(false), m_weight(1)
 {
   if ( m_debug ) cout << "Analysis::Analysis()" << endl;
@@ -441,7 +441,7 @@ void Analysis::TreatEvents(int nevent) {
 
       //Retrieve the electron container                  
       //RELEASE      
-      if ( ! m_tevent.retrieve( m_eContainer, "Electrons" ).isSuccess() ){ cout << "Can not retrieve ElectronContainer : ElectronCollection" << endl; exit(1); }// if retrieve                                                                 
+      if ( ! m_tevent.retrieve( m_eContainer, "ElectronCollection" ).isSuccess() ){ cout << "Can not retrieve ElectronContainer : ElectronCollection" << endl; exit(1); }// if retrieve                                                                 
       if ( ! m_tevent.retrieve( m_eventInfo, "EventInfo" ).isSuccess() ){ cout << "Can Not retrieve EventInfo" << endl; exit(1); }
       if ( ! m_tevent.retrieve( m_ZVertex, "PrimaryVertices" ).isSuccess() ){ cout << "Can Not retrieve Vertex Info" << endl; exit(1); }
 
@@ -451,7 +451,7 @@ void Analysis::TreatEvents(int nevent) {
 
       //Initialize calibration Tool
       m_EgammaCalibrationAndSmearingTool->forceSmearing( m_doSmearing );
-      m_EgammaCalibrationAndSmearingTool->forceScaleCorrection( m_doScaleFactor );
+      m_EgammaCalibrationAndSmearingTool->forceScaleCorrection( false );
       
       //GRL
       m_cutFlow->Fill( "init", 1 );
