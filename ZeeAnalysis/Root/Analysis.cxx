@@ -357,6 +357,9 @@ void Analysis::TreatEvents(int nevent) {
   m_EgammaCalibrationAndSmearingTool  = new CP::EgammaCalibrationAndSmearingTool("EgammaCalibrationAndSmearingTool"); 
   m_EgammaCalibrationAndSmearingTool->setProperty("ESModel", "es2012c"); 
   m_EgammaCalibrationAndSmearingTool->setProperty("ResolutionType", "SigmaEff90"); 
+  m_EgammaCalibrationAndSmearingTool->setProperty( "doSmearing", 0 );
+  m_EgammaCalibrationAndSmearingTool->setProperty( "doScaleCorrection", 0 );
+  m_EgammaCalibrationAndSmearingTool->setProperty("MVAfolder", "egammaMVACalib/offline/v3");
   m_EgammaCalibrationAndSmearingTool->initialize();
 
   //Setup the electron ID tool  
@@ -441,7 +444,7 @@ void Analysis::TreatEvents(int nevent) {
 
       //Retrieve the electron container                  
       //RELEASE      
-      if ( ! m_tevent.retrieve( m_eContainer, "ElectronCollection" ).isSuccess() ){ cout << "Can not retrieve ElectronContainer : ElectronCollection" << endl; exit(1); }// if retrieve                                                                 
+      if ( ! m_tevent.retrieve( m_eContainer, "Electrons" ).isSuccess() ){ cout << "Can not retrieve ElectronContainer : ElectronCollection" << endl; exit(1); }// if retrieve                                                                 
       if ( ! m_tevent.retrieve( m_eventInfo, "EventInfo" ).isSuccess() ){ cout << "Can Not retrieve EventInfo" << endl; exit(1); }
       if ( ! m_tevent.retrieve( m_ZVertex, "PrimaryVertices" ).isSuccess() ){ cout << "Can Not retrieve Vertex Info" << endl; exit(1); }
 
@@ -449,10 +452,6 @@ void Analysis::TreatEvents(int nevent) {
       // Allow to modify electrons properties for calibration
       m_eShallowContainer = xAOD::shallowCopyContainer( *m_eContainer );
 
-      //Initialize calibration Tool
-      m_EgammaCalibrationAndSmearingTool->forceSmearing( m_doSmearing );
-      m_EgammaCalibrationAndSmearingTool->forceScaleCorrection( false );
-      
       //GRL
       m_cutFlow->Fill( "init", 1 );
       if ( ! m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {//test if is data
@@ -531,7 +530,7 @@ void Analysis::MakeElectronCut() {
 
   for ( xAOD::ElectronContainer::iterator eContItr = (m_eShallowContainer.first)->begin(); eContItr != (m_eShallowContainer.first)->end(); eContItr++ ) {
     double efficiencyScaleFactor = 1;
-
+    cout << 
     //  Cut on the quality of the **eContItrectron
     if ( !m_LHToolMedium2012->accept( **eContItr ) ) continue;
 
