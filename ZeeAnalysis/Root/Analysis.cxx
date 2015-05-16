@@ -37,6 +37,7 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_ZVertex = 0;
   m_eventInfo = 0;
   m_tfile = 0;
+  m_pileup = 0;
 
   //Initialize histograms
   m_ZMass = new TH1F ("ZMass", "ZMass", 40, 80, 100); //Masses in GeV
@@ -144,6 +145,7 @@ Analysis::~Analysis() {
   //  if ( m_eContainer ) delete m_eContainer;
   //if ( m_ZVertex ) delete m_ZVertex;
   //if ( m_eventInfo ) delete m_eventInfo;
+  if ( m_pileup ) delete m_pileup;
 
   if ( m_tfile ) {
     m_tfile->Close();
@@ -382,6 +384,19 @@ void Analysis::TreatEvents(int nevent) {
     exit(1);
   }
 
+  Info("","Declaring pileup reweighting tool");
+  m_pileup  = new CP::PileupReweightingTool("Pileup");
+  m_pileup->SetDataScaleFactors(1/1.09); // For 2012
+  std::vector<std::string> confFiles;
+  std::vector<std::string> lcalcFiles;
+  confFiles.push_back("PileupReweighting/mc14v1_defaults.prw.root"); 
+  lcalcFiles.push_back("CalZee/ilumicalc_histograms_None_200842-215643.root");
+  m_pileup->setProperty( "ConfigFiles", confFiles).ignore();
+  m_pileup->setProperty( "LumiCalcFiles", lcalcFiles).ignore();
+  m_pileup->setProperty( "Prefix", "my").ignore();
+  m_pileup->initialize();
+
+
   //Setup m_SelectionTree
   double dummyVar = -99;
   unsigned long long dummyLong = 0;
@@ -529,8 +544,6 @@ void Analysis::MakeElectronCut() {
   if ( m_debug ) cout << "Analysis::MakeElectronCut" << endl;
 
   for ( xAOD::ElectronContainer::iterator eContItr = (m_eShallowContainer.first)->begin(); eContItr != (m_eShallowContainer.first)->end(); eContItr++ ) {
-    double efficiencyScaleFactor = 1;
-    cout << 
     //  Cut on the quality of the **eContItrectron
     if ( !m_LHToolMedium2012->accept( **eContItr ) ) continue;
 
@@ -555,7 +568,7 @@ void Analysis::MakeElectronCut() {
     
     m_veGood.push_back( 0 );
     m_veGood.back() = *eContItr;
-    m_veGoodWeight.push_back( efficiencyScaleFactor );
+    m_veGoodWeight.push_back( 1 );
   }
 
   if ( m_debug ) cout << "Analysis::MakeElectronCut done" << endl;
@@ -610,7 +623,13 @@ int Analysis::FillSelectionTree() {
   unsigned long long runNumber = m_eventInfo->runNumber();
   unsigned long long eventNumber = m_eventInfo->eventNumber();
   double mass = ComputeZMass( m_veGood );
-  double weight = m_veGoodWeight[0]*m_veGoodWeight[1]*m_weight;
+  float weipu = 1;
+
+  if ( m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {
+    m_pileup->apply(m_eventInfo);
+    m_weight *= m_eventInfo->auxdecor< double >( "myPileupWeight" );
+  }
+  m_weight *= m_veGoodWeight[0]*m_veGoodWeight[1];
 
   m_selectionTree->SetBranchStatus( "*", 1);
   m_selectionTree->SetBranchAddress( "runNumber", &runNumber );
@@ -638,7 +657,7 @@ int Analysis::FillSelectionTree() {
   m_selectionTree->SetBranchAddress( "e2_2", &e2_2);
 
   m_selectionTree->SetBranchAddress( "m12" , &mass );  
-  m_selectionTree->SetBranchAddress( "weight" , &weight );
+  m_selectionTree->SetBranchAddress( "weight" , &m_weight );
  
   m_selectionTree->Fill();
   if ( m_debug ) cout << "Analysis::FillSelectionTree done" << endl;

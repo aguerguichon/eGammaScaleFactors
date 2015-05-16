@@ -16,6 +16,7 @@ using std::vector;
 #include "TTree.h"
 #include "xAODTracking/VertexContainer.h"
 #include "ElectronPhotonSelectorTools/AsgElectronLikelihoodTool.h"
+#include "PileupReweighting/PileupReweightingTool.h"
 class GoodRunsListSelectionTool;
 
 /**\class < Analysis > [<Analysis.h>]
@@ -184,6 +185,7 @@ class Analysis
     
   //Electron calibration tool
   CP::EgammaCalibrationAndSmearingTool *m_EgammaCalibrationAndSmearingTool;
+  CP::PileupReweightingTool *m_pileup;
   const xAOD::EventInfo* m_eventInfo;
   AsgElectronLikelihoodTool* m_LHToolMedium2012;
 

@@ -28,7 +28,7 @@ PACKAGE_BINFLAGS = -lboost_program_options
 PACKAGE_LIBFLAGS = 
 
 # the list of packages we depend on:
-PACKAGE_DEP      =  xAODEgamma   ElectronPhotonFourMomentumCorrection xAODEventInfo GoodRunsLists xAODTracking ElectronPhotonSelectorTools ElectronEfficiencyCorrection
+PACKAGE_DEP      =  xAODEgamma   ElectronPhotonFourMomentumCorrection xAODEventInfo GoodRunsLists xAODTracking ElectronPhotonSelectorTools ElectronEfficiencyCorrection PileupReweighting
 #AsgTools egammaMVACalib egammaLayerRecalibTool
 # the list of packages we use if present, but that we can work without :
 PACKAGE_TRYDEP   = 
