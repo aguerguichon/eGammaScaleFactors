@@ -9,6 +9,7 @@ using std::vector;
 #include "xAODRootAccess/TStore.h"
 #include "TH1F.h"
 #include "xAODEgamma/ElectronContainer.h"
+#include "xAODTruth/TruthEventContainer.h"
 #include "xAODEgamma/Electron.h"
 #include "ElectronPhotonFourMomentumCorrection/EgammaCalibrationAndSmearingTool.h"
 #include "xAODEventInfo/EventInfo.h"
@@ -18,7 +19,7 @@ using std::vector;
 #include "ElectronPhotonSelectorTools/AsgElectronLikelihoodTool.h"
 #include "PileupReweighting/PileupReweightingTool.h"
 class GoodRunsListSelectionTool;
-
+class LineShapeTool;
 /**\class < Analysis > [<Analysis.h>]
   \brief Main function for the selection
   
@@ -166,7 +167,8 @@ class Analysis
   TH1F *m_elEta;
   TH1F *m_elPt;
   TH1F *m_eventZVertex;
-
+  TH1F *m_puWeight;
+  TH1F *m_lineshapeWeight;
 
   /**\brief TTree containing minimal information of selected events
    */
@@ -188,6 +190,8 @@ class Analysis
   CP::PileupReweightingTool *m_pileup;
   const xAOD::EventInfo* m_eventInfo;
   AsgElectronLikelihoodTool* m_LHToolMedium2012;
+  LineShapeTool *m_LineShapeTool;
+  const xAOD::TruthEventContainer *m_teC;
 
   vector< xAOD::Electron* > m_veGood;
   vector< double > m_veGoodWeight;

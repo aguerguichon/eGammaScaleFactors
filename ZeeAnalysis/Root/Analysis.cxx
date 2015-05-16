@@ -9,7 +9,7 @@
 #include "TChain.h"
 #include "xAODEgamma/EgammaDefs.h"
 #include "CaloGeoHelpers/CaloSampling.h"
-
+#include "../LineShapeTool/LineShapeTool/LineShapeTool.h"
 
 using std::cout;
 using std::endl;
@@ -38,6 +38,7 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_eventInfo = 0;
   m_tfile = 0;
   m_pileup = 0;
+  m_teC = 0;
 
   //Initialize histograms
   m_ZMass = new TH1F ("ZMass", "ZMass", 40, 80, 100); //Masses in GeV
@@ -77,6 +78,14 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_cutFlow->GetXaxis()->SetBinLabel( 8, "charge" );
   m_cutFlow->GetXaxis()->SetBinLabel( 9, "ZVertex" );
   v_hist.push_back( m_cutFlow );
+
+  m_puWeight = new TH1F( "puWeight", "puWeight", 100, 0.9, 1.1 );
+  m_puWeight->GetXaxis()->SetTitle( "puWeights" );
+  v_hist.push_back( m_puWeight );
+
+  m_lineshapeWeight = new TH1F( "lineshapeWeight", "lineshapeWeight", 100, 0.9, 1.1 );
+  m_lineshapeWeight->GetXaxis()->SetTitle( "lineshapeWeights" );
+  v_hist.push_back( m_lineshapeWeight );
 
   if ( m_debug ) cout << "Analysis::Analysis() Done" << endl;  
 }
@@ -390,11 +399,13 @@ void Analysis::TreatEvents(int nevent) {
   std::vector<std::string> confFiles;
   std::vector<std::string> lcalcFiles;
   confFiles.push_back("PileupReweighting/mc14v1_defaults.prw.root"); 
-  lcalcFiles.push_back("CalZee/ilumicalc_histograms_None_200842-215643.root");
+  lcalcFiles.push_back("ilumicalc_histograms_None_200842-215643.root");
   m_pileup->setProperty( "ConfigFiles", confFiles).ignore();
   m_pileup->setProperty( "LumiCalcFiles", lcalcFiles).ignore();
   m_pileup->setProperty( "Prefix", "my").ignore();
   m_pileup->initialize();
+
+  m_LineShapeTool = new LineShapeTool();
 
 
   //Setup m_SelectionTree
@@ -462,6 +473,7 @@ void Analysis::TreatEvents(int nevent) {
       if ( ! m_tevent.retrieve( m_eContainer, "Electrons" ).isSuccess() ){ cout << "Can not retrieve ElectronContainer : ElectronCollection" << endl; exit(1); }// if retrieve                                                                 
       if ( ! m_tevent.retrieve( m_eventInfo, "EventInfo" ).isSuccess() ){ cout << "Can Not retrieve EventInfo" << endl; exit(1); }
       if ( ! m_tevent.retrieve( m_ZVertex, "PrimaryVertices" ).isSuccess() ){ cout << "Can Not retrieve Vertex Info" << endl; exit(1); }
+      if ( ! m_tevent.retrieve( m_teC,"TruthEvents").isSuccess() ) { cout << "Can not retrieve TruthEvent container" << endl; exit (1 ); }
 
       //Create a shallow copy
       // Allow to modify electrons properties for calibration
@@ -623,13 +635,20 @@ int Analysis::FillSelectionTree() {
   unsigned long long runNumber = m_eventInfo->runNumber();
   unsigned long long eventNumber = m_eventInfo->eventNumber();
   double mass = ComputeZMass( m_veGood );
-  float weipu = 1;
 
   if ( m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {
     m_pileup->apply(m_eventInfo);
-    m_weight *= m_eventInfo->auxdecor< double >( "myPileupWeight" );
+    double puWeight = m_eventInfo->auxdecor< double >( "myPileupWeight" );
+    m_puWeight->Fill( puWeight );
   }
-  m_weight *= m_veGoodWeight[0]*m_veGoodWeight[1];
+
+  const xAOD::TruthEvent* te = m_teC->front();
+  const xAOD::TruthVertex* tvtx = te->signalProcessVertex();
+  const xAOD::TruthParticle *tp = tvtx->incomingParticle(0);
+  int pdg = tp->pdgId();
+  double lineshapeWeight = m_LineShapeTool->reweightPowhegToImprovedBorn(pdg,-pdg, tp->p4().M()*1e-3);
+  m_lineshapeWeight->Fill( lineshapeWeight );
+  m_weight *= lineshapeWeight;
 
   m_selectionTree->SetBranchStatus( "*", 1);
   m_selectionTree->SetBranchAddress( "runNumber", &runNumber );
