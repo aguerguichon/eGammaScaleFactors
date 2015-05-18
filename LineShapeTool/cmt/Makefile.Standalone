@@ -1,0 +1,55 @@
+# Usage: make -f Makefile.Standalone -C cmt/
+BASEDIR = ../
+
+CXXFLAGS = -I$(BASEDIR) -fPIC
+
+LDFLAGSSHARED = $(CXXFLAGS) -pthread
+
+ROOTlib = `root-config --libs`
+ROOTinc = `root-config --incdir`
+
+all:	reweightZ reweightW
+
+# classes
+
+GaugeBoson.o: ../LineShapeTool/Constants.h ../LineShapeTool/GaugeBoson.h ../Root/GaugeBoson.cxx
+	g++ -c $(CXXFLAGS) ../Root/GaugeBoson.cxx
+
+LineShape.o: ../LineShapeTool/Constants.h ../LineShapeTool/LineShape.h ../Root/LineShape.cxx
+	g++ -c $(CXXFLAGS) ../Root/LineShape.cxx
+
+Constants.o: ../LineShapeTool/Constants.h ../Root/Constants.cxx
+	g++ -c $(CXXFLAGS) ../Root/Constants.cxx
+
+LineShapeTool.o: ../LineShapeTool/LineShapeTool.h ../Root/LineShapeTool.cxx
+	g++ -c $(CXXFLAGS) ../Root/LineShapeTool.cxx -I$(ROOTinc)
+
+objects = Constants.o LineShape.o GaugeBoson.o LineShapeTool.o
+
+# libraries
+
+libLineShapeTool.so: $(objects)
+	mkdir -p ../StandAlone/
+	g++ $(LDFLAGSSHARED) $(objects) -o ../StandAlone/$@ -shared -Wl,-soname,$(notdir $@)
+
+
+# Implicit rule to compile all classes
+
+%.o : %.cxx
+	@echo "Compiling $<"
+	@$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $*.o 
+
+# test programs
+
+reweightZ: ../util/reweightZ.cxx libLineShapeTool.so
+	g++ $(CXXFLAGS) -L ../StandAlone -lLineShapeTool ../util/reweightZ.cxx -o ../StandAlone/reweightZ.exe $(ROOTlib) -I$(ROOTinc)
+
+reweightW: ../util/reweightW.cxx libLineShapeTool.so
+	g++ $(CXXFLAGS) -L ../StandAlone -lLineShapeTool ../util/reweightW.cxx -o ../StandAlone/reweightW.exe $(ROOTlib) -I$(ROOTinc)
+
+# clean up
+
+clean:
+	rm -f *~ *.o *.so *.a *.exe *root *ps fort.*
+	rm -f ../StandAlone/*.exe ../StandAlone/libLineShapeTool.so ../StandAlone/output.root ../obj/*.o
+	rm -f Examples/*~ Fortran/*~ SancModules/*~

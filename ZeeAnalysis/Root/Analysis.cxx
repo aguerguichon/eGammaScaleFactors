@@ -10,17 +10,19 @@
 #include "xAODEgamma/EgammaDefs.h"
 #include "CaloGeoHelpers/CaloSampling.h"
 #include "../LineShapeTool/LineShapeTool/LineShapeTool.h"
+#include "xAODTruth/TruthEventContainer.h"
 
 using std::cout;
 using std::endl;
 using std::vector;
 using std::string;
+using std::min;
 namespace po = boost::program_options;
 
 
 Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess), 
-		       m_debug( false), m_name( "Analysis" ), m_numEvent(0), m_goodEvent(0),
-		       m_doSmearing(false), m_doScaleFactor(false), m_weight(1)
+		       m_debug( true), m_name( "Analysis" ), m_numEvent(0), m_goodEvent(0),
+		       m_doSmearing(false), m_doScaleFactor(false)
 {
   if ( m_debug ) cout << "Analysis::Analysis()" << endl;
   //  cout << "m_debug : " << m_debug << endl;
@@ -38,7 +40,6 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_eventInfo = 0;
   m_tfile = 0;
   m_pileup = 0;
-  m_teC = 0;
 
   //Initialize histograms
   m_ZMass = new TH1F ("ZMass", "ZMass", 40, 80, 100); //Masses in GeV
@@ -79,13 +80,37 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_cutFlow->GetXaxis()->SetBinLabel( 9, "ZVertex" );
   v_hist.push_back( m_cutFlow );
 
-  m_puWeight = new TH1F( "puWeight", "puWeight", 100, 0.9, 1.1 );
+  m_puWeight = new TH1F( "puWeight", "puWeight", 100, 0, 2 );
   m_puWeight->GetXaxis()->SetTitle( "puWeights" );
   v_hist.push_back( m_puWeight );
 
   m_lineshapeWeight = new TH1F( "lineshapeWeight", "lineshapeWeight", 100, 0.9, 1.1 );
   m_lineshapeWeight->GetXaxis()->SetTitle( "lineshapeWeights" );
   v_hist.push_back( m_lineshapeWeight );
+
+
+  m_mapVar["energy_1"]=0;
+  m_mapVar["pt_1"]=0;
+  m_mapVar["eta_1"]=0;
+  m_mapVar["phi_1"]=0;
+  m_mapVar["eta_cl_1"]=0;
+  m_mapVar["eta_calo_1"]=0;
+  m_mapVar["e1_1"]=0;
+  m_mapVar["e2_1"]=0;
+  m_mapVar["energy_2"]=0;
+  m_mapVar["pt_2"]=0;
+  m_mapVar["eta_2"]=0;
+  m_mapVar["phi_2"]=0;
+  m_mapVar["eta_cl_2"]=0;
+  m_mapVar["eta_calo_2"]=0;
+  m_mapVar["e1_2"]=0;
+  m_mapVar["e2_2"]=0;
+  m_mapVar["m12"]=0;
+  m_mapVar["weight"]=1;
+  m_mapVar["puWeight"]=1;
+  m_mapVar["lineshapeWeight"]=1;
+  m_mapLongVar["runNumber"]=0;
+  m_mapLongVar["eventNumber"]=0;
 
   if ( m_debug ) cout << "Analysis::Analysis() Done" << endl;  
 }
@@ -364,83 +389,17 @@ void Analysis::TreatEvents(int nevent) {
   if ( m_debug ) cout << "Analysis::TreatEvents" << endl;
   int currentEvent=0;
   
-  //Setup the calibration tool
-  m_EgammaCalibrationAndSmearingTool  = new CP::EgammaCalibrationAndSmearingTool("EgammaCalibrationAndSmearingTool"); 
-  m_EgammaCalibrationAndSmearingTool->setProperty("ESModel", "es2012c"); 
-  m_EgammaCalibrationAndSmearingTool->setProperty("ResolutionType", "SigmaEff90"); 
-  m_EgammaCalibrationAndSmearingTool->setProperty( "doSmearing", 0 );
-  m_EgammaCalibrationAndSmearingTool->setProperty( "doScaleCorrection", 0 );
-  m_EgammaCalibrationAndSmearingTool->setProperty("MVAfolder", "egammaMVACalib/offline/v3");
-  m_EgammaCalibrationAndSmearingTool->initialize();
-
-  //Setup the electron ID tool  
-  m_LHToolMedium2012 = new AsgElectronLikelihoodTool ("m_LHToolMedium2012"); 
-  // initialize the primary vertex container for the tool to have access to the number of vertices used to adapt cuts based on the pileup
-  m_LHToolMedium2012->setProperty("primaryVertexContainer","PrimaryVertices");
-  string confDir = "ElectronPhotonSelectorTools/offline/mc15_20150224/";
-  m_LHToolMedium2012->setProperty("ConfigFile",confDir+"ElectronLikelihoodMediumOfflineConfig2012.conf");
-  m_LHToolMedium2012->initialize();
-
-  //Setup the GRL 
-  m_grl = new GoodRunsListSelectionTool("GoodRunsListSelectionTool");
-  std::vector<std::string> vecStringGRL;
-  vecStringGRL.push_back("data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml");
-  //  vecStringGRL.push_back("/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml");
-  m_grl->setProperty( "GoodRunsListVec", vecStringGRL);
-  m_grl->setProperty("PassThrough", false); // if true (default) will ignore result of GRL and will just pass all events
-  if (!m_grl->initialize().isSuccess()) { // check this isSuccess
-    cout << "Erreur : GRL not initialized" << endl;
-    exit(1);
-  }
-
-  Info("","Declaring pileup reweighting tool");
-  m_pileup  = new CP::PileupReweightingTool("Pileup");
-  m_pileup->SetDataScaleFactors(1/1.09); // For 2012
-  std::vector<std::string> confFiles;
-  std::vector<std::string> lcalcFiles;
-  confFiles.push_back("PileupReweighting/mc14v1_defaults.prw.root"); 
-  lcalcFiles.push_back("ilumicalc_histograms_None_200842-215643.root");
-  m_pileup->setProperty( "ConfigFiles", confFiles).ignore();
-  m_pileup->setProperty( "LumiCalcFiles", lcalcFiles).ignore();
-  m_pileup->setProperty( "Prefix", "my").ignore();
-  m_pileup->initialize();
-
-  m_LineShapeTool = new LineShapeTool();
-
-
+  InitializeTools();
+  
   //Setup m_SelectionTree
-  double dummyVar = -99;
-  unsigned long long dummyLong = 0;
   m_selectionTree = new TTree( TString( m_name.c_str() ) + "_selectionTree", "selectionTree" ); 
   m_selectionTree->SetDirectory( 0 );
-
-  m_selectionTree->Branch( "runNumber", &dummyLong );
-  m_selectionTree->Branch( "eventNumber", &dummyLong );
-  m_selectionTree->Branch( "energy_1", &dummyVar );
-  m_selectionTree->Branch( "e_raw_sampl1_1", &dummyVar );
-  m_selectionTree->Branch( "e_raw_sampl2_1", &dummyVar );
-  m_selectionTree->Branch( "pt_1" , &dummyVar );
-  m_selectionTree->Branch( "eta_1", &dummyVar );
-  m_selectionTree->Branch( "phi_1", &dummyVar );
-  m_selectionTree->Branch( "eta_cl_1", &dummyVar );
-  m_selectionTree->Branch( "eta_calo_1", &dummyVar );
-  m_selectionTree->Branch( "e1_1", &dummyVar );
-  m_selectionTree->Branch( "e2_1", &dummyVar );
-  
-  m_selectionTree->Branch( "energy_2", &dummyVar );
-  m_selectionTree->Branch( "e_raw_sampl1_2", &dummyVar );
-  m_selectionTree->Branch( "e_raw_sampl2_2", &dummyVar );
-  m_selectionTree->Branch( "pt_2" , &dummyVar );
-  m_selectionTree->Branch( "eta_2", &dummyVar );
-  m_selectionTree->Branch( "phi_2", &dummyVar );
-  m_selectionTree->Branch( "eta_cl_2", &dummyVar );
-  m_selectionTree->Branch( "eta_calo_2", &dummyVar ); 
-  m_selectionTree->Branch( "e1_2", &dummyVar );
-  m_selectionTree->Branch( "e2_2", &dummyVar );
-
-  m_selectionTree->Branch( "m12",  &dummyVar );
-  m_selectionTree->Branch( "weight", &dummyVar );
-
+  for ( map<string, double>::iterator it = m_mapVar.begin(); it != m_mapVar.end(); it++) {
+    m_selectionTree->Branch( it->first.c_str(), &it->second );
+  }
+  for ( map<string, long long int>::iterator it = m_mapLongVar.begin(); it != m_mapLongVar.end(); it++) {
+    m_selectionTree->Branch( it->first.c_str(), &it->second );
+  }
 
   //Loop on all TFile stored in the class
   for (unsigned int i_file = 0 ; i_file < m_fileName.size() ; i_file++) {
@@ -473,7 +432,7 @@ void Analysis::TreatEvents(int nevent) {
       if ( ! m_tevent.retrieve( m_eContainer, "Electrons" ).isSuccess() ){ cout << "Can not retrieve ElectronContainer : ElectronCollection" << endl; exit(1); }// if retrieve                                                                 
       if ( ! m_tevent.retrieve( m_eventInfo, "EventInfo" ).isSuccess() ){ cout << "Can Not retrieve EventInfo" << endl; exit(1); }
       if ( ! m_tevent.retrieve( m_ZVertex, "PrimaryVertices" ).isSuccess() ){ cout << "Can Not retrieve Vertex Info" << endl; exit(1); }
-      if ( ! m_tevent.retrieve( m_teC,"TruthEvents").isSuccess() ) { cout << "Can not retrieve TruthEvent container" << endl; exit (1 ); }
+      
 
       //Create a shallow copy
       // Allow to modify electrons properties for calibration
@@ -488,8 +447,11 @@ void Analysis::TreatEvents(int nevent) {
 	     || (m_eventInfo->isEventFlagBitSet(xAOD::EventInfo::Core, 18) )  )
 	  continue;
       }
-      m_cutFlow->Fill( "GRL", 1 );
+      else {
 
+      }
+
+      m_cutFlow->Fill( "GRL", 1 );
       //      Make the electron selection and fill m_eGoodContainer
       int err = (int) PassSelection();
       if ( m_debug ) cout << "PassSelection : " << err << endl;
@@ -497,6 +459,13 @@ void Analysis::TreatEvents(int nevent) {
 
       m_goodEvent++;
       //Should not contain events in bin 0
+
+      if ( m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {
+	m_pileup->apply( m_eventInfo );
+	m_mapVar["puWeight"] = m_eventInfo->auxdecor< double >( "myPileupWeight" );
+	m_puWeight->Fill( m_mapVar["puWeight"] );
+      }
+      
       m_ZMass->Fill( ComputeZMass( m_veGood ) );
       if ( FillSelectionTree() ) {
 	cout << "Error Filling selectionTree" << endl;
@@ -514,7 +483,9 @@ void Analysis::TreatEvents(int nevent) {
 	m_veGood.pop_back();
       }
       m_veGoodWeight.clear();
-      m_weight=1;
+      m_mapVar["weight"]=1;
+      m_mapVar["puWeight"]=1;
+      m_mapVar["lineshapeWeight"]=1;
     }//for i_event    
   }//for i_file
 
@@ -609,80 +580,178 @@ int Analysis::FillSelectionTree() {
   if ( m_debug ) cout << "Analysis::FillSelectionTree" << endl;
   //RELEASE
   if ( m_veGood.size() != 2 ) return 1;
-  double pt_1 = m_veGood[0]->pt();
-  double eta_1 = m_veGood[0]->eta();
-  double phi_1 = m_veGood[0]->phi();
-  double eta_cl_1 = m_veGood[0]->caloCluster()->eta();
-  //Do not put = between eta_calo_1 and m_veGood, the function retrieveMoment fill the value
-  double eta_calo_1; m_veGood[0]->caloCluster()->retrieveMoment(xAOD::CaloCluster::ETACALOFRAME,eta_calo_1); 
-  double e1_1 = m_veGood[0]->caloCluster()->energyBE(1);
-  double e2_1 = m_veGood[0]->caloCluster()->energyBE(2);
-  double energy_1 = m_veGood[0]->e();
-  double e_raw_sampl1_1 = m_veGood[0]->caloCluster()->eSample( CaloSampling::CaloSample::EMB1  );
-  double e_raw_sampl2_1 = m_veGood[0]->caloCluster()->eSample( CaloSampling::CaloSample::EMB2  );
+  m_mapVar["pt_1"] = m_veGood[0]->pt();
+  m_mapVar["eta_1"] = m_veGood[0]->eta();
+  m_mapVar["phi_1"] = m_veGood[0]->phi();
+  m_mapVar["eta_cl_1"] = m_veGood[0]->caloCluster()->eta();
+  m_veGood[0]->caloCluster()->retrieveMoment(xAOD::CaloCluster::ETACALOFRAME,m_mapVar["eta_calo_1"]); 
+  m_mapVar["e1_1"] = m_veGood[0]->caloCluster()->energyBE(1);
+  m_mapVar["e2_1"] = m_veGood[0]->caloCluster()->energyBE(2);
+  m_mapVar["energy_1"] = m_veGood[0]->e();
 
-  double pt_2 = m_veGood[1]->pt();
-  double eta_2 = m_veGood[1]->eta();
-  double phi_2 = m_veGood[1]->phi();
-  double eta_cl_2 = m_veGood[1]->caloCluster()->eta();
-  double eta_calo_2; m_veGood[1]->caloCluster()->retrieveMoment(xAOD::CaloCluster::ETACALOFRAME,eta_calo_2); 
-  double e1_2 = m_veGood[1]->caloCluster()->energyBE(1);
-  double e2_2 = m_veGood[1]->caloCluster()->energyBE(2);
-  double energy_2 = m_veGood[1]->e();
-  double e_raw_sampl1_2 = m_veGood[1]->caloCluster()->eSample( CaloSampling::CaloSample::EMB1  );
-  double e_raw_sampl2_2 = m_veGood[1]->caloCluster()->eSample( CaloSampling::CaloSample::EMB2  );
+  m_mapVar["pt_2"] = m_veGood[1]->pt();
+  m_mapVar["eta_2"] = m_veGood[1]->eta();
+  m_mapVar["phi_2"] = m_veGood[1]->phi();
+  m_mapVar["eta_cl_2"] = m_veGood[1]->caloCluster()->eta();
+  m_veGood[1]->caloCluster()->retrieveMoment(xAOD::CaloCluster::ETACALOFRAME,m_mapVar["eta_calo_2"]); 
+  m_mapVar["e1_2"] = m_veGood[1]->caloCluster()->energyBE(1);
+  m_mapVar["e2_2"] = m_veGood[1]->caloCluster()->energyBE(2);
+  m_mapVar["energy_2"] = m_veGood[1]->e();
 
-  unsigned long long runNumber = m_eventInfo->runNumber();
-  unsigned long long eventNumber = m_eventInfo->eventNumber();
-  double mass = ComputeZMass( m_veGood );
-
-  if ( m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {
-    m_pileup->apply(m_eventInfo);
-    double puWeight = m_eventInfo->auxdecor< double >( "myPileupWeight" );
-    m_puWeight->Fill( puWeight );
-  }
-
-  const xAOD::TruthEvent* te = m_teC->front();
-  const xAOD::TruthVertex* tvtx = te->signalProcessVertex();
-  const xAOD::TruthParticle *tp = tvtx->incomingParticle(0);
-  int pdg = tp->pdgId();
-  double lineshapeWeight = m_LineShapeTool->reweightPowhegToImprovedBorn(pdg,-pdg, tp->p4().M()*1e-3);
-  m_lineshapeWeight->Fill( lineshapeWeight );
-  m_weight *= lineshapeWeight;
-
-  m_selectionTree->SetBranchStatus( "*", 1);
-  m_selectionTree->SetBranchAddress( "runNumber", &runNumber );
-  m_selectionTree->SetBranchAddress( "eventNumber", &eventNumber );
-  m_selectionTree->SetBranchAddress( "energy_1" , &energy_1 );
-  m_selectionTree->SetBranchAddress( "e_raw_sampl1_1" , &e_raw_sampl1_1 );
-  m_selectionTree->SetBranchAddress( "e_raw_sampl2_1" , &e_raw_sampl2_1 );
-  m_selectionTree->SetBranchAddress( "pt_1" , &pt_1 );
-  m_selectionTree->SetBranchAddress( "eta_1" , &eta_1 );
-  m_selectionTree->SetBranchAddress( "phi_1" , &phi_1 );
-  m_selectionTree->SetBranchAddress( "eta_cl_1" , &eta_cl_1 );
-  m_selectionTree->SetBranchAddress( "eta_calo_1" , &eta_calo_1 );
-  m_selectionTree->SetBranchAddress( "e1_1", &e1_1);
-  m_selectionTree->SetBranchAddress( "e2_1", &e2_1);
-
-  m_selectionTree->SetBranchAddress( "energy_2" , &energy_2 );
-  m_selectionTree->SetBranchAddress( "e_raw_sampl1_2" , &e_raw_sampl1_2 );
-  m_selectionTree->SetBranchAddress( "e_raw_sampl2_2" , &e_raw_sampl2_2 );
-  m_selectionTree->SetBranchAddress( "pt_2" , &pt_2 );
-  m_selectionTree->SetBranchAddress( "eta_2" , &eta_2 );
-  m_selectionTree->SetBranchAddress( "phi_2" , &phi_2 );
-  m_selectionTree->SetBranchAddress( "eta_cl_2" , &eta_cl_2 );
-  m_selectionTree->SetBranchAddress( "eta_calo_2" , &eta_calo_2 );
-  m_selectionTree->SetBranchAddress( "e1_2", &e1_2);
-  m_selectionTree->SetBranchAddress( "e2_2", &e2_2);
-
-  m_selectionTree->SetBranchAddress( "m12" , &mass );  
-  m_selectionTree->SetBranchAddress( "weight" , &m_weight );
- 
+  m_mapLongVar["runNumber"] = m_eventInfo->runNumber();
+  m_mapLongVar["eventNumber"] = m_eventInfo->eventNumber();
+  m_mapVar["m12"] = ComputeZMass( m_veGood );
+  m_mapVar["lineshapeWeight"] = GetLineShapeWeight();
+  m_mapVar["weight"] = m_mapVar["lineshapeWeight"]*m_mapVar["puWeight"];
   m_selectionTree->Fill();
   if ( m_debug ) cout << "Analysis::FillSelectionTree done" << endl;
   return 0;
 }
 
 //=====================================================
-TH1F* Analysis::GetZMass() const { 
-  return  m_ZMass; }
+int Analysis::InitializeTools () {
+
+  //Setup the calibration tool
+  m_EgammaCalibrationAndSmearingTool  = new CP::EgammaCalibrationAndSmearingTool("EgammaCalibrationAndSmearingTool"); 
+  m_EgammaCalibrationAndSmearingTool->setProperty("ESModel", "es2012c"); 
+  m_EgammaCalibrationAndSmearingTool->setProperty("ResolutionType", "SigmaEff90"); 
+  m_EgammaCalibrationAndSmearingTool->setProperty( "doSmearing", 0 );
+  m_EgammaCalibrationAndSmearingTool->setProperty( "doScaleCorrection", 0 );
+  m_EgammaCalibrationAndSmearingTool->setProperty("MVAfolder", "egammaMVACalib/offline/v3");
+  m_EgammaCalibrationAndSmearingTool->initialize();
+
+  //Setup the electron ID tool  
+  m_LHToolMedium2012 = new AsgElectronLikelihoodTool ("m_LHToolMedium2012"); 
+  // initialize the primary vertex container for the tool to have access to the number of vertices used to adapt cuts based on the pileup
+  m_LHToolMedium2012->setProperty("primaryVertexContainer","PrimaryVertices");
+  string confDir = "ElectronPhotonSelectorTools/offline/mc15_20150224/";
+  m_LHToolMedium2012->setProperty("ConfigFile",confDir+"ElectronLikelihoodMediumOfflineConfig2012.conf");
+  m_LHToolMedium2012->initialize();
+
+  //Setup the GRL 
+  m_grl = new GoodRunsListSelectionTool("GoodRunsListSelectionTool");
+  std::vector<std::string> vecStringGRL;
+  vecStringGRL.push_back("data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml");
+  //  vecStringGRL.push_back("/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml");
+  m_grl->setProperty( "GoodRunsListVec", vecStringGRL);
+  m_grl->setProperty("PassThrough", false); // if true (default) will ignore result of GRL and will just pass all events
+  if (!m_grl->initialize().isSuccess()) { // check this isSuccess
+    cout << "Erreur : GRL not initialized" << endl;
+    exit(1);
+  }
+
+  Info("","Declaring pileup reweighting tool");
+  m_pileup  = new CP::PileupReweightingTool("Pileup");
+  m_pileup->SetDataScaleFactors(1/1.09); // For 2012
+  std::vector<std::string> confFiles;
+  std::vector<std::string> lcalcFiles;
+  confFiles.push_back("PileupReweighting/mc14v1_defaults.prw.root");
+  lcalcFiles.push_back("ilumicalc_histograms_None_200842-215643.root");
+  m_pileup->setProperty( "ConfigFiles", confFiles).ignore();
+  m_pileup->setProperty( "LumiCalcFiles", lcalcFiles).ignore();
+  m_pileup->setProperty( "Prefix", "my").ignore();
+  m_pileup->initialize();
+  
+
+
+
+  return 0;
+}
+
+//====================================================
+double Analysis::GetLineShapeWeight() {
+  //Code adapted from JB devivie
+
+  class TrueInfo {
+  public:
+    TrueInfo() { pdg1 = 0; pdg2 = 0; }
+    ~TrueInfo() { };
+    
+    int pdg1, pdg2;
+    TLorentzVector e11,e12,z1,e31,e32,z3;
+  };
+  TrueInfo *GetHPInfo();
+  
+  
+  double weight =1;
+  TrueInfo *ti = new TrueInfo();
+
+
+  const xAOD::TruthEventContainer *teC(0);
+  if ( m_tevent.retrieve(teC,"TruthEvents").isFailure()) {
+    Info("","Cannot retrieve TruthEvents");
+    exit( 1 );
+  }
+
+  const xAOD::TruthEvent* te = teC->front();
+  const xAOD::TruthVertex* tvtx = te->signalProcessVertex();
+  if (tvtx) {
+    TString iN[2] = { "In ", "Out" };
+    long unsigned int n[2] = { tvtx->nIncomingParticles(), tvtx->nOutgoingParticles() };
+    for (int it = 0; it < 2; it++) {
+      for (long unsigned int i = 0; i < n[it]; i++) {
+	const xAOD::TruthParticle *tp = i == 0 ? tvtx->incomingParticle(i) : tvtx->outgoingParticle(i);
+	Info("","%s pdg = %i, e = %3.2f, m = %3.2f",iN[i].Data(),tp->pdgId(),tp->e()*1e-3,tp->m()*1e-3);
+      }
+    }
+  } else {
+    //Info("","No signal vertex");
+    //xAOD::TruthEvent::PdfInfo pdfinfo = te->pdfInfo();
+    //Info("","pdg1 = %i, pdg2 = %i",pdfinfo.pdgId1,pdfinfo.pdgId2);
+    const xAOD::TruthParticleContainer *tpC(0);
+    if ( m_tevent.retrieve(tpC,"TruthParticles").isFailure()) {
+      Info("","Cannot retrieve TruthParticles");
+      exit( 1 );
+    }
+    for (const auto *const tp : *tpC) {
+      if (tp->pdgId() != 23) continue;
+      if (tp->status() < 30 && tp->status() > 20) {
+	ti->z3 = tp->p4();
+	const xAOD::TruthVertex* proVtx = tp->prodVtx();
+	if (proVtx) {
+	  int nP = proVtx->nIncomingParticles();
+	  if (nP > 2)
+	    Info("","more than two incoming particles in the Z production vertex ! %i",nP);
+	  int pdg[2] = { 0, 0 };
+	  for (int ii = 0; ii < min(2,nP); ii++) 
+	    pdg[ii] = proVtx->incomingParticle(ii)->pdgId();
+	  ti->pdg1 = pdg[0];
+	  ti->pdg2 = pdg[1];
+	}
+      }
+      if (tp->status() == 62) 
+	ti->z1 = tp->p4();
+
+      if (tp->status() == 62 || tp->status() < 30 && tp->status() > 20) {
+	const xAOD::TruthVertex* decVtx = tp->decayVtx();
+	if (decVtx) {
+	  int nP = decVtx->nIncomingParticles();
+	  int ne = 0;
+	  TLorentzVector el[2];
+	  for (int ii = 0; ii < nP; ii++) {
+	    if (abs(decVtx->outgoingParticle(ii)->pdgId()) == 11) {
+	      if (ne < 2)
+		el[ne] = decVtx->outgoingParticle(ii)->p4();
+	      ne++;
+	    }
+	  }
+	  if (ne > 2)
+	    Info("","more than two electrons in Z decays");
+	  if (tp->status() == 62) {
+	    ti->e11 = el[0];
+	    ti->e12 = el[1];
+	  } else {
+	    ti->e31 = el[0];
+	    ti->e32 = el[1];
+	  }
+	}
+      }
+    }
+  }    
+
+  LineShapeTool *lineShapeTool = new LineShapeTool();
+  weight = lineShapeTool->reweightPowhegToImprovedBorn(ti->pdg1,ti->pdg2,ti->z3.M()*1e-3);
+  m_lineshapeWeight->Fill( weight );
+  //  cout << "lineshapeWeight : " << weight << endl;
+  return weight;
+}

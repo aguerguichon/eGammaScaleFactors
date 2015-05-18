@@ -1,0 +1,37 @@
+
+Compile : 
+
+> make
+
+Run test program : 
+
+> ./ reweight.exe
+
+
+The test program gives examples for all relevant corrections, and is hopefully self-explanatory:
+
+- Powheg : fixed to running width
+  	   running alpha for photon amplitude
+
+- Pythia : reweight to PDG value for width
+  	   undo running alpha for Z amplitude
+
+Feedback : maarten.boonekamp@cern.ch (thanks!)
+Compile : 
+
+> make
+
+Run test program : 
+
+> ./ reweight.exe
+
+
+The test program gives examples for all relevant corrections, and is hopefully self-explanatory:
+
+- Powheg : fixed to running width
+  	   running alpha for photon amplitude
+
+- Pythia : reweight to PDG value for width
+  	   undo running alpha for Z amplitude
+
+Feedback : maarten.boonekamp@cern.ch (thanks!)

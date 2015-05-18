@@ -1,0 +1,12 @@
+20/11/12, Maarten
+	- tagging LineShapeTool-00-00-03
+
+14/11/12, Mikhail Karnevskiy, George Sedov, James Dassoulas, Sebastian Schmitt
+	- added requirements file
+	- fixed memory leak
+	- removed extra ;
+	- moved test functions to util
+
+17/09/12, Maarten
+	- added W reweighting, and generator specfic reweighting functions
+	- interface simplifications (simpler user functions)

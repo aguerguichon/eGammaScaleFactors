@@ -4,6 +4,8 @@
 using std::string;
 #include <vector>
 using std::vector;
+#include <map>
+using std::map;
 #include "xAODRootAccess/TEvent.h"
 #include "xAODRootAccess/Init.h"
 #include "xAODRootAccess/TStore.h"
@@ -86,7 +88,7 @@ class Analysis
   void SetDoScaleFactor( bool doScale ) { m_doScaleFactor = doScale;}
   void SetDoSmearing( bool doSmearing ) { m_doSmearing = doSmearing; }
   
-  TH1F* GetZMass() const;
+  TH1F* GetZMass() const { return m_ZMass;}
 
   /**\brief Create an Analysis object from a ROOT file saving
      \param fileName ROOT file created by Analysis::Save 
@@ -135,6 +137,9 @@ class Analysis
 
   //  bool IsMedium(const xAOD::Electron* el ) const;
  private :
+  int InitializeTools();
+  double GetLineShapeWeight();
+
   //I assume that the TEvent can only read one fiel at the time
   //and it can not concatenate multiple files
   //Hence I store in the class the vector of TFile
@@ -195,7 +200,7 @@ class Analysis
 
   vector< xAOD::Electron* > m_veGood;
   vector< double > m_veGoodWeight;
-  double m_weight; 
+
   // Current read file 
   // Opening one file at a time and deleting others allow to have more files in the job
   TFile* m_tfile;
@@ -216,5 +221,8 @@ class Analysis
   TFile *m_logFile;
 
   TH1F* m_cutFlow;
+
+  map<string, double> m_mapVar;
+  map<string, long long int> m_mapLongVar;
 };
 #endif

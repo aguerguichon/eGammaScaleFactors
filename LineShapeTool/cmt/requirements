@@ -1,0 +1,23 @@
+package LineShapeTool
+author Mikhail Karnevskiy, Sebastian Schmitt
+
+include_path none
+
+private
+use  AtlasROOT                  AtlasROOT-*                     External
+
+public
+use  AtlasPolicy                AtlasPolicy-*
+
+apply_pattern installed_library
+library LineShapeTool ../Root/*.cxx
+
+application reweightZ ../util/reweightZ.cxx
+macro_append reweightZ_dependencies LineShapeTool
+
+application reweightW ../util/reweightW.cxx
+macro_append reweightW_dependencies LineShapeTool
+
+apply_tag  ROOTBasicLibs
+apply_tag  ROOTMathLibs
+
