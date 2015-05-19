@@ -460,10 +460,12 @@ void Analysis::TreatEvents(int nevent) {
       m_goodEvent++;
       //Should not contain events in bin 0
 
-      if ( m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {
+      if ( 1 && m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {
+	cout << "IsSimulation" << endl;
 	m_pileup->apply( m_eventInfo );
 	m_mapVar["puWeight"] = m_eventInfo->auxdecor< double >( "myPileupWeight" );
 	m_puWeight->Fill( m_mapVar["puWeight"] );
+	m_mapVar["lineshapeWeight"] = GetLineShapeWeight();      
       }
       
       m_ZMass->Fill( ComputeZMass( m_veGood ) );
@@ -533,8 +535,9 @@ void Analysis::MakeElectronCut() {
     m_cutFlow->Fill( "mediumID", 1 );
 
     //Calibrate this new electron
+    //    cout << (*eContItr)->pt() << " ";
     m_EgammaCalibrationAndSmearingTool->applyCorrection( **eContItr );
-
+    //    cout << (*eContItr)->pt() << endl;
     m_elEta->Fill( (*eContItr)->eta() );
     m_elPt->Fill( (*eContItr)->pt() /1000 );
     
@@ -601,7 +604,7 @@ int Analysis::FillSelectionTree() {
   m_mapLongVar["runNumber"] = m_eventInfo->runNumber();
   m_mapLongVar["eventNumber"] = m_eventInfo->eventNumber();
   m_mapVar["m12"] = ComputeZMass( m_veGood );
-  m_mapVar["lineshapeWeight"] = GetLineShapeWeight();
+
   m_mapVar["weight"] = m_mapVar["lineshapeWeight"]*m_mapVar["puWeight"];
   m_selectionTree->Fill();
   if ( m_debug ) cout << "Analysis::FillSelectionTree done" << endl;
