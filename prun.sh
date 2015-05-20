@@ -1,18 +1,13 @@
-input=mc14_8TeV.129685.PowhegPythia8_AU2CT10_Zee_Exactly1LeptonFilter.merge.AOD.e2095_s1933_s1911_r6241_r6197/
-#input=mc14_8TeV.129680.PowhegPythia8_AU2CT10_Zee_DiLeptonFilter.merge.AOD.e1861_s1933_s1911_r6241_r6197/
-#input=data12_8TeV.periodAllYear.physics_Egamma.PhysCont.DAOD_ZEE.repro17_v01/
-#input=mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2576_s2132_r6630_r6264/
+input=data12_8TeV.periodAllYear.physics_Egamma.PhysCont.DAOD_ZEE.repro16_v02
 outFileName=Ntuple.root
-version=9
+version=1
 
 doScale=0
 doSmearing=0
 options=""
 #Do not put usercgoudet nor version
-outDatasetName="MC_8TeV_Zee1Lepton_Tight_AOD20"
-#outDatasetName="MC_8TeV_ZeeDiLepton_AOD20"
-#outDatasetName="Data_8TeV_Zee_DAOD20"
-outDatasetName="MC_13TeV_Zee_AOD"
+outDatasetName="Data_8TeV_Zee_DAOD19"
+
 
 
 #=============================

@@ -39,7 +39,6 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_ZVertex = 0;
   m_eventInfo = 0;
   m_tfile = 0;
-  m_pileup = 0;
 
   //Initialize histograms
   m_ZMass = new TH1F ("ZMass", "ZMass", 40, 80, 100); //Masses in GeV
@@ -80,14 +79,6 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_cutFlow->GetXaxis()->SetBinLabel( 9, "ZVertex" );
   v_hist.push_back( m_cutFlow );
 
-  m_puWeight = new TH1F( "puWeight", "puWeight", 100, 0, 2 );
-  m_puWeight->GetXaxis()->SetTitle( "puWeights" );
-  v_hist.push_back( m_puWeight );
-
-  m_lineshapeWeight = new TH1F( "lineshapeWeight", "lineshapeWeight", 100, 0.9, 1.1 );
-  m_lineshapeWeight->GetXaxis()->SetTitle( "lineshapeWeights" );
-  v_hist.push_back( m_lineshapeWeight );
-
 
   m_mapVar["energy_1"]=0;
   m_mapVar["pt_1"]=0;
@@ -107,8 +98,6 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_mapVar["e2_2"]=0;
   m_mapVar["m12"]=0;
   m_mapVar["weight"]=1;
-  m_mapVar["puWeight"]=1;
-  m_mapVar["lineshapeWeight"]=1;
   m_mapLongVar["runNumber"]=0;
   m_mapLongVar["eventNumber"]=0;
 
@@ -179,7 +168,6 @@ Analysis::~Analysis() {
   //  if ( m_eContainer ) delete m_eContainer;
   //if ( m_ZVertex ) delete m_ZVertex;
   //if ( m_eventInfo ) delete m_eventInfo;
-  if ( m_pileup ) delete m_pileup;
 
   if ( m_tfile ) {
     m_tfile->Close();
@@ -429,7 +417,7 @@ void Analysis::TreatEvents(int nevent) {
 
       //Retrieve the electron container                  
       //RELEASE      
-      if ( ! m_tevent.retrieve( m_eContainer, "Electrons" ).isSuccess() ){ cout << "Can not retrieve ElectronContainer : ElectronCollection" << endl; exit(1); }// if retrieve                                                                 
+      if ( ! m_tevent.retrieve( m_eContainer, "ElectronCollection" ).isSuccess() ){ cout << "Can not retrieve ElectronContainer : ElectronCollection" << endl; exit(1); }// if retrieve                                                                 
       if ( ! m_tevent.retrieve( m_eventInfo, "EventInfo" ).isSuccess() ){ cout << "Can Not retrieve EventInfo" << endl; exit(1); }
       if ( ! m_tevent.retrieve( m_ZVertex, "PrimaryVertices" ).isSuccess() ){ cout << "Can Not retrieve Vertex Info" << endl; exit(1); }
       
@@ -460,14 +448,6 @@ void Analysis::TreatEvents(int nevent) {
       m_goodEvent++;
       //Should not contain events in bin 0
 
-      if ( 1 && m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {
-	cout << "IsSimulation" << endl;
-	m_pileup->apply( m_eventInfo );
-	m_mapVar["puWeight"] = m_eventInfo->auxdecor< double >( "myPileupWeight" );
-	m_puWeight->Fill( m_mapVar["puWeight"] );
-	m_mapVar["lineshapeWeight"] = GetLineShapeWeight();      
-      }
-      
       m_ZMass->Fill( ComputeZMass( m_veGood ) );
       if ( FillSelectionTree() ) {
 	cout << "Error Filling selectionTree" << endl;
@@ -486,8 +466,6 @@ void Analysis::TreatEvents(int nevent) {
       }
       m_veGoodWeight.clear();
       m_mapVar["weight"]=1;
-      m_mapVar["puWeight"]=1;
-      m_mapVar["lineshapeWeight"]=1;
     }//for i_event    
   }//for i_file
 
@@ -643,118 +621,8 @@ int Analysis::InitializeTools () {
     exit(1);
   }
 
-  Info("","Declaring pileup reweighting tool");
-  m_pileup  = new CP::PileupReweightingTool("Pileup");
-  m_pileup->SetDataScaleFactors(1/1.09); // For 2012
-  std::vector<std::string> confFiles;
-  std::vector<std::string> lcalcFiles;
-  confFiles.push_back("PileupReweighting/mc14v1_defaults.prw.root");
-  lcalcFiles.push_back("ilumicalc_histograms_None_200842-215643.root");
-  m_pileup->setProperty( "ConfigFiles", confFiles).ignore();
-  m_pileup->setProperty( "LumiCalcFiles", lcalcFiles).ignore();
-  m_pileup->setProperty( "Prefix", "my").ignore();
-  m_pileup->initialize();
-  
-
-
 
   return 0;
 }
 
-//====================================================
-double Analysis::GetLineShapeWeight() {
-  //Code adapted from JB devivie
 
-  class TrueInfo {
-  public:
-    TrueInfo() { pdg1 = 0; pdg2 = 0; }
-    ~TrueInfo() { };
-    
-    int pdg1, pdg2;
-    TLorentzVector e11,e12,z1,e31,e32,z3;
-  };
-  TrueInfo *GetHPInfo();
-  
-  
-  double weight =1;
-  TrueInfo *ti = new TrueInfo();
-
-
-  const xAOD::TruthEventContainer *teC(0);
-  if ( m_tevent.retrieve(teC,"TruthEvents").isFailure()) {
-    Info("","Cannot retrieve TruthEvents");
-    exit( 1 );
-  }
-
-  const xAOD::TruthEvent* te = teC->front();
-  const xAOD::TruthVertex* tvtx = te->signalProcessVertex();
-  if (tvtx) {
-    TString iN[2] = { "In ", "Out" };
-    long unsigned int n[2] = { tvtx->nIncomingParticles(), tvtx->nOutgoingParticles() };
-    for (int it = 0; it < 2; it++) {
-      for (long unsigned int i = 0; i < n[it]; i++) {
-	const xAOD::TruthParticle *tp = i == 0 ? tvtx->incomingParticle(i) : tvtx->outgoingParticle(i);
-	Info("","%s pdg = %i, e = %3.2f, m = %3.2f",iN[i].Data(),tp->pdgId(),tp->e()*1e-3,tp->m()*1e-3);
-      }
-    }
-  } else {
-    //Info("","No signal vertex");
-    //xAOD::TruthEvent::PdfInfo pdfinfo = te->pdfInfo();
-    //Info("","pdg1 = %i, pdg2 = %i",pdfinfo.pdgId1,pdfinfo.pdgId2);
-    const xAOD::TruthParticleContainer *tpC(0);
-    if ( m_tevent.retrieve(tpC,"TruthParticles").isFailure()) {
-      Info("","Cannot retrieve TruthParticles");
-      exit( 1 );
-    }
-    for (const auto *const tp : *tpC) {
-      if (tp->pdgId() != 23) continue;
-      if (tp->status() < 30 && tp->status() > 20) {
-	ti->z3 = tp->p4();
-	const xAOD::TruthVertex* proVtx = tp->prodVtx();
-	if (proVtx) {
-	  int nP = proVtx->nIncomingParticles();
-	  if (nP > 2)
-	    Info("","more than two incoming particles in the Z production vertex ! %i",nP);
-	  int pdg[2] = { 0, 0 };
-	  for (int ii = 0; ii < min(2,nP); ii++) 
-	    pdg[ii] = proVtx->incomingParticle(ii)->pdgId();
-	  ti->pdg1 = pdg[0];
-	  ti->pdg2 = pdg[1];
-	}
-      }
-      if (tp->status() == 62) 
-	ti->z1 = tp->p4();
-
-      if (tp->status() == 62 || tp->status() < 30 && tp->status() > 20) {
-	const xAOD::TruthVertex* decVtx = tp->decayVtx();
-	if (decVtx) {
-	  int nP = decVtx->nIncomingParticles();
-	  int ne = 0;
-	  TLorentzVector el[2];
-	  for (int ii = 0; ii < nP; ii++) {
-	    if (abs(decVtx->outgoingParticle(ii)->pdgId()) == 11) {
-	      if (ne < 2)
-		el[ne] = decVtx->outgoingParticle(ii)->p4();
-	      ne++;
-	    }
-	  }
-	  if (ne > 2)
-	    Info("","more than two electrons in Z decays");
-	  if (tp->status() == 62) {
-	    ti->e11 = el[0];
-	    ti->e12 = el[1];
-	  } else {
-	    ti->e31 = el[0];
-	    ti->e32 = el[1];
-	  }
-	}
-      }
-    }
-  }    
-
-  LineShapeTool *lineShapeTool = new LineShapeTool();
-  weight = lineShapeTool->reweightPowhegToImprovedBorn(ti->pdg1,ti->pdg2,ti->z3.M()*1e-3);
-  m_lineshapeWeight->Fill( weight );
-  //  cout << "lineshapeWeight : " << weight << endl;
-  return weight;
-}

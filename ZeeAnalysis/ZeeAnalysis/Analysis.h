@@ -172,8 +172,7 @@ class Analysis
   TH1F *m_elEta;
   TH1F *m_elPt;
   TH1F *m_eventZVertex;
-  TH1F *m_puWeight;
-  TH1F *m_lineshapeWeight;
+
 
   /**\brief TTree containing minimal information of selected events
    */
@@ -192,10 +191,9 @@ class Analysis
     
   //Electron calibration tool
   CP::EgammaCalibrationAndSmearingTool *m_EgammaCalibrationAndSmearingTool;
-  CP::PileupReweightingTool *m_pileup;
+
   const xAOD::EventInfo* m_eventInfo;
   AsgElectronLikelihoodTool* m_LHToolMedium2012;
-  LineShapeTool *m_LineShapeTool;
   const xAOD::TruthEventContainer *m_teC;
 
   vector< xAOD::Electron* > m_veGood;
