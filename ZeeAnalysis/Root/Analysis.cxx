@@ -627,8 +627,8 @@ int Analysis::InitializeTools () {
   m_LHToolMedium2012 = new AsgElectronLikelihoodTool ("m_LHToolMedium2012"); 
   // initialize the primary vertex container for the tool to have access to the number of vertices used to adapt cuts based on the pileup
   m_LHToolMedium2012->setProperty("primaryVertexContainer","PrimaryVertices");
-  string confDir = "ElectronPhotonSelectorTools/offline/mc15_20150224/";
-  m_LHToolMedium2012->setProperty("ConfigFile",confDir+"ElectronLikelihoodMediumOfflineConfig2012.conf");
+  string confDir = "ElectronPhotonSelectorTools/offline/mc15_20150429/";
+  m_LHToolMedium2012->setProperty("ConfigFile",confDir+"ElectronLikelihoodMediumOfflineConfig2015.conf");
   m_LHToolMedium2012->initialize();
 
   //Setup the GRL 
