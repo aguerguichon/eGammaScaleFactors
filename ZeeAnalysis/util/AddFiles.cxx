@@ -71,6 +71,7 @@ int main( int argc, char* argv[] ) {
     }
   }
   cout << "NGoodEvents : " << final_analysis.GetGoodEvents() << endl;
+  cout << "Total events : " << final_analysis.GetNEvents() << endl;
   final_analysis.Save();
   cout << "Saved" << endl;
   return 0;

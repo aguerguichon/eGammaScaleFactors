@@ -20,6 +20,8 @@ using std::map;
 #include "xAODTracking/VertexContainer.h"
 #include "ElectronPhotonSelectorTools/AsgElectronLikelihoodTool.h"
 #include "PileupReweighting/PileupReweightingTool.h"
+#include "ElectronPhotonSelectorTools/AsgElectronIsEMSelector.h"
+
 class GoodRunsListSelectionTool;
 class LineShapeTool;
 /**\class < Analysis > [<Analysis.h>]
@@ -85,8 +87,8 @@ class Analysis
   int GetNEvents() const { return m_numEvent; }
 
   void SetDebug( bool debug ) { m_debug = debug; }
-  void SetDoScaleFactor( bool doScale ) { m_doScaleFactor = doScale;}
-  void SetDoSmearing( bool doSmearing ) { m_doSmearing = doSmearing; }
+  void SetDoScaleFactor( int doScale ) { m_doScaleFactor = doScale;}
+  void SetDoSmearing( int doSmearing ) { m_doSmearing = doSmearing; }
   
   TH1F* GetZMass() const { return m_ZMass;}
 
@@ -164,8 +166,8 @@ class Analysis
   /* int m_goodEvent; */
 
   //Configuration attributes
-  bool m_doSmearing;
-  bool m_doScaleFactor;
+  int m_doSmearing;
+  int m_doScaleFactor;
 
   //output histograms
   TH1F *m_ZMass;
@@ -195,6 +197,7 @@ class Analysis
   CP::PileupReweightingTool *m_pileup;
   const xAOD::EventInfo* m_eventInfo;
   AsgElectronLikelihoodTool* m_LHToolMedium2012;
+  AsgElectronIsEMSelector* m_CutToolMedium2012;
   LineShapeTool *m_LineShapeTool;
   const xAOD::TruthEventContainer *m_teC;
 

@@ -36,6 +36,7 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_grl = 0;
   m_selectionTree = 0;
   m_LHToolMedium2012 = 0;
+  m_CutToolMedium2012 = 0;
   m_ZVertex = 0;
   m_eventInfo = 0;
   m_tfile = 0;
@@ -66,18 +67,19 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_eventZVertex->Sumw2();
   v_hist.push_back( m_eventZVertex );
 
-  m_cutFlow = new TH1F( "cutFlow", "cutFlow", 9, 0.5, 9+0.5);
+  m_cutFlow = new TH1F( "cutFlow", "cutFlow", 11, 0.5, 11+0.5);
   m_cutFlow->GetXaxis()->SetTitle( "Cuts" );
   m_cutFlow->GetYaxis()->SetTitle( "# Events" );
   m_cutFlow->GetXaxis()->SetBinLabel( 1, "init" );
   m_cutFlow->GetXaxis()->SetBinLabel( 2, "GRL" );
-  m_cutFlow->GetXaxis()->SetBinLabel( 4, "eta" );
-  m_cutFlow->GetXaxis()->SetBinLabel( 5, "pt" );
-  m_cutFlow->GetXaxis()->SetBinLabel( 3, "mediumID" );
-  m_cutFlow->GetXaxis()->SetBinLabel( 6, "OQ" );
-  m_cutFlow->GetXaxis()->SetBinLabel( 7, "2el" );
-  m_cutFlow->GetXaxis()->SetBinLabel( 8, "charge" );
-  m_cutFlow->GetXaxis()->SetBinLabel( 9, "ZVertex" );
+  m_cutFlow->GetXaxis()->SetBinLabel( 4, "initEl" );
+  m_cutFlow->GetXaxis()->SetBinLabel( 5, "eta" );
+  m_cutFlow->GetXaxis()->SetBinLabel( 6, "pt" );
+  m_cutFlow->GetXaxis()->SetBinLabel( 7, "mediumID" );
+  m_cutFlow->GetXaxis()->SetBinLabel( 8, "OQ" );
+  m_cutFlow->GetXaxis()->SetBinLabel( 9, "2el" );
+  m_cutFlow->GetXaxis()->SetBinLabel( 10, "charge" );
+  m_cutFlow->GetXaxis()->SetBinLabel( 11, "ZVertex" );
   v_hist.push_back( m_cutFlow );
 
   m_puWeight = new TH1F( "puWeight", "puWeight", 100, 0, 2 );
@@ -111,7 +113,7 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_mapVar["lineshapeWeight"]=1;
   m_mapLongVar["runNumber"]=0;
   m_mapLongVar["eventNumber"]=0;
-
+  m_mapVar["m12_True"]=0;
   if ( m_debug ) cout << "Analysis::Analysis() Done" << endl;  
 }
 
@@ -461,7 +463,7 @@ void Analysis::TreatEvents(int nevent) {
       //Should not contain events in bin 0
 
       if ( 1 && m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {
-	cout << "IsSimulation" << endl;
+	//	cout << "IsSimulation" << endl;
 	m_pileup->apply( m_eventInfo );
 	m_mapVar["puWeight"] = m_eventInfo->auxdecor< double >( "myPileupWeight" );
 	m_puWeight->Fill( m_mapVar["puWeight"] );
@@ -531,6 +533,7 @@ void Analysis::MakeElectronCut() {
   for ( xAOD::ElectronContainer::iterator eContItr = (m_eShallowContainer.first)->begin(); eContItr != (m_eShallowContainer.first)->end(); eContItr++ ) {
     //  Cut on the quality of the **eContItrectron
     if ( !m_LHToolMedium2012->accept( **eContItr ) ) continue;
+    // if ( !m_CutToolMedium2012->accept( **eContItr ) ) continue;
 
     m_cutFlow->Fill( "mediumID", 1 );
 
@@ -616,10 +619,10 @@ int Analysis::InitializeTools () {
 
   //Setup the calibration tool
   m_EgammaCalibrationAndSmearingTool  = new CP::EgammaCalibrationAndSmearingTool("EgammaCalibrationAndSmearingTool"); 
-  m_EgammaCalibrationAndSmearingTool->setProperty("ESModel", "es2012c"); 
+  m_EgammaCalibrationAndSmearingTool->setProperty("ESModel", "es2015PRE"); 
   m_EgammaCalibrationAndSmearingTool->setProperty("ResolutionType", "SigmaEff90"); 
-  m_EgammaCalibrationAndSmearingTool->setProperty( "doSmearing", 0 );
-  m_EgammaCalibrationAndSmearingTool->setProperty( "doScaleCorrection", 0 );
+  m_EgammaCalibrationAndSmearingTool->setProperty( "doSmearing", m_doSmearing );
+  m_EgammaCalibrationAndSmearingTool->setProperty( "doScaleCorrection", m_doScaleFactor );
   m_EgammaCalibrationAndSmearingTool->setProperty("MVAfolder", "egammaMVACalib/offline/v3");
   m_EgammaCalibrationAndSmearingTool->initialize();
 
@@ -630,6 +633,10 @@ int Analysis::InitializeTools () {
   string confDir = "ElectronPhotonSelectorTools/offline/mc15_20150429/";
   m_LHToolMedium2012->setProperty("ConfigFile",confDir+"ElectronLikelihoodMediumOfflineConfig2015.conf");
   m_LHToolMedium2012->initialize();
+
+  m_CutToolMedium2012 = new  AsgElectronIsEMSelector("m_CutToolMedium2012"); // create the selector
+  m_CutToolMedium2012->setProperty("ConfigFile",confDir+"ElectronIsEMLooseSelectorCutDefs.conf"); // set the config file that contains the cuts on the shower shapes 
+  m_CutToolMedium2012->initialize();
 
   //Setup the GRL 
   m_grl = new GoodRunsListSelectionTool("GoodRunsListSelectionTool");
@@ -753,6 +760,7 @@ double Analysis::GetLineShapeWeight() {
   }    
 
   LineShapeTool *lineShapeTool = new LineShapeTool();
+  m_mapVar["m12_True"] = ti->z3.M()*1e-3;
   weight = lineShapeTool->reweightPowhegToImprovedBorn(ti->pdg1,ti->pdg2,ti->z3.M()*1e-3);
   m_lineshapeWeight->Fill( weight );
   //  cout << "lineshapeWeight : " << weight << endl;
