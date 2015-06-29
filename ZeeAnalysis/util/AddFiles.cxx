@@ -4,6 +4,7 @@ using std::vector;
 using std::cout; 
 using std::endl;
 
+
 #include "ZeeAnalysis/Analysis.h"
 #include <boost/program_options.hpp>
 
@@ -37,42 +38,47 @@ int main( int argc, char* argv[] ) {
 
   //  int debug = ( vm.count( "debug" ) ) ? 1 : 0;
 
-  string name = outName;
-  if ( name.find_last_of( "/" ) != string::npos ) name = name.substr( name.find_last_of( "/" ) +1 );
-  name = name.substr( 0, name.find_last_of( "." ) );
 
-  Analysis final_analysis( "Final", outName );;
-
-  if ( vm.count( "divide" ) ) {
-    if ( infile.size() != 2 ) { cout << "Not only 2 inputs" << endl; return 1;}
-
-    final_analysis.Load( infile[0] );
-
-    Analysis tmp_ana;
-    tmp_ana.Load( infile[1] );
-
-    final_analysis.Divide( tmp_ana );
-
-  }
-  else {
-    //Load input files into an analysis
-    for (unsigned int i = 0; i < infile.size(); i++ ) {
-	cout << infile[i] << endl;
-      if (!i) {
-	final_analysis.SetName( "Analysis" );
-	final_analysis.Load( infile[0] );
-	final_analysis.SetName( name );}
-      else {
-	Analysis dummy_analysis;
-	dummy_analysis.SetName( "Analysis" );
-	dummy_analysis.Load( infile[i] );
-	final_analysis.Add( dummy_analysis );
-      }
+  Analysis *final_analysis = 0;
+  unsigned int counterAnalysis = 0;
+  string name;
+  //Load input files into an analysis
+  for (unsigned int i = 0; i < infile.size(); i++ ) {
+    cout << infile[i] << endl;
+    
+    if ( !final_analysis ) {
+      char buffer[100];
+      string dumOutName=outName;
+      sprintf( buffer, "_%d", counterAnalysis );
+      final_analysis = new Analysis( "Final", dumOutName.insert( dumOutName.find_last_of( "."), buffer ));
+      final_analysis->SetName( "Analysis" );
+      final_analysis->Load( infile[i] );
+      name = dumOutName;  
+      if ( name.find_last_of( "/" ) != string::npos ) name = name.substr( name.find_last_of( "/" ) +1 );
+      name = name.substr( 0, name.find_last_of( "." ) );
+      final_analysis->SetName( name );}
+    else {
+      Analysis dummy_analysis;
+      dummy_analysis.SetName( "Analysis" );
+      dummy_analysis.Load( infile[i] );
+      final_analysis->Add( dummy_analysis );
+    }
+    if ( final_analysis->GetGoodEvents()>5000000 ) {
+      cout << "saving : " << name << endl;
+      cout << "GoodEvents : " << final_analysis->GetGoodEvents() << endl;
+      final_analysis->Save();
+      delete final_analysis;
+      final_analysis = 0;
+      counterAnalysis++;
     }
   }
-  cout << "NGoodEvents : " << final_analysis.GetGoodEvents() << endl;
-  cout << "Total events : " << final_analysis.GetNEvents() << endl;
-  final_analysis.Save();
-  cout << "Saved" << endl;
+  cout << "saving : " << name << endl;
+  cout << "GoodEvents : " << final_analysis->GetGoodEvents() << endl;
+  final_analysis->Save();
+  delete final_analysis;
+  final_analysis = 0;
+
+  
+  cout << "Saved " << counterAnalysis+1 << " files"<< endl;
   return 0;
 }

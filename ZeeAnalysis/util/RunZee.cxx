@@ -21,8 +21,8 @@ int main( int argc, char* argv[] ) {
   po::options_description desc("LikelihoodProfiel Usage");
   //define all options in the program                                                
   vector<string> infile;
-  string outName,anaName;
-  int doSmearing, doScale;
+  string outName,anaName, esModel;
+  int doSmearing, doScale, electronID;
   desc.add_options()
     ("help", "Display this help message")
     ("outName", po::value<string >(&outName)->default_value("/sps/atlas/c/cgoudet/Calibration/DataxAOD/TestAnalysis.root") , "Name of the output file")
@@ -30,6 +30,8 @@ int main( int argc, char* argv[] ) {
     ("anaName", po::value< string >( &anaName )->default_value( "Analysis" ), "Name of the object")
     ("doSmearing", po::value<int >( &doSmearing )->default_value( false )->implicit_value( true ), "Switch on the smearing")
     ("doScale", po::value<int >( &doScale )->default_value( false )->implicit_value( true ), "Switch on the scale")
+    ("electronID", po::value< int >( &electronID )->default_value( 1 ), "" )
+    ("esModel", po::value< string >( &esModel )->default_value( "es2015PRE" ), "" )
     ;
 
   //Define options gathered by position                                              
@@ -66,6 +68,8 @@ int main( int argc, char* argv[] ) {
     analysisData.SetDebug(false);
     analysisData.SetDoSmearing( doSmearing );
     analysisData.SetDoScaleFactor( doScale );
+    analysisData.SetElectronID( electronID );
+    analysisData.SetEsModel( esModel );
     analysisData.TreatEvents();
     analysisData.Save( );
   }

@@ -86,10 +86,11 @@ class Analysis
   int GetGoodEvents() const {return m_goodEvent; }
   int GetNEvents() const { return m_numEvent; }
 
+  void SetEsModel( string esModel ) { m_esModel = esModel; }
   void SetDebug( bool debug ) { m_debug = debug; }
   void SetDoScaleFactor( int doScale ) { m_doScaleFactor = doScale;}
   void SetDoSmearing( int doSmearing ) { m_doSmearing = doSmearing; }
-  
+  void SetElectronID( int electronID ) { m_electronID = electronID; }  
   TH1F* GetZMass() const { return m_ZMass;}
 
   /**\brief Create an Analysis object from a ROOT file saving
@@ -227,5 +228,16 @@ class Analysis
 
   map<string, double> m_mapVar;
   map<string, long long int> m_mapLongVar;
+
+  /*
+    O Likellihood Loose
+    1 Likelihood Medium
+    2 Likeihood Tight
+    3 CutBase Loose
+    4 CutBased Medium
+    5 CutBased Tight
+   */
+  int m_electronID;
+  string m_esModel;
 };
 #endif

@@ -22,7 +22,7 @@ namespace po = boost::program_options;
 
 Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess), 
 		       m_debug( true), m_name( "Analysis" ), m_numEvent(0), m_goodEvent(0),
-		       m_doSmearing(false), m_doScaleFactor(false)
+		       m_doSmearing(false), m_doScaleFactor(false), m_electronID(1), m_esModel( "es2015PRE" )
 {
   if ( m_debug ) cout << "Analysis::Analysis()" << endl;
   //  cout << "m_debug : " << m_debug << endl;
@@ -443,7 +443,7 @@ void Analysis::TreatEvents(int nevent) {
       //GRL
       m_cutFlow->Fill( "init", 1 );
       if ( ! m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {//test if is data
-	if ( !m_grl->passRunLB(*m_eventInfo) ) continue;  //passes the GRL
+	//	if ( !m_grl->passRunLB(*m_eventInfo) ) continue;  //passes the GRL
 	if ( ( m_eventInfo->errorState(xAOD::EventInfo::LAr)==xAOD::EventInfo::Error ) 
 	     || (m_eventInfo->errorState(xAOD::EventInfo::Tile)==xAOD::EventInfo::Error ) 
 	     || (m_eventInfo->isEventFlagBitSet(xAOD::EventInfo::Core, 18) )  )
@@ -462,7 +462,7 @@ void Analysis::TreatEvents(int nevent) {
       m_goodEvent++;
       //Should not contain events in bin 0
 
-      if ( 1 && m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {
+      if ( 0 && m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {
 	//	cout << "IsSimulation" << endl;
 	m_pileup->apply( m_eventInfo );
 	m_mapVar["puWeight"] = m_eventInfo->auxdecor< double >( "myPileupWeight" );
@@ -532,9 +532,9 @@ void Analysis::MakeElectronCut() {
 
   for ( xAOD::ElectronContainer::iterator eContItr = (m_eShallowContainer.first)->begin(); eContItr != (m_eShallowContainer.first)->end(); eContItr++ ) {
     //  Cut on the quality of the **eContItrectron
-    if ( !m_LHToolMedium2012->accept( **eContItr ) ) continue;
-    // if ( !m_CutToolMedium2012->accept( **eContItr ) ) continue;
-
+    if ( !(m_electronID/3)  && !m_LHToolMedium2012->accept( **eContItr ) ) continue;
+    if ( (m_electronID/3) && !m_CutToolMedium2012->accept( **eContItr ) ) continue;
+    
     m_cutFlow->Fill( "mediumID", 1 );
 
     //Calibrate this new electron
@@ -619,23 +619,35 @@ int Analysis::InitializeTools () {
 
   //Setup the calibration tool
   m_EgammaCalibrationAndSmearingTool  = new CP::EgammaCalibrationAndSmearingTool("EgammaCalibrationAndSmearingTool"); 
-  m_EgammaCalibrationAndSmearingTool->setProperty("ESModel", "es2015PRE"); 
+  m_EgammaCalibrationAndSmearingTool->setProperty("ESModel", m_esModel.c_str()); 
   m_EgammaCalibrationAndSmearingTool->setProperty("ResolutionType", "SigmaEff90"); 
   m_EgammaCalibrationAndSmearingTool->setProperty( "doSmearing", m_doSmearing );
   m_EgammaCalibrationAndSmearingTool->setProperty( "doScaleCorrection", m_doScaleFactor );
-  m_EgammaCalibrationAndSmearingTool->setProperty("MVAfolder", "egammaMVACalib/offline/v3");
+  //  m_EgammaCalibrationAndSmearingTool->setProperty("MVAfolder", "egammaMVACalib/offline/v3");
   m_EgammaCalibrationAndSmearingTool->initialize();
 
   //Setup the electron ID tool  
+  string IDselection;
+  switch ( m_electronID %3 ) {
+  case 0 :
+    IDselection = "Loose";
+    break;
+  case 1 :
+    IDselection = "Medium";
+    break;
+  case 2 :
+    IDselection = "Tight";
+    break;
+  }
   m_LHToolMedium2012 = new AsgElectronLikelihoodTool ("m_LHToolMedium2012"); 
   // initialize the primary vertex container for the tool to have access to the number of vertices used to adapt cuts based on the pileup
   m_LHToolMedium2012->setProperty("primaryVertexContainer","PrimaryVertices");
   string confDir = "ElectronPhotonSelectorTools/offline/mc15_20150429/";
-  m_LHToolMedium2012->setProperty("ConfigFile",confDir+"ElectronLikelihoodMediumOfflineConfig2015.conf");
+  m_LHToolMedium2012->setProperty("ConfigFile",confDir+"ElectronLikelihood" + IDselection + "OfflineConfig2015.conf");
   m_LHToolMedium2012->initialize();
 
   m_CutToolMedium2012 = new  AsgElectronIsEMSelector("m_CutToolMedium2012"); // create the selector
-  m_CutToolMedium2012->setProperty("ConfigFile",confDir+"ElectronIsEMLooseSelectorCutDefs.conf"); // set the config file that contains the cuts on the shower shapes 
+  m_CutToolMedium2012->setProperty("ConfigFile",confDir+"ElectronIsEM" + IDselection + "SelectorCutDefs.conf"); // set the config file that contains the cuts on the shower shapes 
   m_CutToolMedium2012->initialize();
 
   //Setup the GRL 
