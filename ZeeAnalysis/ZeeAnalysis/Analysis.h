@@ -21,6 +21,7 @@ using std::map;
 #include "ElectronPhotonSelectorTools/AsgElectronLikelihoodTool.h"
 #include "PileupReweighting/PileupReweightingTool.h"
 #include "ElectronPhotonSelectorTools/AsgElectronIsEMSelector.h"
+#include "AsgTools/ToolHandle.h"
 
 class GoodRunsListSelectionTool;
 class LineShapeTool;
@@ -195,7 +196,7 @@ class Analysis
     
   //Electron calibration tool
   CP::EgammaCalibrationAndSmearingTool *m_EgammaCalibrationAndSmearingTool;
-  CP::PileupReweightingTool *m_pileup;
+  ToolHandle<CP::IPileupReweightingTool> *m_pileup;
   const xAOD::EventInfo* m_eventInfo;
   AsgElectronLikelihoodTool* m_LHToolMedium2012;
   AsgElectronIsEMSelector* m_CutToolMedium2012;

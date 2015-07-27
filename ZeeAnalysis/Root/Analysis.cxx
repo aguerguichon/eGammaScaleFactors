@@ -443,7 +443,7 @@ void Analysis::TreatEvents(int nevent) {
       //GRL
       m_cutFlow->Fill( "init", 1 );
       if ( ! m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {//test if is data
-	//	if ( !m_grl->passRunLB(*m_eventInfo) ) continue;  //passes the GRL
+	if ( !m_grl->passRunLB(*m_eventInfo) ) continue;  //passes the GRL
 	if ( ( m_eventInfo->errorState(xAOD::EventInfo::LAr)==xAOD::EventInfo::Error ) 
 	     || (m_eventInfo->errorState(xAOD::EventInfo::Tile)==xAOD::EventInfo::Error ) 
 	     || (m_eventInfo->isEventFlagBitSet(xAOD::EventInfo::Core, 18) )  )
@@ -464,9 +464,10 @@ void Analysis::TreatEvents(int nevent) {
 
       if ( 0 && m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {
 	//	cout << "IsSimulation" << endl;
-	m_pileup->apply( m_eventInfo );
-	m_mapVar["puWeight"] = m_eventInfo->auxdecor< double >( "myPileupWeight" );
-	m_puWeight->Fill( m_mapVar["puWeight"] );
+	//	m_pileup->apply( *m_eventInfo );
+
+	//	m_mapVar["puWeight"] = m_eventInfo->auxdecor< double >( "myPileupWeight" );
+	//m_puWeight->Fill( m_mapVar["puWeight"] );
 	m_mapVar["lineshapeWeight"] = GetLineShapeWeight();      
       }
       
@@ -653,8 +654,8 @@ int Analysis::InitializeTools () {
   //Setup the GRL 
   m_grl = new GoodRunsListSelectionTool("GoodRunsListSelectionTool");
   std::vector<std::string> vecStringGRL;
-  vecStringGRL.push_back("data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml");
-  //  vecStringGRL.push_back("/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml");
+  //vecStringGRL.push_back("data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml");
+  vecStringGRL.push_back("/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/data15_13TeV.periodAllYear_DetStatus-v63-pro18-01_DQDefects-00-01-02_PHYS_StandardGRL_All_Good.xml" );
   m_grl->setProperty( "GoodRunsListVec", vecStringGRL);
   m_grl->setProperty("PassThrough", false); // if true (default) will ignore result of GRL and will just pass all events
   if (!m_grl->initialize().isSuccess()) { // check this isSuccess
@@ -663,16 +664,17 @@ int Analysis::InitializeTools () {
   }
 
   Info("","Declaring pileup reweighting tool");
-  m_pileup  = new CP::PileupReweightingTool("Pileup");
-  m_pileup->SetDataScaleFactors(1/1.09); // For 2012
-  std::vector<std::string> confFiles;
-  std::vector<std::string> lcalcFiles;
-  confFiles.push_back("PileupReweighting/mc14v1_defaults.prw.root");
-  lcalcFiles.push_back("ilumicalc_histograms_None_200842-215643.root");
-  m_pileup->setProperty( "ConfigFiles", confFiles).ignore();
-  m_pileup->setProperty( "LumiCalcFiles", lcalcFiles).ignore();
-  m_pileup->setProperty( "Prefix", "my").ignore();
-  m_pileup->initialize();
+  // m_pileup  = new CP::PileupReweightingTool("Pileup");
+  // //  m_pileup->SetDataScaleFactors(1/1.09); // For 2012
+  // std::vector<std::string> confFiles;
+  // std::vector<std::string> lcalcFiles;
+  // confFiles.push_back("auto.prw.root");
+  // //  lcalcFiles.push_back("ilumicalc_histograms_None_200842-215643.root");
+  // lcalcFiles.push_back("my.lumicalc.root");
+  // m_pileup->setProperty( "ConfigFiles", confFiles).ignore();
+  // m_pileup->setProperty( "LumiCalcFiles", lcalcFiles).ignore();
+  // m_pileup->setProperty( "Prefix", "my").ignore();
+  // m_pileup->initialize();
   
 
 
