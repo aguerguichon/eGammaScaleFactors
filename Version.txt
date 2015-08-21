@@ -29,7 +29,7 @@ Data_13TeV_Zee_00267162_scaled_CB1 0
 Data_13TeV_Zee_00267167_scaled_CB1 1
 Data_13TeV_Zee_00267162_CB1 0
 Data_13TeV_Zee_00267167_CB1 1
-Data_8TeV_Zee_Lkh1 0
+Data_8TeV_Zee_Lkh1 1
 Data_13TeV_Zee_00267358_CB1 0
 Data_13TeV_Zee_00267599_CB1 0
 Data_13TeV_Zee_00267148_CB1 0
@@ -46,3 +46,10 @@ Data_13TeV_Zee_00267638_scaled_CB1 1
 Data_8TeV_Zee_scaled_Lkh1 1
 MC_8TeV_ZeeDiLepton_scaled_Lkh1 1
 MC_8TeV_Zee1Lepton_scaled_Lkh1 1
+MC_13TeV_Zee_Lkh1 1
+MC_13TeV_Zee_scaled_Lkh1 0
+MC_8TeV_ZeeDiLepton_Lkh1 0
+MC_8TeV_Zee1Lepton_Lkh1 0
+Data_8TeV_Zee_Lkh1_scaled 0
+MC_8TeV_ZeeDiLepton_Lkh1_scaled 0
+MC_8TeV_Zee1Lepton_Lkh1_scaled 0

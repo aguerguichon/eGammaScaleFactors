@@ -87,7 +87,7 @@ class Analysis
   int GetGoodEvents() const {return m_goodEvent; }
   int GetNEvents() const { return m_numEvent; }
 
-  void SetEsModel( string esModel ) { m_esModel = esModel; }
+  void SetEsModel( string esModel ) { m_esModel = esModel;} 
   void SetDebug( bool debug ) { m_debug = debug; }
   void SetDoScaleFactor( int doScale ) { m_doScaleFactor = doScale;}
   void SetDoSmearing( int doSmearing ) { m_doSmearing = doSmearing; }
@@ -138,7 +138,6 @@ class Analysis
      If nevent = 0, the program will run over all events
   */
   void TreatEvents(int nevent=0);
-
   //  bool IsMedium(const xAOD::Electron* el ) const;
  private :
   int InitializeTools();
@@ -196,7 +195,9 @@ class Analysis
     
   //Electron calibration tool
   CP::EgammaCalibrationAndSmearingTool *m_EgammaCalibrationAndSmearingTool;
-  ToolHandle<CP::IPileupReweightingTool> *m_pileup;
+  //  ToolHandle<CP::IPileupReweightingTool> *m_pileup;
+  CP::PileupReweightingTool *m_pileup;
+  
   const xAOD::EventInfo* m_eventInfo;
   AsgElectronLikelihoodTool* m_LHToolMedium2012;
   AsgElectronIsEMSelector* m_CutToolMedium2012;
@@ -240,5 +241,10 @@ class Analysis
    */
   int m_electronID;
   string m_esModel;
+  /*
+    2015 : es2015PRE
+    2012 : es2012c
+  */
+
 };
 #endif

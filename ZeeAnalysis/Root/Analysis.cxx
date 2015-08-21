@@ -40,8 +40,8 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_ZVertex = 0;
   m_eventInfo = 0;
   m_tfile = 0;
+  //  m_pileup = 0;
   m_pileup = 0;
-
   //Initialize histograms
   m_ZMass = new TH1F ("ZMass", "ZMass", 40, 80, 100); //Masses in GeV
   m_ZMass->GetXaxis()->SetTitle("M_{ee} [GeV]");
@@ -67,19 +67,13 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_eventZVertex->Sumw2();
   v_hist.push_back( m_eventZVertex );
 
-  m_cutFlow = new TH1F( "cutFlow", "cutFlow", 11, 0.5, 11+0.5);
+  vector<TString> cutFlowNames = { "init", "GRL", "initEl", "eta", "pt", "mediumID", "OQ", "2el", "charge", "ZVertex" };
+  m_cutFlow = new TH1F( "cutFlow", "cutFlow", cutFlowNames.size(), 0.5, cutFlowNames.size()+0.5);
   m_cutFlow->GetXaxis()->SetTitle( "Cuts" );
   m_cutFlow->GetYaxis()->SetTitle( "# Events" );
-  m_cutFlow->GetXaxis()->SetBinLabel( 1, "init" );
-  m_cutFlow->GetXaxis()->SetBinLabel( 2, "GRL" );
-  m_cutFlow->GetXaxis()->SetBinLabel( 4, "initEl" );
-  m_cutFlow->GetXaxis()->SetBinLabel( 5, "eta" );
-  m_cutFlow->GetXaxis()->SetBinLabel( 6, "pt" );
-  m_cutFlow->GetXaxis()->SetBinLabel( 7, "mediumID" );
-  m_cutFlow->GetXaxis()->SetBinLabel( 8, "OQ" );
-  m_cutFlow->GetXaxis()->SetBinLabel( 9, "2el" );
-  m_cutFlow->GetXaxis()->SetBinLabel( 10, "charge" );
-  m_cutFlow->GetXaxis()->SetBinLabel( 11, "ZVertex" );
+  for ( int iBin = 1; iBin <= m_cutFlow->GetNbinsX(); iBin++ ) {
+    m_cutFlow->GetXaxis()->SetBinLabel( iBin, cutFlowNames[iBin-1] );
+  }
   v_hist.push_back( m_cutFlow );
 
   m_puWeight = new TH1F( "puWeight", "puWeight", 100, 0, 2 );
@@ -439,8 +433,10 @@ void Analysis::TreatEvents(int nevent) {
       //Create a shallow copy
       // Allow to modify electrons properties for calibration
       m_eShallowContainer = xAOD::shallowCopyContainer( *m_eContainer );
+      //      if ( ( m_eventInfo->runNumber() != 267599 || m_eventInfo->eventNumber()!= 945889210) ) continue;
 
       //GRL
+
       m_cutFlow->Fill( "init", 1 );
       if ( ! m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {//test if is data
 	if ( !m_grl->passRunLB(*m_eventInfo) ) continue;  //passes the GRL
@@ -449,10 +445,6 @@ void Analysis::TreatEvents(int nevent) {
 	     || (m_eventInfo->isEventFlagBitSet(xAOD::EventInfo::Core, 18) )  )
 	  continue;
       }
-      else {
-
-      }
-
       m_cutFlow->Fill( "GRL", 1 );
       //      Make the electron selection and fill m_eGoodContainer
       int err = (int) PassSelection();
@@ -461,23 +453,23 @@ void Analysis::TreatEvents(int nevent) {
 
       m_goodEvent++;
       //Should not contain events in bin 0
+      if ( m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {
+	if ( m_pileup ) {
+	  m_pileup->apply( *m_eventInfo );
+	  m_mapVar["puWeight"] = m_eventInfo->auxdecor< double >( "PileupWeight" );
+	  m_puWeight->Fill( m_mapVar["puWeight"] );
+	}
 
-      if ( 0 && m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {
-	//	cout << "IsSimulation" << endl;
-	//	m_pileup->apply( *m_eventInfo );
-
-	//	m_mapVar["puWeight"] = m_eventInfo->auxdecor< double >( "myPileupWeight" );
-	//m_puWeight->Fill( m_mapVar["puWeight"] );
-	m_mapVar["lineshapeWeight"] = GetLineShapeWeight();      
+	if ( m_esModel.find( "2015" ) == string::npos )	m_mapVar["lineshapeWeight"] = GetLineShapeWeight();      
       }
-      
+
       m_ZMass->Fill( ComputeZMass( m_veGood ) );
       if ( FillSelectionTree() ) {
 	cout << "Error Filling selectionTree" << endl;
 	exit(2);
       }
       }      
-
+      
       // Free the memory from copy
       if ( m_eShallowContainer.first )  delete m_eShallowContainer.first;
       if ( m_eShallowContainer.second ) delete m_eShallowContainer.second;
@@ -518,8 +510,8 @@ bool Analysis::PassSelection() {
   if ( m_veGood[0]->charge() *  m_veGood[1]->charge() > 0 ) return false;
   m_cutFlow->Fill( "charge", 1 );
   //Cut on the position of the primary Vertex
-  if ( fabs( (*m_ZVertex)[0]->z() ) > 150 ) return false;
-  m_cutFlow->Fill( "ZVertex", 1 );
+  if ( m_esModel.find( "2015" ) == string::npos && fabs( (*m_ZVertex)[0]->z() ) > 150 ) return false;
+    m_cutFlow->Fill( "ZVertex", 1 );
 
   //if (ComputeZMass( m_veGood ) > 100 || ComputeZMass( m_veGood ) < 80) return false;
   if ( m_debug ) cout << "Analysis::PassSelection done" << endl;
@@ -530,8 +522,9 @@ bool Analysis::PassSelection() {
 //Make selection on electron level
 void Analysis::MakeElectronCut() {
   if ( m_debug ) cout << "Analysis::MakeElectronCut" << endl;
-
   for ( xAOD::ElectronContainer::iterator eContItr = (m_eShallowContainer.first)->begin(); eContItr != (m_eShallowContainer.first)->end(); eContItr++ ) {
+
+    m_cutFlow->Fill( "initEl", 1 );
     //  Cut on the quality of the **eContItrectron
     if ( !(m_electronID/3)  && !m_LHToolMedium2012->accept( **eContItr ) ) continue;
     if ( (m_electronID/3) && !m_CutToolMedium2012->accept( **eContItr ) ) continue;
@@ -546,9 +539,11 @@ void Analysis::MakeElectronCut() {
     m_elPt->Fill( (*eContItr)->pt() /1000 );
     
     //kinematical cuts on electrons
-    if ( fabs( (*eContItr)->eta() ) > 2.47 ) continue;
+    double eta_calo = 0;
+    (*eContItr)->caloCluster()->retrieveMoment(xAOD::CaloCluster::ETACALOFRAME,eta_calo); 
+    if ( fabs( eta_calo ) > 2.47 ) continue;
     m_cutFlow->Fill( "eta", 1 );
-    
+
     if ( (*eContItr)->pt() < 27e3 ) continue;
     m_cutFlow->Fill( "pt", 1 );
     
@@ -618,13 +613,14 @@ int Analysis::FillSelectionTree() {
 //=====================================================
 int Analysis::InitializeTools () {
 
+
+
   //Setup the calibration tool
   m_EgammaCalibrationAndSmearingTool  = new CP::EgammaCalibrationAndSmearingTool("EgammaCalibrationAndSmearingTool"); 
   m_EgammaCalibrationAndSmearingTool->setProperty("ESModel", m_esModel.c_str()); 
   m_EgammaCalibrationAndSmearingTool->setProperty("ResolutionType", "SigmaEff90"); 
   m_EgammaCalibrationAndSmearingTool->setProperty( "doSmearing", m_doSmearing );
   m_EgammaCalibrationAndSmearingTool->setProperty( "doScaleCorrection", m_doScaleFactor );
-  //  m_EgammaCalibrationAndSmearingTool->setProperty("MVAfolder", "egammaMVACalib/offline/v3");
   m_EgammaCalibrationAndSmearingTool->initialize();
 
   //Setup the electron ID tool  
@@ -648,14 +644,18 @@ int Analysis::InitializeTools () {
   m_LHToolMedium2012->initialize();
 
   m_CutToolMedium2012 = new  AsgElectronIsEMSelector("m_CutToolMedium2012"); // create the selector
-  m_CutToolMedium2012->setProperty("ConfigFile",confDir+"ElectronIsEM" + IDselection + "SelectorCutDefs.conf"); // set the config file that contains the cuts on the shower shapes 
+  // set the config file that contains the cuts on the shower shapes 
+  m_CutToolMedium2012->setProperty("ConfigFile",confDir+"ElectronIsEM" + IDselection + "SelectorCutDefs.conf"); 
   m_CutToolMedium2012->initialize();
 
   //Setup the GRL 
   m_grl = new GoodRunsListSelectionTool("GoodRunsListSelectionTool");
   std::vector<std::string> vecStringGRL;
-  //vecStringGRL.push_back("data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml");
-  vecStringGRL.push_back("/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/data15_13TeV.periodAllYear_DetStatus-v63-pro18-01_DQDefects-00-01-02_PHYS_StandardGRL_All_Good.xml" );
+  string grlLocalFile = "/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/";
+  string grlFile = ( m_esModel.find( "2015" ) != string::npos ) ? "data15_13TeV.periodAllYear_DetStatus-v63-pro18-01_DQDefects-00-01-02_PHYS_StandardGRL_All_Good.xml" 
+    : "data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml";
+  bool isLocal = system( ("ls " + grlFile).c_str() );
+  vecStringGRL.push_back( ( isLocal ? grlLocalFile : "" ) + grlFile );
   m_grl->setProperty( "GoodRunsListVec", vecStringGRL);
   m_grl->setProperty("PassThrough", false); // if true (default) will ignore result of GRL and will just pass all events
   if (!m_grl->initialize().isSuccess()) { // check this isSuccess
@@ -664,21 +664,23 @@ int Analysis::InitializeTools () {
   }
 
   Info("","Declaring pileup reweighting tool");
-  // m_pileup  = new CP::PileupReweightingTool("Pileup");
-  // //  m_pileup->SetDataScaleFactors(1/1.09); // For 2012
-  // std::vector<std::string> confFiles;
-  // std::vector<std::string> lcalcFiles;
-  // confFiles.push_back("auto.prw.root");
-  // //  lcalcFiles.push_back("ilumicalc_histograms_None_200842-215643.root");
-  // lcalcFiles.push_back("my.lumicalc.root");
-  // m_pileup->setProperty( "ConfigFiles", confFiles).ignore();
-  // m_pileup->setProperty( "LumiCalcFiles", lcalcFiles).ignore();
-  // m_pileup->setProperty( "Prefix", "my").ignore();
-  // m_pileup->initialize();
+  m_pileup = new CP::PileupReweightingTool("prw");
+  std::vector<std::string> confFiles;
+  std::vector<std::string> lcalcFiles;
+  if ( m_esModel.find( "2015" ) == string::npos ) {
+    m_pileup->SetDataScaleFactors(1/1.09); // For 2012
+    confFiles.push_back("PileupReweighting/mc14v1_defaults.prw.root");
+    lcalcFiles.push_back("ilumicalc_histograms_None_200842-215643.root");
+  }
+  else {
+    confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "PileUpReweighting_13TeV.root");
+    lcalcFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "ilumicalc_histograms_None_267073-271744.root");
+  }
+  dynamic_cast<CP::PileupReweightingTool&>(*m_pileup).setProperty( "ConfigFiles", confFiles);
+  dynamic_cast<CP::PileupReweightingTool&>(*m_pileup).setProperty( "LumiCalcFiles", lcalcFiles);
   
-
-
-
+  m_pileup->initialize();
+  
   return 0;
 }
 
@@ -746,7 +748,7 @@ double Analysis::GetLineShapeWeight() {
       if (tp->status() == 62) 
 	ti->z1 = tp->p4();
 
-      if (tp->status() == 62 || tp->status() < 30 && tp->status() > 20) {
+      if ( tp->status() == 62 || ( tp->status() < 30  && tp->status() > 20 ) ) {
 	const xAOD::TruthVertex* decVtx = tp->decayVtx();
 	if (decVtx) {
 	  int nP = decVtx->nIncomingParticles();

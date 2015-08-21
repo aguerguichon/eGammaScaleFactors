@@ -65,7 +65,7 @@ int main( int argc, char* argv[] ) {
     cout << "infile size : " << infile.size() << endl;
     
     Analysis analysisData( anaName,  infile, outName );
-    analysisData.SetDebug(false);
+    analysisData.SetDebug( false );
     analysisData.SetDoSmearing( doSmearing );
     analysisData.SetDoScaleFactor( doScale );
     analysisData.SetElectronID( electronID );
