@@ -11,33 +11,21 @@ electronID = []
 outFilePrefix = []
 if  mode == 0 :
     inputs = [ 
-        ["data12_8TeV.periodAllYear.physics_Egamma.PhysCont.DAOD_ZEE.repro17_v01/"],
-        ["mc14_8TeV.129680.PowhegPythia8_AU2CT10_Zee_DiLeptonFilter.merge.AOD.e1861_s1933_s1911_r6241_r6197/"],
-        ["mc14_8TeV.129685.PowhegPythia8_AU2CT10_Zee_Exactly1LeptonFilter.merge.AOD.e2095_s1933_s1911_r6241_r6197/"],
-        ["data12_8TeV.periodAllYear.physics_Egamma.PhysCont.DAOD_ZEE.repro17_v01/"],
-        ["mc14_8TeV.129680.PowhegPythia8_AU2CT10_Zee_DiLeptonFilter.merge.AOD.e1861_s1933_s1911_r6241_r6197/"],
-        ["mc14_8TeV.129685.PowhegPythia8_AU2CT10_Zee_Exactly1LeptonFilter.merge.AOD.e2095_s1933_s1911_r6241_r6197/"]
-#        ["mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2576_s2132_r6630_r6264_p2352/" ] 
-        # ["data15_13TeV.*.physics_Main.merge.DAOD_EGAM6.f594_m1435_p2361/"]
+        # ["mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2576_s2132_r6765_r6282/"],
+        ["mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2576_s2132_r6630_r6264_p2395/"]
+#        [ "data15_13TeV.periodA.physics_Main.PhysCont.AOD.repro18_v02/", "data15_13TeV.periodC.physics_Main.PhysCont.AOD.repro18_v02/" ]
         ]
-    doScale = [  0, 0, 0, 1, 1, 1 ]
-    electronID = [ 1, 1, 1, 1, 1, 1]
-    esModel=[ "es2012c", "es2012c", "es2012c", "es2012c", "es2012c", "es2012c" ]
-    # doScale = [ 0, 0, 0, 1, 1, 1, 0, 0, 1, 1 ]
+    doScale = [  0 ]
+    electronID = [ 1 ]
+    esModel=[ "es2015PRE" ]
+
 #Do not put usercgoudet nor version
 #outDatasetName="MC_8TeV_Zee1Lepton_AOD20"
 
     outFilePrefix = [
-        "Data_8TeV_Zee",
-        "MC_8TeV_ZeeDiLepton",
-        "MC_8TeV_Zee1Lepton",
-        "Data_8TeV_Zee",
-        "MC_8TeV_ZeeDiLepton",
-        "MC_8TeV_Zee1Lepton",
-#        "MC_13TeV_Zee",
-        # "Data_13TeV_Zee",
-        # "MC_13TeV_Zee_smeared",
-        # "Data_13TeV_Zee_scaled"
+        # "MC_13TeV_Zee", 
+        "MC_13TeV_Zee"
+ #       "Data_13TeV_Zee"
         ]
 
 elif mode ==1 :
@@ -51,11 +39,9 @@ elif mode ==1 :
 
 
 elif mode == 2 :
-    GetDataFiles( inputs, 1, doScale, 4, electronID, outFilePrefix)
+    GetDataFiles( inputs, 1, doScale, 1, electronID, outFilePrefix)
+    esModel = [ "es2015PRE" ]
 
-print inputs
-print doScale
-print electronID
 if len( inputs ) != len( doScale ) or len( inputs ) != len( outFilePrefix ) or len( inputs ) != len( esModel ) :
     print( "Wrong tabular sizes" )
     exit(0)
@@ -94,7 +80,7 @@ for iFile in range( 0, len( inputs ) ) :
             datasetList += ','
         datasetList += inputs[iFile][iDataset]
 
-        outFileName +=  "_" + str( version )
+    outFileName +=  "_" + str( version )
     print outFileName
 
     commandLine = 'prun'
@@ -106,8 +92,8 @@ for iFile in range( 0, len( inputs ) ) :
     commandLine += ' --outDS user.cgoudet.' + outFileName
     commandLine += ' --inDS ' + datasetList
     commandLine += ' --outputs Ntuple.root '
-    commandLine += ' --useRootCore --extFile=lumicalc_histograms_None_200842-215643.root ' + options
-
+    commandLine += ' --useRootCore --extFile=lumicalc_histograms_None_200842-215643.root --extFile=ilumicalc_histograms_None_267073-271744.root --extFile=PileUpReweighting_13TeV.root ' + options
+    
     os.system( commandLine )
 
 np.savetxt( 'Version.txt', tab, delimiter=' ', fmt='%s')  

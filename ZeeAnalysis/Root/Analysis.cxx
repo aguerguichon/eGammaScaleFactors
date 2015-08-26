@@ -40,7 +40,6 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_ZVertex = 0;
   m_eventInfo = 0;
   m_tfile = 0;
-  //  m_pileup = 0;
   m_pileup = 0;
   //Initialize histograms
   m_ZMass = new TH1F ("ZMass", "ZMass", 40, 80, 100); //Masses in GeV
@@ -172,9 +171,6 @@ Analysis::~Analysis() {
   if ( m_grl )  delete m_grl;
   if ( m_LHToolMedium2012 ) delete m_LHToolMedium2012;
   if ( m_selectionTree ) delete m_selectionTree;
-  //  if ( m_eContainer ) delete m_eContainer;
-  //if ( m_ZVertex ) delete m_ZVertex;
-  //if ( m_eventInfo ) delete m_eventInfo;
   if ( m_pileup ) delete m_pileup;
 
   if ( m_tfile ) {
@@ -453,7 +449,7 @@ void Analysis::TreatEvents(int nevent) {
 
       m_goodEvent++;
       //Should not contain events in bin 0
-      if ( m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {
+      if ( 0 && m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {
 	if ( m_pileup ) {
 	  m_pileup->apply( *m_eventInfo );
 	  m_mapVar["puWeight"] = m_eventInfo->auxdecor< double >( "PileupWeight" );
@@ -652,10 +648,16 @@ int Analysis::InitializeTools () {
   m_grl = new GoodRunsListSelectionTool("GoodRunsListSelectionTool");
   std::vector<std::string> vecStringGRL;
   string grlLocalFile = "/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/";
-  string grlFile = ( m_esModel.find( "2015" ) != string::npos ) ? "data15_13TeV.periodAllYear_DetStatus-v63-pro18-01_DQDefects-00-01-02_PHYS_StandardGRL_All_Good.xml" 
-    : "data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml";
+  vector< string > grlFile = {
+    "data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml",
+    "data15_13TeV.periodAllYear_DetStatus-v63-pro18-01_DQDefects-00-01-02_PHYS_StandardGRL_All_Good.xml";
+    "data15_13TeV.periodAllYear_HEAD_DQDefects-00-01-02_PHYS_StandardGRL_All_Good.xml"
+  };
+    
   bool isLocal = system( ("ls " + grlFile).c_str() );
-  vecStringGRL.push_back( ( isLocal ? grlLocalFile : "" ) + grlFile );
+  for ( unsigned int i = 0; i< grlFile.size(); i++ ) {
+    vecStringGRL.push_back( ( isLocal ? grlLocalFile : "" ) + grlFile[i] );
+  }
   m_grl->setProperty( "GoodRunsListVec", vecStringGRL);
   m_grl->setProperty("PassThrough", false); // if true (default) will ignore result of GRL and will just pass all events
   if (!m_grl->initialize().isSuccess()) { // check this isSuccess

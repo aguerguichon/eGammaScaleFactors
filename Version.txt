@@ -46,10 +46,13 @@ Data_13TeV_Zee_00267638_scaled_CB1 1
 Data_8TeV_Zee_scaled_Lkh1 1
 MC_8TeV_ZeeDiLepton_scaled_Lkh1 1
 MC_8TeV_Zee1Lepton_scaled_Lkh1 1
-MC_13TeV_Zee_Lkh1 1
+MC_13TeV_Zee_Lkh1 14
 MC_13TeV_Zee_scaled_Lkh1 0
 MC_8TeV_ZeeDiLepton_Lkh1 0
 MC_8TeV_Zee1Lepton_Lkh1 0
 Data_8TeV_Zee_Lkh1_scaled 0
 MC_8TeV_ZeeDiLepton_Lkh1_scaled 0
 MC_8TeV_Zee1Lepton_Lkh1_scaled 0
+Data_13TeV_Zee__CB1_scaled 0
+Data_13TeV_Zee_Lkh1_scaled 0
+Data_13TeV_Zee_Lkh1 1
