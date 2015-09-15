@@ -449,7 +449,7 @@ void Analysis::TreatEvents(int nevent) {
 
       m_goodEvent++;
       //Should not contain events in bin 0
-      if ( 0 && m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {
+      if ( m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {
 	if ( m_pileup ) {
 	  m_pileup->apply( *m_eventInfo );
 	  m_mapVar["puWeight"] = m_eventInfo->auxdecor< double >( "PileupWeight" );
@@ -650,14 +650,14 @@ int Analysis::InitializeTools () {
   string grlLocalFile = "/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/";
   vector< string > grlFile = {
     "data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml",
-    "data15_13TeV.periodAllYear_DetStatus-v63-pro18-01_DQDefects-00-01-02_PHYS_StandardGRL_All_Good.xml";
+    "data15_13TeV.periodAllYear_DetStatus-v63-pro18-01_DQDefects-00-01-02_PHYS_StandardGRL_All_Good.xml",
     "data15_13TeV.periodAllYear_HEAD_DQDefects-00-01-02_PHYS_StandardGRL_All_Good.xml"
   };
-    
-  bool isLocal = system( ("ls " + grlFile).c_str() );
-  for ( unsigned int i = 0; i< grlFile.size(); i++ ) {
-    vecStringGRL.push_back( ( isLocal ? grlLocalFile : "" ) + grlFile[i] );
-  }
+  bool isLocal = system( ("ls " + grlFile[0]).c_str() );    
+  
+  for ( unsigned int i = 0; i< grlFile.size(); i++ ) 
+    vecStringGRL.push_back( string( isLocal ? grlLocalFile : "" ) + grlFile[i] );
+  
   m_grl->setProperty( "GoodRunsListVec", vecStringGRL);
   m_grl->setProperty("PassThrough", false); // if true (default) will ignore result of GRL and will just pass all events
   if (!m_grl->initialize().isSuccess()) { // check this isSuccess
@@ -675,8 +675,10 @@ int Analysis::InitializeTools () {
     lcalcFiles.push_back("ilumicalc_histograms_None_200842-215643.root");
   }
   else {
-    confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "PileUpReweighting_13TeV.root");
-    lcalcFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "ilumicalc_histograms_None_267073-271744.root");
+    //    confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "PileUpReweighting_13TeV.root");
+    confFiles.push_back( "dev/PileupReweighting/mc15a_defaults.NotRecommended.prw.root" );
+      //    lcalcFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "ilumicalc_histograms_None_13TeV_25ns.root");
+    lcalcFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "ilumicalc_histograms_None_13TeV_50ns.root");
   }
   dynamic_cast<CP::PileupReweightingTool&>(*m_pileup).setProperty( "ConfigFiles", confFiles);
   dynamic_cast<CP::PileupReweightingTool&>(*m_pileup).setProperty( "LumiCalcFiles", lcalcFiles);
