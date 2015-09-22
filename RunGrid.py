@@ -13,8 +13,6 @@ esModel = []
 
 GetDataFiles( inputs, 1, doScale, 1, electronID, 0, outFilePrefix, esModel)
 
-print inputs
-
 if len( inputs ) != len( doScale ) or len( inputs ) != len( outFilePrefix ) or len( inputs ) != len( esModel ) :
     print( "Wrong tabular sizes" )
     exit(0)
@@ -49,8 +47,6 @@ for iFile in range( 0, len( inputs ) ) :
 
     datasetList = ""
     for iDataset in range( 0, len( inputs[iFile] ) ):
-        print iDataset
-        print inputs[iFile][iDataset]
         if ( iDataset ) :
             datasetList += ','
         datasetList += inputs[iFile][iDataset]

@@ -29,8 +29,7 @@ def GetDataFiles( inputs, scale, doScale, eleID, electronID, inFileIndex, outFil
         tmplist.append( line )
 
     tmpEsModel = tmpEsModel.split( ' ' )[1]
-    print tmpEsModel
-    exit(0)
+
     inputs.append( tmplist )
     doScale.append( scale )
     electronID.append( eleID )

@@ -59,7 +59,7 @@ Data_13TeV_Zee_Lkh1 1
 MC_13TeV_Zee_25ns_Lkh1 2
 Data_13TeV_Zee_276731_Lkh1 2
 Data_13TeV_Zee_50ns__Lkh1_scaled 0
-Data_13TeV_Zee_25ns_Lkh1_scaled 0
+Data_13TeV_Zee_25ns_Lkh1_scaled 1
 MC_13TeV_Zee_50ns_Lkh1_scaled 2
 Data_13TeV_Zee_50ns_Lkh1_scaled 3
 MC_13TeV_Zee_50ns_Lkh1 0
