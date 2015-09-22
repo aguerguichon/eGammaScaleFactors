@@ -424,12 +424,11 @@ void Analysis::TreatEvents(int nevent) {
       if ( ! m_tevent.retrieve( m_eContainer, "Electrons" ).isSuccess() ){ cout << "Can not retrieve ElectronContainer : ElectronCollection" << endl; exit(1); }// if retrieve                                                                 
       if ( ! m_tevent.retrieve( m_eventInfo, "EventInfo" ).isSuccess() ){ cout << "Can Not retrieve EventInfo" << endl; exit(1); }
       if ( ! m_tevent.retrieve( m_ZVertex, "PrimaryVertices" ).isSuccess() ){ cout << "Can Not retrieve Vertex Info" << endl; exit(1); }
-      
+
 
       //Create a shallow copy
       // Allow to modify electrons properties for calibration
       m_eShallowContainer = xAOD::shallowCopyContainer( *m_eContainer );
-      //      if ( ( m_eventInfo->runNumber() != 267599 || m_eventInfo->eventNumber()!= 945889210) ) continue;
 
       //GRL
 
@@ -450,7 +449,7 @@ void Analysis::TreatEvents(int nevent) {
       m_goodEvent++;
       //Should not contain events in bin 0
       if ( m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {
-	if ( m_pileup ) {
+	if ( 0 && m_pileup ) {
 	  m_pileup->apply( *m_eventInfo );
 	  m_mapVar["puWeight"] = m_eventInfo->auxdecor< double >( "PileupWeight" );
 	  m_puWeight->Fill( m_mapVar["puWeight"] );
@@ -651,7 +650,7 @@ int Analysis::InitializeTools () {
   vector< string > grlFile = {
     "data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml",
     "data15_13TeV.periodAllYear_DetStatus-v63-pro18-01_DQDefects-00-01-02_PHYS_StandardGRL_All_Good.xml",
-    "data15_13TeV.periodAllYear_HEAD_DQDefects-00-01-02_PHYS_StandardGRL_All_Good.xml"
+    "data15_13TeV.periodAllYear_DetStatus-v65-pro19-01_DQDefects-00-01-02_PHYS_StandardGRL_All_Good.xml"
   };
   bool isLocal = system( ("ls " + grlFile[0]).c_str() );    
   
@@ -675,9 +674,9 @@ int Analysis::InitializeTools () {
     lcalcFiles.push_back("ilumicalc_histograms_None_200842-215643.root");
   }
   else {
-    //    confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "PileUpReweighting_13TeV.root");
+    //confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "PileUpReweighting_13TeV.root");
     confFiles.push_back( "dev/PileupReweighting/mc15a_defaults.NotRecommended.prw.root" );
-      //    lcalcFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "ilumicalc_histograms_None_13TeV_25ns.root");
+    //lcalcFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "ilumicalc_histograms_None_13TeV_25ns.root");
     lcalcFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "ilumicalc_histograms_None_13TeV_50ns.root");
   }
   dynamic_cast<CP::PileupReweightingTool&>(*m_pileup).setProperty( "ConfigFiles", confFiles);

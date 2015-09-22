@@ -3,49 +3,17 @@ import sys
 import numpy as np
 from FunctionsRunGrid import *
 
-mode = 2
+mode = 1
 inputs = []
 options=""
 doScale = []
 electronID = []
 outFilePrefix = []
-if  mode == 0 :
-    inputs = [ 
-#        ['data15_13TeV.00276731.physics_Main.merge.AOD.f620_m1480']
-        ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2576_s2132_r6765_r6282']
-#        ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2576_s2132_r6993_r6282/'] 
-       # ["mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2576_s2132_r6765_r6282/"],
-#        ["mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2576_s2132_r6630_r6264_p2395/"]
-#        [ "data15_13TeV.periodA.physics_Main.PhysCont.AOD.repro18_v02/", "data15_13TeV.periodC.physics_Main.PhysCont.AOD.repro18_v02/" ]
-        ]
-    doScale = [  0 ]
-    electronID = [ 1 ]
-    esModel=[ "es2015PRE" ]
+esModel = []
 
-#Do not put usercgoudet nor version
-#outDatasetName="MC_8TeV_Zee1Lepton_AOD20"
+GetDataFiles( inputs, 1, doScale, 1, electronID, 0, outFilePrefix, esModel)
 
-    outFilePrefix = [
-        # "MC_13TeV_Zee", 
-        "MC_13TeV_Zee_25ns"
- #       "Data_13TeV_Zee"
-#        "Data_13TeV_Zee_276731"
-        ]
-
-elif mode ==1 :
-    inputs = [
-        ["mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2576_s2132_r6630_r6264_p2352/" ],
-        ["data15_13TeV.*.physics_Main.merge.DAOD_EGAM6.f594_m1435_p2361/"]        ]
-    doScale = [ 0 ]
-    outFilePrefix = [ 
-        "MC_13TeV_Zee"
-        ]
-
-
-elif mode == 2 :
-    GetDataFiles( inputs, 1, doScale, 1, electronID, 3, outFilePrefix)
-    esModel = [ "es2015PRE" ]
-    print inputs
+print inputs
 
 if len( inputs ) != len( doScale ) or len( inputs ) != len( outFilePrefix ) or len( inputs ) != len( esModel ) :
     print( "Wrong tabular sizes" )
@@ -81,6 +49,8 @@ for iFile in range( 0, len( inputs ) ) :
 
     datasetList = ""
     for iDataset in range( 0, len( inputs[iFile] ) ):
+        print iDataset
+        print inputs[iFile][iDataset]
         if ( iDataset ) :
             datasetList += ','
         datasetList += inputs[iFile][iDataset]
@@ -89,6 +59,7 @@ for iFile in range( 0, len( inputs ) ) :
     print outFileName
 
     commandLine = 'prun'
+#    commandLine += ' --exec "RunZee %IN --outName Ntuple.root '
     commandLine += ' --exec "RunZee \`echo %IN | sed \'s/,/ /g\'\` --outName Ntuple.root '
     commandLine += ' --doScale ' + str( doScale[iFile] ) + ' --doSmearing ' + str( doScale[iFile] ) 
     commandLine += ' --electronID ' + str( electronID[iFile] )
@@ -103,7 +74,7 @@ for iFile in range( 0, len( inputs ) ) :
                      + options )
     
     os.system( commandLine )
-
+    print commandLine
 np.savetxt( 'Version.txt', tab, delimiter=' ', fmt='%s')  
 
 
