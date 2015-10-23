@@ -47,12 +47,13 @@ int main( int argc, char* argv[] ) {
     cout << infile[i] << endl;
     
     if ( !final_analysis ) {
-      char buffer[100];
+      char buffer[200];
       string dumOutName=outName;
       sprintf( buffer, "_%d", counterAnalysis );
       final_analysis = new Analysis( "Final", dumOutName.insert( dumOutName.find_last_of( "."), buffer ));
       final_analysis->SetName( "Analysis" );
       final_analysis->Load( infile[i] );
+
       name = dumOutName;  
       if ( name.find_last_of( "/" ) != string::npos ) name = name.substr( name.find_last_of( "/" ) +1 );
       name = name.substr( 0, name.find_last_of( "." ) );
@@ -63,7 +64,7 @@ int main( int argc, char* argv[] ) {
       dummy_analysis.Load( infile[i] );
       final_analysis->Add( dummy_analysis );
     }
-    if ( final_analysis->GetGoodEvents()>3000000 ) {
+    if ( final_analysis->GetGoodEvents()>3400000 ) {
       cout << "saving : " << name << endl;
       cout << "GoodEvents : " << final_analysis->GetGoodEvents() << endl;
       final_analysis->Save();

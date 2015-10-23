@@ -9,7 +9,7 @@ using std::map;
 #include "xAODRootAccess/TEvent.h"
 #include "xAODRootAccess/Init.h"
 #include "xAODRootAccess/TStore.h"
-#include "TH1F.h"
+#include "TH1D.h"
 #include "xAODEgamma/ElectronContainer.h"
 #include "xAODTruth/TruthEventContainer.h"
 #include "xAODEgamma/Electron.h"
@@ -22,6 +22,8 @@ using std::map;
 #include "PileupReweighting/PileupReweightingTool.h"
 #include "ElectronPhotonSelectorTools/AsgElectronIsEMSelector.h"
 #include "AsgTools/ToolHandle.h"
+#include "VertexPositionReweighting/VertexPositionReweightingTool.h"
+#include "ElectronEfficiencyCorrection/AsgElectronEfficiencyCorrectionTool.h"
 
 class GoodRunsListSelectionTool;
 class LineShapeTool;
@@ -86,13 +88,15 @@ class Analysis
   string GetName() const { return m_name; }
   int GetGoodEvents() const {return m_goodEvent; }
   int GetNEvents() const { return m_numEvent; }
+  double GetPtCut() const { return m_ptCut; }
 
   void SetEsModel( string esModel ) { m_esModel = esModel;} 
   void SetDebug( bool debug ) { m_debug = debug; }
   void SetDoScaleFactor( int doScale ) { m_doScaleFactor = doScale;}
   void SetDoSmearing( int doSmearing ) { m_doSmearing = doSmearing; }
   void SetElectronID( int electronID ) { m_electronID = electronID; }  
-  TH1F* GetZMass() const { return m_ZMass;}
+  void SetPtCut( double ptCut ) { m_ptCut = ptCut; }
+  TH1D* GetZMass() const { return m_ZMass;}
 
   /**\brief Create an Analysis object from a ROOT file saving
      \param fileName ROOT file created by Analysis::Save 
@@ -171,19 +175,19 @@ class Analysis
   int m_doScaleFactor;
 
   //output histograms
-  TH1F *m_ZMass;
-  TH1F *m_elEta;
-  TH1F *m_elPt;
-  TH1F *m_eventZVertex;
-  TH1F *m_puWeight;
-  TH1F *m_lineshapeWeight;
+  TH1D *m_ZMass;
+  TH1D *m_elEta;
+  TH1D *m_elPt;
+  TH1D *m_eventZVertex;
+  TH1D *m_puWeight;
+  TH1D *m_lineshapeWeight;
 
   /**\brief TTree containing minimal information of selected events
    */
   TTree *m_selectionTree;
 
   //Store pointers of histograms to lighten the saving and reading code
-  vector< TH1F* > v_hist;
+  vector< TH1* > v_hist;
 
   //Store electron container and its shallow copy 
   const xAOD::ElectronContainer* m_eContainer;
@@ -197,6 +201,8 @@ class Analysis
   CP::EgammaCalibrationAndSmearingTool *m_EgammaCalibrationAndSmearingTool;
   //  ToolHandle<CP::IPileupReweightingTool> *m_pileup;
   CP::PileupReweightingTool *m_pileup;
+  CP::VertexPositionReweightingTool *m_vtxTool;
+  AsgElectronEfficiencyCorrectionTool *m_electronSF;
   
   const xAOD::EventInfo* m_eventInfo;
   AsgElectronLikelihoodTool* m_LHToolMedium2012;
@@ -226,7 +232,9 @@ class Analysis
    */
   TFile *m_logFile;
 
-  TH1F* m_cutFlow;
+  TH1D* m_cutFlow;
+  TH1D* m_vertexWeight;
+  TH1D* m_SFWeight;
 
   map<string, double> m_mapVar;
   map<string, long long int> m_mapLongVar;
@@ -246,5 +254,6 @@ class Analysis
     2012 : es2012c
   */
 
+  double m_ptCut;
 };
 #endif

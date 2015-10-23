@@ -23,6 +23,7 @@ int main( int argc, char* argv[] ) {
   vector<string> infile;
   string outName,anaName, esModel;
   int doSmearing, doScale, electronID;
+  double ptCut;
   desc.add_options()
     ("help", "Display this help message")
     ("outName", po::value<string >(&outName)->default_value("/sps/atlas/c/cgoudet/Calibration/DataxAOD/TestAnalysis.root") , "Name of the output file")
@@ -32,6 +33,7 @@ int main( int argc, char* argv[] ) {
     ("doScale", po::value<int >( &doScale )->default_value( false )->implicit_value( true ), "Switch on the scale")
     ("electronID", po::value< int >( &electronID )->default_value( 1 ), "" )
     ("esModel", po::value< string >( &esModel )->default_value( "es2015PRE" ), "" )
+    ("ptCut", po::value<double>( &ptCut ), "" )
     ;
 
   //Define options gathered by position                                              
@@ -66,6 +68,7 @@ int main( int argc, char* argv[] ) {
     
     Analysis analysisData( anaName,  infile, outName );
     analysisData.SetDebug( false );
+    if ( vm.count( "ptCut" ) ) analysisData.SetPtCut( ptCut );
     analysisData.SetDoSmearing( doSmearing );
     analysisData.SetDoScaleFactor( doScale );
     analysisData.SetElectronID( electronID );

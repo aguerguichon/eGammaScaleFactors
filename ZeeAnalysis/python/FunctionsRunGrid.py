@@ -2,7 +2,7 @@ import os
 from string import *
 import numpy as np
 
-def GetDataFiles( inputs, scale, doScale, eleID, electronID, inFileIndex, outFilePrefix, esModel ) :
+def GetDataFiles( inputs, scale, doScale, eleID, electronID, inFileIndex, outFilePrefix, esModel, ptCut, ptCutVect ) :
 
     fileList = [
         'DatasetList/Data_13TeV_Zee_25ns.csv',
@@ -41,3 +41,4 @@ def GetDataFiles( inputs, scale, doScale, eleID, electronID, inFileIndex, outFil
         chosenFile = chosenFile[chosenFile.rfind( '/' )+1:len( chosenFile )]
     outFilePrefix.append( chosenFile )
 
+    ptCutVect.append( ptCut )
