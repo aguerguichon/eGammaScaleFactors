@@ -630,7 +630,7 @@ int Analysis::FillSelectionTree() {
   m_mapLongVar["eventNumber"] = m_eventInfo->eventNumber();
   m_mapVar["m12"] = ComputeZMass( m_veGood );
 
-  m_mapVar["weight"] = m_mapVar["lineshapeWeight"]*m_mapVar["puWeight"]*m_mapVar["vertexWeight"]*m_mapVar["SFWeight_1"]*m_mapVar["SFWeight_2"]);
+  m_mapVar["weight"] = m_mapVar["lineshapeWeight"]*m_mapVar["puWeight"]*m_mapVar["vertexWeight"]*m_mapVar["SFWeight_1"]*m_mapVar["SFWeight_2"];
   m_selectionTree->Fill();
   if ( m_debug ) cout << "Analysis::FillSelectionTree done" << endl;
   return 0;
@@ -681,7 +681,8 @@ int Analysis::InitializeTools () {
   vector< string > grlFile = {
     "data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml",
     "data15_13TeV.periodAllYear_DetStatus-v63-pro18-01_DQDefects-00-01-02_PHYS_StandardGRL_All_Good.xml",
-    "data15_13TeV.periodAllYear_DetStatus-v67-pro19-02_DQDefects-00-01-02_PHYS_StandardGRL_All_Good.xml"
+    "data15_13TeV.periodAllYear_DetStatus-v67-pro19-02_DQDefects-00-01-02_PHYS_StandardGRL_All_Good.xml",
+    "data15_13TeV.periodAllYear_DetStatus-v69-pro19-03_DQDefects-00-01-02_PHYS_StandardGRL_All_Good_25ns_tolerable_IBLSTANDBY-DISABLE.xml"
   };
   bool isLocal = system( ("ls " + grlFile[0]).c_str() );    
   

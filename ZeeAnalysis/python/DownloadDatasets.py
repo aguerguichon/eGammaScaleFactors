@@ -1,9 +1,8 @@
 import os
 import sys
-from Functions_MeasureAlphaSigma import *
+#from Functions_MeasureAlphaSigma import *
 
-action= 0 if  len( sys.argv)<=1 else int( sys.argv[1] )
-print action
+action= 1
 
 path='/sps/atlas/c/cgoudet/Calibration/DataxAOD/'
 # = os.popen( command ).read().split( '\n' )
@@ -24,7 +23,7 @@ toDownload = [
 
 missingFiles=[]
 
-with open( '/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/Version.txt' ) as versionFile :
+with open( '/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/ZeeAnalysis/python/Version.txt' ) as versionFile :
     for line in versionFile :
         lineVect = line.split(' ')
         lineVect[1] = lineVect[1].replace('\n', "" )

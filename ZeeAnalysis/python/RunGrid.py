@@ -2,7 +2,7 @@ import os
 import sys
 import numpy as np
 from FunctionsRunGrid import *
-
+import subprocess as sub
 inputs = []
 doScale = []
 electronID = []
@@ -88,7 +88,12 @@ for option in sys.argv:
         GetDataFiles( inputs, 0, doScale, 2, electronID, 3, outFilePrefix, esModel, 27, ptCutVect)
         GetDataFiles( inputs, 0, doScale, 1, electronID, 3, outFilePrefix, esModel, 27, ptCutVect)
 
-    
+    if option=='download' :
+        path='/sps/atlas/c/cgoudet/Calibration/DataxAOD/'
+        gridJobIDList = np.genfromtxt( 'GridJobList.txt', dtype='S100', delimiter=' ' )
+        for job in gridJobIDList :
+            print job
+
 # mode = 1
 
 if len( inputs ) :
@@ -99,6 +104,7 @@ if len( inputs ) :
 
     tab = np.genfromtxt( "Version.txt", dtype='S100', delimiter=' ' )
 
+    jobIDList=[]
 #=============================
     for iFile in range( 0, len( inputs ) ) :
         version=0
@@ -140,10 +146,14 @@ if len( inputs ) :
                             )
                         )
 
-    
-#        os.system( commandLine )
-    #print commandLine
- #       np.savetxt( 'Version.txt', tab, delimiter=' ', fmt='%s')  
+        result = sub.check_output([commandLine], shell=1, stderr=sub.STDOUT)    
+        for line in result.split() :
+            if 'jediTaskID' in line : 
+                jobIDList.append( [line.split('=')[1], 'user.cgoudet.' + outFileName+'_Ntuple.root' )
+    np.savetxt( 'Version.txt', tab, delimiter=' ', fmt='%s')   
+    with open( 'GridJobList.txt', 'a') as jobFile :
+        for job in jobIDList : jobFile.write( job[0] + ' ' + job[1] + '\n' )
+
 
 
 
