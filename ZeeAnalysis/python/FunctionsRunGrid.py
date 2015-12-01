@@ -13,7 +13,7 @@ def GetDataFiles( inputs, scale, doScale, eleID, electronID, inFileIndex, outFil
         ['MC_13TeV_Zee_50ns.csv', 'es2015PRE'],
         ['Data_8TeV_Zee.csv', 'es2012c'],
         ['MC_8TeV_Zee_DiLepton.csv', 'es2012c'],
-        ['MC_8TeV_Zee_1Lepton.csv' 'es2012c']
+        ['MC_8TeV_Zee_1Lepton.csv', 'es2012c']
         ]
 
     chosenFile = path + fileList[inFileIndex][0]

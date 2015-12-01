@@ -70,7 +70,7 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_eventZVertex->Sumw2();
   v_hist.push_back( m_eventZVertex );
 
-  vector<TString> cutFlowNames = { "init", "GRL", "initEl", "eta", "pt", "mediumID", "OQ", "2el", "charge", "ZVertex" };
+  vector<TString> cutFlowNames = { "init", "GRL", "initEl", "mediumID", "eta", "pt",  "OQ", "2el", "charge", "ZVertex" };
   m_cutFlow = new TH1D( "cutFlow", "cutFlow", cutFlowNames.size(), 0.5, cutFlowNames.size()+0.5);
   m_cutFlow->GetXaxis()->SetTitle( "Cuts" );
   m_cutFlow->GetYaxis()->SetTitle( "# Events" );
@@ -665,7 +665,7 @@ int Analysis::InitializeTools () {
   m_LHToolMedium2012 = new AsgElectronLikelihoodTool ("m_LHToolMedium2012"); 
   // initialize the primary vertex container for the tool to have access to the number of vertices used to adapt cuts based on the pileup
   m_LHToolMedium2012->setProperty("primaryVertexContainer","PrimaryVertices");
-  string confDir = "ElectronPhotonSelectorTools/offline/mc15_20150429/";
+  string confDir = "ElectronPhotonSelectorTools/offline/mc15_20150712/";
   m_LHToolMedium2012->setProperty("ConfigFile",confDir+"ElectronLikelihood" + IDselection + "OfflineConfig2015.conf");
   m_LHToolMedium2012->initialize();
 
@@ -680,9 +680,7 @@ int Analysis::InitializeTools () {
   string grlLocalFile = "/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/";
   vector< string > grlFile = {
     "data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml",
-    "data15_13TeV.periodAllYear_DetStatus-v63-pro18-01_DQDefects-00-01-02_PHYS_StandardGRL_All_Good.xml",
-    "data15_13TeV.periodAllYear_DetStatus-v67-pro19-02_DQDefects-00-01-02_PHYS_StandardGRL_All_Good.xml",
-    "data15_13TeV.periodAllYear_DetStatus-v69-pro19-03_DQDefects-00-01-02_PHYS_StandardGRL_All_Good_25ns_tolerable_IBLSTANDBY-DISABLE.xml"
+    "data15_13TeV.periodAllYear_DetStatus-v73-pro19-08_DQDefects-00-01-02_PHYS_StandardGRL_All_Good_25ns.xml"
   };
   bool isLocal = system( ("ls " + grlFile[0]).c_str() );    
   
@@ -706,6 +704,7 @@ int Analysis::InitializeTools () {
     lcalcFiles.push_back("ilumicalc_histograms_None_200842-215643.root");
   }
   else {
+    m_pileup->SetDataScaleFactors(1/1.16); // For 2015
     confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "PileUpReweighting_50ns_prw.root");
     confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "PileUpReweighting_25ns_prw.root");
     lcalcFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "ilumicalc_histograms_None_13TeV_25ns.root");

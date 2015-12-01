@@ -3,6 +3,7 @@ import sys
 import numpy as np
 from FunctionsRunGrid import *
 import subprocess as sub
+from Test import *
 inputs = []
 doScale = []
 electronID = []
@@ -22,9 +23,11 @@ for option in sys.argv:
     if option == 'RunGrid.py' : continue
 
     if option in ['DATA25', 'DATA50'] :
+
 #Get the list of all the runs in the grl
-        savingFile="/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/DatasetList/Data_13TeV_Zee_" + ( '25' if option == 'DATA25' else '50' ) + "ns.csv"
-        datasetList = np.genfromtxt( savingFile, dtype='S100', delimiter=' ' )
+        path='/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/'
+        savingFile="DatasetList/Data_13TeV_Zee_" + ( '25' if option == 'DATA25' else '50' ) + "ns.csv"
+        datasetList = np.genfromtxt( path + savingFile, dtype='S100', delimiter=' ' )
         runs = []
         grlList=os.popen( 'ls /afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/data15*').read().split()
         for grl  in grlList :
@@ -35,60 +38,71 @@ for option in sys.argv:
                 
 #Check if the latest version of the run dataset belong to the datasetList
 
-        oldDataset=''
-        currentDatasetIndex=-1
         runAll = 0
-        addDataset=[]
-        
+        runs = sorted( set( runs ), reverse=True)
+        print runs
+        treeDatasets=node( "/" )        
         for run in runs :
 
-            oldDataset = ''
-            currentDatasetIndex=-1
-    
             run = int( run )
             if option == 'DATA25' and ( run < 276262 or run == 276731 ): continue
             if option == 'DATA50' and run > 276261 and run != 276731 : continue
-            if run != 280614 : continue
-            print run                    
-#look for the current file for this run 
-            for iDataset in range(0, len( datasetList ) ) :
-                if str( run ) not in datasetList[iDataset] : continue
-                currentDatasetIndex = iDataset
-                
+            print run
+
             line='dq2-ls data15_13TeV.00'+ str( run )+'.physics_Main.merge.DAOD_EGAM1.*/'
             output = os.popen(line).read().split()
-
             for file in output :
-                if oldDataset == '' : oldDataset = file
-                if oldDataset.split('.')[1] != file.split('.')[1] or file==output[-1] :
-                    if currentDatasetIndex == -1 : addDataset.append( oldDataset )
-                    elif datasetList[currentDatasetIndex] != oldDataset : runAll=1; datasetList[currentDatasetIndex] = oldDataset
-                    else : continue
-                elif oldDataset < file : oldDataset = file 
-        
-        datasetList= list( datasetList) + list( addDataset )
-        np.savetxt( savingFile, datasetList, delimiter=' ', fmt='%s')
-        rangeMax = 2 if option=='DATA50' else (5 if runAll or len( addDataset ) else 0 )
-
+                file = file.split(':')[1]
+#                print file
+                treeDatasets.Insert( file.split('.')[-1].split('/')[0].split('_'), file.split('.')[1] )
+                pass        
+            pass
+        datasets=[]
+        treeDatasets.CreateTag('')
+        treeDatasets.FillDatasets( datasets )
+ 
+        np.savetxt( path + savingFile, datasetList, delimiter=' ', fmt='%s')
+        rangeMax = 6
+# electronID doScale pt
+# 0 : 1 0  27
+# 1 : 1 1  27
+# 2 : 1 0  30
+# 3 : 1 0  35
+# 4 : 1 0  20
+# 5 : 2 0  27
         for iLaunch in range( 0, rangeMax ) :
+            if iLaunch != 4 : continue
             outFilePrefix.append( 'Data_13TeV_Zee_25ns' if runAll else 'Data_13TeV_Zee_25ns' )
             esModel.append( 'es2015PRE' )
-            inputs.append( datasetList if runAll else addDataset )
-            electronID.append( 1 if iLaunch<4 else 2 )
+            inputs.append( datasets )
+            electronID.append( 1 if iLaunch<5 else 2 )
             doScale.append( 1 if iLaunch==1 else 0 )
             if iLaunch == 3 : ptCutVect.append( 35 )
             elif iLaunch==2 : ptCutVect.append( 30 )
+            elif iLaunch==4 : ptCutVect.append( 20 )
             else : ptCutVect.append( 27 )
 
     if 'MC25' == option :
-        GetDataFiles( inputs, 0, doScale, 2, electronID, 2, outFilePrefix, esModel, 27, ptCutVect)
-        GetDataFiles( inputs, 0, doScale, 1, electronID, 2, outFilePrefix, esModel, 27, ptCutVect)
-        GetDataFiles( inputs, 0, doScale, 1, electronID, 2, outFilePrefix, esModel, 30, ptCutVect)
-        GetDataFiles( inputs, 0, doScale, 1, electronID, 2, outFilePrefix, esModel, 35, ptCutVect)
+        # GetDataFiles( inputs, 0, doScale, 2, electronID, 2, outFilePrefix, esModel, 27, ptCutVect)
+        # GetDataFiles( inputs, 0, doScale, 1, electronID, 2, outFilePrefix, esModel, 27, ptCutVect)
+        # GetDataFiles( inputs, 0, doScale, 1, electronID, 2, outFilePrefix, esModel, 30, ptCutVect)
+        GetDataFiles( inputs, 0, doScale, 1, electronID, 2, outFilePrefix, esModel, 20, ptCutVect)
+        # GetDataFiles( inputs, 0, doScale, 1, electronID, 2, outFilePrefix, esModel, 35, ptCutVect)
+        # GetDataFiles( inputs, 1, doScale, 1, electronID, 2, outFilePrefix, esModel, 27, ptCutVect)
 
     if 'MC50' == option :
         GetDataFiles( inputs, 0, doScale, 2, electronID, 3, outFilePrefix, esModel, 27, ptCutVect)
         GetDataFiles( inputs, 0, doScale, 1, electronID, 3, outFilePrefix, esModel, 27, ptCutVect)
+
+    if 'MC8' == option :
+        GetDataFiles( inputs, 0, doScale, 1, electronID, 5, outFilePrefix, esModel, 27, ptCutVect)
+        GetDataFiles( inputs, 0, doScale, 1, electronID, 6, outFilePrefix, esModel, 27, ptCutVect)
+        GetDataFiles( inputs, 1, doScale, 1, electronID, 5, outFilePrefix, esModel, 27, ptCutVect)
+        GetDataFiles( inputs, 1, doScale, 1, electronID, 6, outFilePrefix, esModel, 27, ptCutVect)
+
+    if 'DATA8' == option :
+        GetDataFiles( inputs, 0, doScale, 1, electronID, 4, outFilePrefix, esModel, 27, ptCutVect)
+        GetDataFiles( inputs, 1, doScale, 1, electronID, 4, outFilePrefix, esModel, 27, ptCutVect)
 
 ##==================================================================
     if option=='download' :
@@ -112,7 +126,7 @@ for option in sys.argv:
                     break
 
 #create the name of the repository were the dataset must be downloaded
-            directory = job[1].replace( 'user.cgoudet.', '' ).replace('_Ntuple.root/', '' )
+            directory = job[1].replace( 'user.cgoudet.', '' ).replace('_Ntuple.root', '' )
             directory = directory[:directory.rfind('_')]
             os.chdir( path + directory )
 
@@ -125,37 +139,39 @@ for option in sys.argv:
             if status == 'done' :
                 if not int(nMiss)  :
                     os.system('touch OK' + job[1].split('.')[2].split('_')[-2] )
-                    addFileLine= 'AddFile ' + job[1] + '* --outName ' + directory + '.root'
+                    addFileLine= 'AddFiles ' + job[1] + '/* --outName ' + directory + '.root'
                     print addFileLine
+                    os.system( addFileLine )
                     toRemove.append( job[0] )
                 else :
-                    missingFiles.append( [ dataset, nMiss ] )
-            pass#end status condition
-        pass#end job loop
+                    missingFiles.append( [ job[1], nMiss ] )
+            elif status == 'broken' :
+                toRemove.apend( job[0] )
+                pass
 
+        
 #cannot delete from gridJobIDList so I have to create a new one and add only interesting bins
-    newGridJobList=[]
-    for job in gridJobIDList : 
-        if job[0] in toRemove : continue
-        newGridJobList.append( job )
-
-    print newGridJobList
-    os.chdir( launcherPath )
-    np.savetxt( 'GridJobList2.txt', newGridJobList, delimiter=' ', fmt='%s')   
-
+            newGridJobList=[]
+            for job in gridJobIDList : 
+                if job[0] in toRemove : continue
+                newGridJobList.append( job )
+                
+                os.chdir( launcherPath )
+                np.savetxt( 'GridJobList.txt', newGridJobList, delimiter=' ', fmt='%s')   
 
 #===================================================
 if len( inputs ) :
-
+    os.chdir( '/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/' )
     if len( inputs ) != len( doScale ) or len( inputs ) != len( outFilePrefix ) or len( inputs ) != len( esModel ) :
         print( "Wrong tabular sizes" )
         exit(0)
 
-    tab = np.genfromtxt( "Version.txt", dtype='S100', delimiter=' ' )
+
 
     jobIDList=[]
 
     for iFile in range( 0, len( inputs ) ) :
+        tab = np.genfromtxt( "/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/ZeeAnalysis/python/Version.txt", dtype='S100', delimiter=' ' )
         version=0
         
         outFileName = outFilePrefix[iFile]
@@ -170,12 +186,14 @@ if len( inputs ) :
         if ptCutVect[iFile] != 27 : outFileName += '_pt' + str( ptCutVect[iFile] )    
 
         for iName in tab :
-            if  iName[0] == outFileName  : version=str( int(iName[1] ) + 1)
-        outFileName +=  "_" + str( version )
+            if  iName[0] == outFileName  : version=str( int(iName[1] ) + 1); iName[1]=str(version)
 
         if  version == 0 :
             tab = np.resize( tab, (len(tab)+1, 2))
             tab[ len( tab )-1 ] = [ outFileName, 0]
+            
+        outFileName +=  "_" + str( version )
+
 
         datasetList = ""
         for dataset in inputs[iFile] : datasetList += dataset + ( ',' if dataset != inputs[iFile][-1] else '' )
@@ -192,17 +210,24 @@ if len( inputs ) :
                         
                         + ( ' --useRootCore '
                             + '--extFile=lumicalc_histograms_None_200842-215643.root,ilumicalc_histograms_None_13TeV_25ns.root,ilumicalc_histograms_None_13TeV_50ns.root,PileUpReweighting_25ns_prw.root,PileUpReweighting_50ns_prw.root '
+                            + ' --tmpDir /tmp '
                             )
                         )
 
+        # print commandLine
+        # exit(0)
+        result=''
         result = sub.check_output([commandLine], shell=1, stderr=sub.STDOUT)    
+        #        result = os.popen( commandLine ).read()
+        print result
+        jobIDList=[]
         for line in result.split() :
             if 'jediTaskID' in line : 
                 jobIDList.append( [line.split('=')[1], 'user.cgoudet.' + outFileName+'_Ntuple.root'] )
-        pass
-    np.savetxt( 'Version.txt', tab, delimiter=' ', fmt='%s')   
-    with open( 'GridJobList.txt', 'a') as jobFile :
-        for job in jobIDList : jobFile.write( job[0] + ' ' + job[1] + '\n' )
+
+        np.savetxt( '/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/ZeeAnalysis/python/Version.txt', tab, delimiter=' ', fmt='%s')   
+        with open( '/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/ZeeAnalysis/python/GridJobList.txt', 'a') as jobFile :
+            for job in jobIDList : jobFile.write( job[0] + ' ' + job[1] + '\n' )
 
 
 
