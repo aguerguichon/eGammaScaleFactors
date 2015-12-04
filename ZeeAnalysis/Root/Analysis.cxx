@@ -189,7 +189,7 @@ Analysis::~Analysis() {
   if ( m_grl )  delete m_grl;
   if ( m_LHToolMedium2012 ) delete m_LHToolMedium2012;
   if ( m_selectionTree ) delete m_selectionTree;
-  if ( m_pileup ) delete m_pileup;
+  //  if ( m_pileup ) delete m_pileup;
   if ( m_electronSF ) delete m_electronSF;
   if ( m_vtxTool ) delete m_vtxTool;
 
@@ -457,6 +457,7 @@ void Analysis::TreatEvents(int nevent) {
 	     || (m_eventInfo->isEventFlagBitSet(xAOD::EventInfo::Core, 18) )  )
 	  continue;
       }
+	
       m_cutFlow->Fill( "GRL", 1 );
       //      Make the electron selection and fill m_eGoodContainer
       int err = (int) PassSelection();
@@ -466,25 +467,23 @@ void Analysis::TreatEvents(int nevent) {
       m_goodEvent++;
       //Should not contain events in bin 0
       if ( m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {
-	if ( m_pileup ) {
-	  m_pileup->apply( *m_eventInfo );
-	  m_mapVar["puWeight"] = m_eventInfo->auxdecor< double >( "PileupWeight" );
-	  m_puWeight->Fill( m_mapVar["puWeight"] );
-	}
+	m_pileup->apply( *m_eventInfo );
+	m_mapVar["puWeight"] = m_eventInfo->auxdecor< float >( "PileupWeight" );
+	
+	m_puWeight->Fill( m_mapVar["puWeight"] );
+	//	}
 	if ( m_vtxTool ) {
 	  m_vtxTool->getWeight( m_mapVar[ "vertexWeight" ] );
 	  m_vertexWeight->Fill( m_mapVar[ "vertexWeight" ] );
 	}
 
 	if ( m_esModel.find( "2015" ) == string::npos )	cout << "getline shpae" << endl;
-
-      }
-
-      if ( m_electronSF ) {
-      m_electronSF->getEfficiencyScaleFactor(*m_veGood[0],m_mapVar["SFWeight_1"]);
-      m_electronSF->getEfficiencyScaleFactor(*m_veGood[1],m_mapVar["SFWeight_2"]);
-      m_SFWeight->Fill( m_mapVar["SFWeight_1"] );
-      m_SFWeight->Fill( m_mapVar["SFWeight_2"] );
+	if ( m_electronSF ) {
+	  m_electronSF->getEfficiencyScaleFactor(*m_veGood[0],m_mapVar["SFWeight_1"]);
+	  m_electronSF->getEfficiencyScaleFactor(*m_veGood[1],m_mapVar["SFWeight_2"]);
+	  m_SFWeight->Fill( m_mapVar["SFWeight_1"] );
+	  m_SFWeight->Fill( m_mapVar["SFWeight_2"] );
+	}
       }
 
       m_ZMass->Fill( ComputeZMass( m_veGood ) );
@@ -699,12 +698,13 @@ int Analysis::InitializeTools () {
   std::vector<std::string> confFiles;
   std::vector<std::string> lcalcFiles;
   if ( m_esModel.find( "2015" ) == string::npos ) {
-    m_pileup->SetDataScaleFactors(1/1.09); // For 2012
+    m_pileup->setProperty("DataScaleFactor",1./1.09);    //    m_pileup.SetDataScaleFactors(1/1.09); // For 2012
     confFiles.push_back("PileupReweighting/mc14v1_defaults.prw.root");
     lcalcFiles.push_back("ilumicalc_histograms_None_200842-215643.root");
   }
   else {
-    m_pileup->SetDataScaleFactors(1/1.16); // For 2015
+    m_pileup->setProperty("DataScaleFactor",1./1.16);
+    //m_pileup->SetDataScaleFactors(1/1.16); // For 2015
     confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "PileUpReweighting_50ns_prw.root");
     confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "PileUpReweighting_25ns_prw.root");
     lcalcFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "ilumicalc_histograms_None_13TeV_25ns.root");
@@ -716,17 +716,18 @@ int Analysis::InitializeTools () {
   m_pileup->initialize();
 
 
-  m_vtxTool = new CP::VertexPositionReweightingTool( "VertexPosition" );  
-  m_vtxTool->setProperty("DataMean", -25.7903);
-  m_vtxTool->setProperty("DataSigma", 43.7201);
+  // m_vtxTool = new CP::VertexPositionReweightingTool( "VertexPosition" );  
+  // m_vtxTool->setProperty("DataMean", -25.7903);
+  // m_vtxTool->setProperty("DataSigma", 43.7201);
 
 
   m_electronSF = new AsgElectronEfficiencyCorrectionTool( "AsgElectronEfficiencyCorrectionTool" ) ;
   //define input file
   vector<string> inputFilesSF;
-  inputFilesSF.push_back( "ElectronEfficiencyCorrection/efficiencySF.offline.RecoTrk.2015.13TeV.rel20p0.25ns.v01.root" );
-  inputFilesSF.push_back( "ElectronEfficiencyCorrection/efficiencySF.offline.MediumLH.2015.13TeV.rel20p0.25ns.v01.root" );
-  inputFilesSF.push_back( "ElectronEfficiencyCorrection/efficiencySF.AnyElectronTrigger.MediumLH.2015.13TeV.rel20p0.25ns.v01.root");
+  inputFilesSF.push_back( "ElectronEfficiencyCorrection/efficiencySF.offline.RecoTrk.2015.13TeV.rel20p0.25ns.v02.root" );
+  inputFilesSF.push_back( "ElectronEfficiencyCorrection/efficiencySF.offline.MediumLLH_d0z0.2015.13TeV.rel20p0.25ns.v02.root" );
+  //  inputFilesSF.push_back( "ElectronEfficiencyCorrection/efficiencySF.e24_lhmedium_L1EM20VH_OR_e60_lhmedium_OR_e120_lhloose.MediumLLH_d0z0_v8.2015.13TeV.rel20p0.25ns.v02.root" );
+  //  inputFilesSF.push_back( "ElectronEfficiencyCorrection/efficiencySF.e24_lhmedium_L1EM20VH_OR_e60_lhmedium_OR_e120_lhloose.MediumLLH_d0z0_v8.2015.13TeV.rel20p0.25ns.v02.root" );
 
   m_electronSF->setProperty("CorrectionFileNameList",inputFilesSF);
   //set datatype, 0-Data(or dont use the tool - faster), 1-FULLSIM, 3-AF2

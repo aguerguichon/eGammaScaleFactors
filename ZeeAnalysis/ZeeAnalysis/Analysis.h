@@ -21,9 +21,11 @@ using std::map;
 #include "ElectronPhotonSelectorTools/AsgElectronLikelihoodTool.h"
 #include "PileupReweighting/PileupReweightingTool.h"
 #include "ElectronPhotonSelectorTools/AsgElectronIsEMSelector.h"
-#include "AsgTools/ToolHandle.h"
 #include "VertexPositionReweighting/VertexPositionReweightingTool.h"
 #include "ElectronEfficiencyCorrection/AsgElectronEfficiencyCorrectionTool.h"
+#include "TrigConfxAOD/xAODConfigTool.h"
+#include "TrigDecisionTool/TrigDecisionTool.h"
+#include "AsgTools/ToolHandle.h"
 
 class GoodRunsListSelectionTool;
 class LineShapeTool;
@@ -199,8 +201,8 @@ class Analysis
     
   //Electron calibration tool
   CP::EgammaCalibrationAndSmearingTool *m_EgammaCalibrationAndSmearingTool;
-  //  ToolHandle<CP::IPileupReweightingTool> *m_pileup;
-  CP::PileupReweightingTool *m_pileup;
+  ToolHandle<CP::IPileupReweightingTool> m_pileup;
+  //CP::PileupReweightingTool *m_pileup;
   CP::VertexPositionReweightingTool *m_vtxTool;
   AsgElectronEfficiencyCorrectionTool *m_electronSF;
   
@@ -209,6 +211,8 @@ class Analysis
   AsgElectronIsEMSelector* m_CutToolMedium2012;
   LineShapeTool *m_LineShapeTool;
   const xAOD::TruthEventContainer *m_teC;
+  Trig::TrigDecisionTool *m_trigDecisionTool;
+  TrigConf::xAODConfigTool *m_trigConfigTool;
 
   vector< xAOD::Electron* > m_veGood;
   vector< double > m_veGoodWeight;
