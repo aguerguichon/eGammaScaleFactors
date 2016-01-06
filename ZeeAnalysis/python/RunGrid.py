@@ -71,7 +71,6 @@ for option in sys.argv:
 # 4 : 1 0  20
 # 5 : 2 0  27
         for iLaunch in range( 0, rangeMax ) :
-            if iLaunch != 4 : continue
             outFilePrefix.append( 'Data_13TeV_Zee_25ns' if runAll else 'Data_13TeV_Zee_25ns' )
             esModel.append( 'es2015PRE' )
             inputs.append( datasets )
@@ -83,26 +82,32 @@ for option in sys.argv:
             else : ptCutVect.append( 27 )
 
     if 'MC25' == option :
-        # GetDataFiles( inputs, 0, doScale, 2, electronID, 2, outFilePrefix, esModel, 27, ptCutVect)
-        # GetDataFiles( inputs, 0, doScale, 1, electronID, 2, outFilePrefix, esModel, 27, ptCutVect)
-        # GetDataFiles( inputs, 0, doScale, 1, electronID, 2, outFilePrefix, esModel, 30, ptCutVect)
-        GetDataFiles( inputs, 0, doScale, 1, electronID, 2, outFilePrefix, esModel, 20, ptCutVect)
-        # GetDataFiles( inputs, 0, doScale, 1, electronID, 2, outFilePrefix, esModel, 35, ptCutVect)
-        # GetDataFiles( inputs, 1, doScale, 1, electronID, 2, outFilePrefix, esModel, 27, ptCutVect)
+        GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns', outFilePrefix, esModel, 27, ptCutVect)
+        GetDataFiles( inputs, 0, doScale, 2, electronID, 'MC_13TeV_Zee_25ns', outFilePrefix, esModel, 27, ptCutVect)
+        GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns', outFilePrefix, esModel, 30, ptCutVect)
+        GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns', outFilePrefix, esModel, 20, ptCutVect)
+        GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns', outFilePrefix, esModel, 35, ptCutVect)
+        GetDataFiles( inputs, 1, doScale, 1, electronID, 'MC_13TeV_Zee_25ns', outFilePrefix, esModel, 27, ptCutVect)
+        # GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns_geo02', outFilePrefix, esModel, 27, ptCutVect)
+        # GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns_geo11', outFilePrefix, esModel, 27, ptCutVect)
+        # GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns_geo12', outFilePrefix, esModel, 27, ptCutVect)
+        # GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns_geo13', outFilePrefix, esModel, 27, ptCutVect)
+        # GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns_geo14', outFilePrefix, esModel, 27, ptCutVect)
+        # GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns_geo15', outFilePrefix, esModel, 27, ptCutVect)
 
     if 'MC50' == option :
-        GetDataFiles( inputs, 0, doScale, 2, electronID, 3, outFilePrefix, esModel, 27, ptCutVect)
-        GetDataFiles( inputs, 0, doScale, 1, electronID, 3, outFilePrefix, esModel, 27, ptCutVect)
+        GetDataFiles( inputs, 0, doScale, 2, electronID, 'MC_13TeV_Zee_50ns', outFilePrefix, esModel, 27, ptCutVect)
+        GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_50ns', outFilePrefix, esModel, 27, ptCutVect)
 
     if 'MC8' == option :
-        GetDataFiles( inputs, 0, doScale, 1, electronID, 5, outFilePrefix, esModel, 27, ptCutVect)
-        GetDataFiles( inputs, 0, doScale, 1, electronID, 6, outFilePrefix, esModel, 27, ptCutVect)
-        GetDataFiles( inputs, 1, doScale, 1, electronID, 5, outFilePrefix, esModel, 27, ptCutVect)
-        GetDataFiles( inputs, 1, doScale, 1, electronID, 6, outFilePrefix, esModel, 27, ptCutVect)
+        GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_8TeV_Zee_1Lepton', outFilePrefix, esModel, 27, ptCutVect)
+        GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_8TeV_Zee_DiLepton', outFilePrefix, esModel, 27, ptCutVect)
+        GetDataFiles( inputs, 1, doScale, 1, electronID, 'MC_8TeV_Zee_1Lepton', outFilePrefix, esModel, 27, ptCutVect)
+        GetDataFiles( inputs, 1, doScale, 1, electronID, 'MC_8TeV_Zee_DiLepton', outFilePrefix, esModel, 27, ptCutVect)
 
     if 'DATA8' == option :
-        GetDataFiles( inputs, 0, doScale, 1, electronID, 4, outFilePrefix, esModel, 27, ptCutVect)
-        GetDataFiles( inputs, 1, doScale, 1, electronID, 4, outFilePrefix, esModel, 27, ptCutVect)
+        GetDataFiles( inputs, 0, doScale, 1, electronID, 'Data_8TeV_Zee', outFilePrefix, esModel, 27, ptCutVect)
+        GetDataFiles( inputs, 1, doScale, 1, electronID, 'Data_8TeV_Zee', outFilePrefix, esModel, 27, ptCutVect)
 
 ##==================================================================
     if option=='download' :
@@ -128,6 +133,7 @@ for option in sys.argv:
 #create the name of the repository were the dataset must be downloaded
             directory = job[1].replace( 'user.cgoudet.', '' ).replace('_Ntuple.root', '' )
             directory = directory[:directory.rfind('_')]
+            print directory
             os.chdir( path + directory )
 
 #download the dataset with rucio and get the number of failed download
@@ -139,6 +145,7 @@ for option in sys.argv:
             if status == 'done' :
                 if not int(nMiss)  :
                     os.system('touch OK' + job[1].split('.')[2].split('_')[-2] )
+                    os.system('rm ' +job[1] + '/*.part' )
                     addFileLine= 'AddFiles ' + job[1] + '/* --outName ' + directory + '.root'
                     print addFileLine
                     os.system( addFileLine )
@@ -196,7 +203,9 @@ if len( inputs ) :
 
 
         datasetList = ""
-        for dataset in inputs[iFile] : datasetList += dataset + ( ',' if dataset != inputs[iFile][-1] else '' )
+#        for dataset in inputs[iFile] : datasetList += dataset + ( ',' if dataset != inputs[iFile][-1] else '' )
+        print inputs[iFile] 
+        datasetList += inputs[iFile]
 
         print outFileName
         
@@ -209,7 +218,7 @@ if len( inputs ) :
                         + ' --outDS user.cgoudet.' + outFileName + ' --inDS ' + datasetList + ' --outputs Ntuple.root '
                         
                         + ( ' --useRootCore '
-                            + '--extFile=lumicalc_histograms_None_200842-215643.root,ilumicalc_histograms_None_13TeV_25ns.root,ilumicalc_histograms_None_13TeV_50ns.root,PileUpReweighting_25ns_prw.root,PileUpReweighting_50ns_prw.root '
+                            + '--extFile=lumicalc_histograms_None_200842-215643.root,ilumicalc_histograms_None_13TeV_25ns.root,ilumicalc_histograms_None_13TeV_50ns.root,PileUpReweighting_25nsa_prw.root,PileUpReweighting_25nsb_prw.root,PileUpReweighting_50ns_prw.root '
                             + ' --tmpDir /tmp '
                             )
                         )

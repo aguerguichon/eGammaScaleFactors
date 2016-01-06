@@ -50,38 +50,38 @@ int main( int argc, char* argv[] ) {
   Analysis aMCNoCorr,  aMCScale, aMCScaleSmear, aDataNoCorr, aDataScale, aDataScaleSmear;
 
   aMCNoCorr.Load( inMCName );
-  TH1F *hMCNoCorr = (TH1F* ) aMCNoCorr.GetZMass()->Clone();
+  TH1F *hMCNoCorr = (TH1F* ) aMCNoCorr.GetHist( "ZMass" )->Clone();
   hMCNoCorr->SetLineColor( 1 );
   outFile->cd();  
   hMCNoCorr->Write("", TObject::kOverwrite );
   
   aMCScale.Load( inMCScaleName );
-  TH1F *hMCScale = (TH1F*) aMCScale.GetZMass()->Clone();
+  TH1F *hMCScale = (TH1F*) aMCScale.GetHist( "ZMass" )->Clone();
   hMCScale->SetLineColor( 2 );
   outFile->cd();
   hMCScale->Write("", TObject::kOverwrite );
 
   aMCScaleSmear.Load( inMCScaleSmearName );
-  TH1F *hMCScaleSmear = (TH1F*) aMCScaleSmear.GetZMass()->Clone();
+  TH1F *hMCScaleSmear = (TH1F*) aMCScaleSmear.GetHist( "ZMass" )->Clone();
   hMCScaleSmear->SetLineColor( 4 );
   outFile->cd();
   hMCScaleSmear->Write("", TObject::kOverwrite );
 
   aDataNoCorr.Load( inDataName );
-  TH1F *hDataNoCorr = (TH1F*)  aDataNoCorr.GetZMass()->Clone();
+  TH1F *hDataNoCorr = (TH1F*)  aDataNoCorr.GetHist( "ZMass" )->Clone();
   hDataNoCorr->SetLineColor( 1 );
   outFile->cd();
   hDataNoCorr->Write("", TObject::kOverwrite );
   
 
   aDataScale.Load( inDataScaleName );
-  TH1F *hDataScale = (TH1F*) aDataScale.GetZMass()->Clone();
+  TH1F *hDataScale = (TH1F*) aDataScale.GetHist( "ZMass" )->Clone();
   hDataScale->SetLineColor( 2 );
   outFile->cd();
   hDataScale->Write("", TObject::kOverwrite );
 
   aDataScaleSmear.Load( inDataScaleSmearName );
-  TH1F *hDataScaleSmear = (TH1F*) aDataScaleSmear.GetZMass()->Clone();
+  TH1F *hDataScaleSmear = (TH1F*) aDataScaleSmear.GetHist( "ZMass" )->Clone();
   hDataScaleSmear->SetLineColor( 4 );
   outFile->cd();
   hDataScaleSmear->Write("", TObject::kOverwrite );

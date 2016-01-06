@@ -43,59 +43,55 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_tfile = 0;
   m_pileup = 0;
   m_vtxTool = 0;
-  m_electronSF = 0;
+  m_electronSFReco = 0;
+  m_electronSFID = 0;
 
   //Initialize histograms
-  m_ZMass = new TH1D ("ZMass", "ZMass", 40, 80, 100); //Masses in GeV
-  m_ZMass->GetXaxis()->SetTitle("M_{ee} [GeV]");
-  m_ZMass->GetYaxis()->SetTitle("Event/0.5 GeV");
-  m_ZMass->Sumw2();
-  v_hist.push_back( m_ZMass );
+  m_mapHist["ZMass"] = new TH1D ("ZMass", "ZMass", 40, 80, 100); //Masses in GeV
+  m_mapHist["ZMass"]->GetXaxis()->SetTitle("M_{ee} [GeV]");
+  m_mapHist["ZMass"]->GetYaxis()->SetTitle("Event/0.5 GeV");
+  m_mapHist["ZMass"]->Sumw2();
 
-  m_elEta = new TH1D( "elEta", "elEta", 100, -5, 5 );
-  m_elEta->GetXaxis()->SetTitle( "#eta_{el}" );
-  m_elEta->GetYaxis()->SetTitle( "Event / 0.1" );
-  m_elEta->Sumw2();
-  v_hist.push_back( m_elEta );
+  m_mapHist["elEta"] = new TH1D( "elEta", "elEta", 100, -5, 5 );
+  m_mapHist["elEta"]->GetXaxis()->SetTitle( "#eta_{el}" );
+  m_mapHist["elEta"]->GetYaxis()->SetTitle( "Event / 0.1" );
+  m_mapHist["elEta"]->Sumw2();
 
-  m_elPt = new TH1D( "elPt", "elPt", 100, 0, 100 );
-  m_elPt->GetXaxis()->SetTitle( "pt_{el}" );
-  m_elPt->GetYaxis()->SetTitle( "Event / 1 GeV" );
-  m_elPt->Sumw2();
-  v_hist.push_back( m_elPt );
+  m_mapHist["elPt"] = new TH1D( "elPt", "elPt", 100, 0, 100 );
+  m_mapHist["elPt"]->GetXaxis()->SetTitle( "pt_{el}" );
+  m_mapHist["elPt"]->GetYaxis()->SetTitle( "Event / 1 GeV" );
+  m_mapHist["elPt"]->Sumw2();
 
-  m_eventZVertex = new TH1D( "eventZVertex", "eventZVertex", 100, -250, 250 );
-  m_eventZVertex->GetXaxis()->SetTitle( "Z Primary Vertex" );
-  m_eventZVertex->GetYaxis()->SetTitle( "Event / 5 mm" );
-  m_eventZVertex->Sumw2();
-  v_hist.push_back( m_eventZVertex );
+  m_mapHist["eventZVertex"] = new TH1D( "eventZVertex", "eventZVertex", 100, -250, 250 );
+  m_mapHist["eventZVertex"]->GetXaxis()->SetTitle( "Z Primary Vertex" );
+  m_mapHist["eventZVertex"]->GetYaxis()->SetTitle( "Event / 5 mm" );
+  m_mapHist["eventZVertex"]->Sumw2();
 
   vector<TString> cutFlowNames = { "init", "GRL", "initEl", "mediumID", "eta", "pt",  "OQ", "2el", "charge", "ZVertex" };
-  m_cutFlow = new TH1D( "cutFlow", "cutFlow", cutFlowNames.size(), 0.5, cutFlowNames.size()+0.5);
-  m_cutFlow->GetXaxis()->SetTitle( "Cuts" );
-  m_cutFlow->GetYaxis()->SetTitle( "# Events" );
-  for ( int iBin = 1; iBin <= m_cutFlow->GetNbinsX(); iBin++ ) {
-    m_cutFlow->GetXaxis()->SetBinLabel( iBin, cutFlowNames[iBin-1] );
+  m_mapHist["cutFlow"] = new TH1D( "cutFlow", "cutFlow", cutFlowNames.size(), 0.5, cutFlowNames.size()+0.5);
+  m_mapHist["cutFlow"]->GetXaxis()->SetTitle( "Cuts" );
+  m_mapHist["cutFlow"]->GetYaxis()->SetTitle( "# Events" );
+  for ( int iBin = 1; iBin <= m_mapHist["cutFlow"]->GetNbinsX(); iBin++ ) {
+    m_mapHist["cutFlow"]->GetXaxis()->SetBinLabel( iBin, cutFlowNames[iBin-1] );
   }
-  v_hist.push_back( m_cutFlow );
 
-  m_puWeight = new TH1D( "puWeight", "puWeight", 100, 0, 2 );
-  m_puWeight->GetXaxis()->SetTitle( "puWeights" );
-  v_hist.push_back( m_puWeight );
+  m_mapHist["puWeight"] = new TH1D( "puWeight", "puWeight", 100, 0, 2 );
+  m_mapHist["puWeight"]->GetXaxis()->SetTitle( "puWeights" );
 
-  m_lineshapeWeight = new TH1D( "lineshapeWeight", "lineshapeWeight", 100, 0.9, 1.1 );
-  m_lineshapeWeight->GetXaxis()->SetTitle( "lineshapeWeights" );
-  v_hist.push_back( m_lineshapeWeight );
+  m_mapHist["lineshapeWeight"] = new TH1D( "lineshapeWeight", "lineshapeWeight", 100, 0.9, 1.1 );
+  m_mapHist["lineshapeWeight"]->GetXaxis()->SetTitle( "lineshapeWeights" );
 
-  m_vertexWeight = new TH1D ("vertexWeight", "vertexWeight", 100, 0, 2 ); 
-  m_vertexWeight->GetXaxis()->SetTitle("vertexWeight");
-  m_vertexWeight->Sumw2();
-  v_hist.push_back( m_vertexWeight );
+  m_mapHist["vertexWeight"] = new TH1D ("vertexWeight", "vertexWeight", 100, 0, 2 ); 
+  m_mapHist["vertexWeight"]->GetXaxis()->SetTitle("vertexWeight");
+  m_mapHist["vertexWeight"]->Sumw2();
 
-  m_SFWeight = new TH1D ("SFWeight", "SFWeight", 100, 0.98, 1.01 );
-  m_SFWeight->GetXaxis()->SetTitle("SFWeight");
-  m_SFWeight->Sumw2();
-  v_hist.push_back( m_SFWeight );
+  m_mapHist["SFReco"] = new TH1D ("SFReco", "SFReco", 100, 0.98, 1.01 );
+  m_mapHist["SFReco"]->GetXaxis()->SetTitle("SFReco");
+  m_mapHist["SFReco"]->Sumw2();
+
+  m_mapHist["SFID"] = new TH1D ("SFID", "SFID", 100, 0.8, 1.2 );
+  m_mapHist["SFID"]->GetXaxis()->SetTitle("SFID");
+  m_mapHist["SFID"]->Sumw2();
 
 
   m_mapVar["energy_1"]=0;
@@ -115,8 +111,8 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_mapVar["e1_2"]=0;
   m_mapVar["e2_2"]=0;
   m_mapVar["m12"]=0;
-  m_mapVar["SFWeight_1"]=1;
-  m_mapVar["SFWeight_2"]=1;
+  m_mapVar["SFReco"]=1;
+  m_mapVar["SFID"]=1;
   m_mapVar["weight"]=1;
   m_mapVar["puWeight"]=1;
   m_mapVar[ "vertexWeight" ] = 1;
@@ -131,9 +127,8 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
 Analysis::Analysis( string name , string outputFile ) : Analysis() {
   if ( m_debug ) cout << "Analysis::Analysis( string name , string outputFile )" << endl;
   m_name = name;
-  for (unsigned int ihist = 0; ihist < v_hist.size() ; ihist++) {
-    if ( v_hist[ihist] ) v_hist[ihist]->SetName( TString( m_name + "_" + v_hist[ihist]->GetName() ) );
-  }
+  for ( auto it = m_mapHist.begin(); it != m_mapHist.end(); it++) 
+    if ( it->second ) it->second->SetName( TString( m_name + "_" + it->second->GetName() ) );
 
   m_logFile = new TFile( outputFile.c_str(), "RECREATE" );  
   if ( m_debug ) cout << "Analysis::Analysis( string name , string outputFile ) Done" << endl;
@@ -179,10 +174,9 @@ Analysis::Analysis( string name, vector< string > v_infileName, string outputFil
 //===============================================
 Analysis::~Analysis() {
 
-  while ( v_hist.size() ) {
-    delete v_hist.back();
-    v_hist.back() = 0;
-    v_hist.pop_back();
+  for ( auto it = m_mapHist.begin(); it != m_mapHist.end(); it++)  {
+    if ( it->second ) delete it->second;
+    it->second = 0;
   }
   
   if ( m_EgammaCalibrationAndSmearingTool )  delete  m_EgammaCalibrationAndSmearingTool;
@@ -190,7 +184,8 @@ Analysis::~Analysis() {
   if ( m_LHToolMedium2012 ) delete m_LHToolMedium2012;
   if ( m_selectionTree ) delete m_selectionTree;
   //  if ( m_pileup ) delete m_pileup;
-  if ( m_electronSF ) delete m_electronSF;
+  if ( m_electronSFReco ) delete m_electronSFReco;
+  if ( m_electronSFID ) delete m_electronSFID;
   if ( m_vtxTool ) delete m_vtxTool;
 
   if ( m_tfile ) {
@@ -250,9 +245,9 @@ void Analysis::SetName( string name ) {
   m_name = name; 
   if ( m_debug )  cout << "Changed name : " << m_name << endl;
 
-  for (unsigned int ihist = 0; ihist < v_hist.size(); ihist++ ) {
-    if ( v_hist[ihist] ) v_hist[ihist]->SetName( TString( m_name + "_" + v_hist[ihist]->GetTitle() ) );
-    if ( m_debug && v_hist[ihist])   cout << v_hist[ihist]->GetName() << endl;
+  for ( auto it = m_mapHist.begin(); it != m_mapHist.end(); it++)  {
+    if ( it->second ) it->second->SetName( TString( m_name + "_" + it->second->GetTitle() ) );
+    if ( m_debug && it->second)   cout << it->second->GetName() << endl;
   }
 
   if ( m_selectionTree ) m_selectionTree->SetName( TString (m_name + "_" + m_selectionTree->GetTitle() ) ); 
@@ -267,9 +262,9 @@ void Analysis::PlotResult(string fileName) {
 
   TCanvas *canvas = new TCanvas();
 
-  for (unsigned int ihist = 0; ihist < v_hist.size() ; ihist++) {
-    v_hist[ihist]->Draw("E");
-    canvas->SaveAs( TString( fileName + "_" + v_hist[ihist]->GetName() + ".pdf" ) );
+  for ( auto it = m_mapHist.begin(); it != m_mapHist.end(); it++)  {
+    it->second->Draw("E");
+    canvas->SaveAs( TString( fileName + "_" + it->second->GetName() + ".pdf" ) );
   }
 
   delete canvas;
@@ -281,8 +276,8 @@ void Analysis::Save( ) {
   if ( m_debug ) cout << "Analysis::Save()" << endl;
   m_logFile->cd();
 
-  for (unsigned int ihist = 0; ihist < v_hist.size() ; ihist++) {
-    v_hist[ihist]->Write( "", TObject::kOverwrite );
+  for ( auto it = m_mapHist.begin(); it != m_mapHist.end(); it++)  {
+    it->second->Write( "", TObject::kOverwrite );
   }
 
   TString bufferName = TString::Format( "%s", m_name.c_str() );
@@ -331,15 +326,16 @@ int Analysis::Load( string fileName ) {
   }
   else return 2;
   
-  for (unsigned int ihist = 0; ihist < v_hist.size() ; ihist++) {
-    string histName = m_name + "_" + v_hist[ihist]->GetTitle();
+  for ( auto it = m_mapHist.begin(); it != m_mapHist.end(); it++)  {
+    if ( !it->second ) continue;
+    string histName = m_name + "_" + it->second->GetTitle();
 
 
     if ( !infile->Get( histName.c_str() ) ) continue;
-    delete v_hist[ihist];
-    v_hist[ihist] = (TH1D*) infile->Get( histName.c_str() )->Clone();  
-    v_hist[ihist]->SetDirectory( 0 );
-    if ( m_debug ) cout << "Loaded histogram : " << v_hist[ihist]->GetName() << endl;
+    delete it->second;
+    it->second = (TH1D*) infile->Get( histName.c_str() )->Clone();  
+    it->second->SetDirectory( 0 );
+    if ( m_debug ) cout << "Loaded histogram : " << it->second->GetName() << endl;
       
   }//for ihist
 
@@ -359,7 +355,7 @@ int Analysis::Load( string fileName ) {
 
 
 //========================================================
-void Analysis::Add( Analysis const &analysis ) {
+void Analysis::Add( Analysis &analysis ) {
 
   // Add input files names
   for ( unsigned int i = 0; i < analysis.m_fileName.size(); i++) {
@@ -377,8 +373,8 @@ void Analysis::Add( Analysis const &analysis ) {
   m_goodEvent += analysis.m_goodEvent;
 
   //Add histograms
-  for (unsigned int ihist = 0; ihist < v_hist.size(); ihist++ ) {
-       v_hist[ihist]->Add( analysis.v_hist[ihist] );
+  for ( auto it = m_mapHist.begin(); it != m_mapHist.end(); it++)  {
+       it->second->Add( analysis.m_mapHist[it->first] );
   }
 
   //Add selectionTree's
@@ -449,7 +445,7 @@ void Analysis::TreatEvents(int nevent) {
 
       //GRL
 
-      m_cutFlow->Fill( "init", 1 );
+      m_mapHist["cutFlow"]->Fill( "init", 1 );
       if ( ! m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {//test if is data
 	if ( !m_grl->passRunLB(*m_eventInfo) ) continue;  //passes the GRL
 	if ( ( m_eventInfo->errorState(xAOD::EventInfo::LAr)==xAOD::EventInfo::Error ) 
@@ -458,7 +454,7 @@ void Analysis::TreatEvents(int nevent) {
 	  continue;
       }
 	
-      m_cutFlow->Fill( "GRL", 1 );
+      m_mapHist["cutFlow"]->Fill( "GRL", 1 );
       //      Make the electron selection and fill m_eGoodContainer
       int err = (int) PassSelection();
       if ( m_debug ) cout << "PassSelection : " << err << endl;
@@ -466,27 +462,8 @@ void Analysis::TreatEvents(int nevent) {
 
       m_goodEvent++;
       //Should not contain events in bin 0
-      if ( m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {
-	m_pileup->apply( *m_eventInfo );
-	m_mapVar["puWeight"] = m_eventInfo->auxdecor< float >( "PileupWeight" );
-	
-	m_puWeight->Fill( m_mapVar["puWeight"] );
-	//	}
-	if ( m_vtxTool ) {
-	  m_vtxTool->getWeight( m_mapVar[ "vertexWeight" ] );
-	  m_vertexWeight->Fill( m_mapVar[ "vertexWeight" ] );
-	}
 
-	if ( m_esModel.find( "2015" ) == string::npos )	cout << "getline shpae" << endl;
-	if ( m_electronSF ) {
-	  m_electronSF->getEfficiencyScaleFactor(*m_veGood[0],m_mapVar["SFWeight_1"]);
-	  m_electronSF->getEfficiencyScaleFactor(*m_veGood[1],m_mapVar["SFWeight_2"]);
-	  m_SFWeight->Fill( m_mapVar["SFWeight_1"] );
-	  m_SFWeight->Fill( m_mapVar["SFWeight_2"] );
-	}
-      }
-
-      m_ZMass->Fill( ComputeZMass( m_veGood ) );
+      m_mapHist["ZMass"]->Fill( ComputeZMass( m_veGood ) );
       if ( FillSelectionTree() ) {
 	cout << "Error Filling selectionTree" << endl;
 	exit(2);
@@ -503,12 +480,8 @@ void Analysis::TreatEvents(int nevent) {
 	m_veGood.pop_back();
       }
       m_veGoodWeight.clear();
-      m_mapVar["weight"]=1;
-      m_mapVar["puWeight"]=1;
-      m_mapVar["lineshapeWeight"]=1;
-      m_mapVar[ "vertexWeight" ] = 1;
-      m_mapVar["SFWeight_1"]=1;
-      m_mapVar["SFWeight_2"]=1;
+      //      map<string, int>::iterator it;
+      for ( auto it = m_mapVar.begin(); it != m_mapVar.end(); it++ ) it->second = 1;
     }//for i_event    
   }//for i_file
 
@@ -523,20 +496,20 @@ void Analysis::TreatEvents(int nevent) {
 //Make selection on event level
 bool Analysis::PassSelection() {
   if ( m_debug ) cout << "Analysis::PassSelection()" << endl;
-  //  m_eventZVertex->Fill( (*m_ZVertex)[0]->auxdecor< float >("beamPosZ") );
-  m_eventZVertex->Fill( (*m_ZVertex)[0]->z() );
+  m_mapHist["eventZVertex"]->Fill( (*m_ZVertex)[0]->auxdecor< float >("beamPosZ") );
+  //m_mapHist["eventZVertex"]->Fill( (*m_ZVertex)[0]->z() );
   //Reduce number of electron in container by appling cuts on electrons
   MakeElectronCut();
 
   //Request exactly two electrons
   if ( m_veGood.size() != 2 ) return false;
-  m_cutFlow->Fill( "2el", 1 );
+  m_mapHist["cutFlow"]->Fill( "2el", 1 );
   //  Check the sign of the two electrons
   if ( m_veGood[0]->charge() *  m_veGood[1]->charge() > 0 ) return false;
-  m_cutFlow->Fill( "charge", 1 );
+  m_mapHist["cutFlow"]->Fill( "charge", 1 );
   //Cut on the position of the primary Vertex
   if ( m_esModel.find( "2015" ) == string::npos && fabs( (*m_ZVertex)[0]->z() ) > 150 ) return false;
-    m_cutFlow->Fill( "ZVertex", 1 );
+    m_mapHist["cutFlow"]->Fill( "ZVertex", 1 );
 
   //if (ComputeZMass( m_veGood ) > 100 || ComputeZMass( m_veGood ) < 80) return false;
   if ( m_debug ) cout << "Analysis::PassSelection done" << endl;
@@ -549,32 +522,32 @@ void Analysis::MakeElectronCut() {
   if ( m_debug ) cout << "Analysis::MakeElectronCut" << endl;
   for ( xAOD::ElectronContainer::iterator eContItr = (m_eShallowContainer.first)->begin(); eContItr != (m_eShallowContainer.first)->end(); eContItr++ ) {
 
-    m_cutFlow->Fill( "initEl", 1 );
+    m_mapHist["cutFlow"]->Fill( "initEl", 1 );
     //  Cut on the quality of the **eContItrectron
     if ( !(m_electronID/3)  && !m_LHToolMedium2012->accept( **eContItr ) ) continue;
     if ( (m_electronID/3) && !m_CutToolMedium2012->accept( **eContItr ) ) continue;
     
-    m_cutFlow->Fill( "mediumID", 1 );
+    m_mapHist["cutFlow"]->Fill( "mediumID", 1 );
 
     //Calibrate this new electron
     //    cout << (*eContItr)->pt() << " ";
     m_EgammaCalibrationAndSmearingTool->applyCorrection( **eContItr );
     //    cout << (*eContItr)->pt() << endl;
-    m_elEta->Fill( (*eContItr)->eta() );
-    m_elPt->Fill( (*eContItr)->pt() /1000 );
+    m_mapHist["elEta"]->Fill( (*eContItr)->eta() );
+    m_mapHist["elPt"]->Fill( (*eContItr)->pt() /1000 );
     
     //kinematical cuts on electrons
     double eta_calo = 0;
     (*eContItr)->caloCluster()->retrieveMoment(xAOD::CaloCluster::ETACALOFRAME,eta_calo); 
     if ( fabs( eta_calo ) > 2.47 ) continue;
-    m_cutFlow->Fill( "eta", 1 );
+    m_mapHist["cutFlow"]->Fill( "eta", 1 );
 
     if ( (*eContItr)->pt() < 27e3 ) continue;
-    m_cutFlow->Fill( "pt", 1 );
+    m_mapHist["cutFlow"]->Fill( "pt", 1 );
     
     //  OQ cut
     if ( !(*eContItr)->isGoodOQ( xAOD::EgammaParameters::BADCLUSELECTRON ) ) continue;
-    m_cutFlow->Fill( "OQ", 1 );
+    m_mapHist["cutFlow"]->Fill( "OQ", 1 );
     
     m_veGood.push_back( 0 );
     m_veGood.back() = *eContItr;
@@ -588,17 +561,16 @@ void Analysis::MakeElectronCut() {
 //========================================================================
 void Analysis::Divide( Analysis  &analysis ) {
 
-  for ( unsigned int ihist = 0; ihist < v_hist.size(); ihist++ ) {
+  for ( auto it = m_mapHist.begin(); it != m_mapHist.end(); it++ ) { 
 
-    analysis.v_hist[ihist]->Scale( 1 / analysis.v_hist[ihist]->Integral() );    
-
-    v_hist[ihist]->Scale( 1 / v_hist[ihist]->Integral() );
+    analysis.m_mapHist[it->first]->Scale( 1 / analysis.m_mapHist[it->first]->Integral() );    
+    it->second->Scale( 1 / it->second->Integral() );
     
-    v_hist[ihist]->Divide( analysis.v_hist[ihist] );
+    it->second->Divide( analysis.m_mapHist[it->first] );
 
-    v_hist[ihist]->SetTitle( TString( "Ratio") + TString(v_hist[ihist]->GetTitle()) );
+    it->second->SetTitle( TString( "Ratio") + TString(it->second->GetTitle()) );
 
-    v_hist[ihist]->GetYaxis()->SetTitle( TString( "Data/MC" ) );
+    it->second->GetYaxis()->SetTitle( TString( "Data/MC" ) );
   }
 }
 
@@ -629,7 +601,40 @@ int Analysis::FillSelectionTree() {
   m_mapLongVar["eventNumber"] = m_eventInfo->eventNumber();
   m_mapVar["m12"] = ComputeZMass( m_veGood );
 
-  m_mapVar["weight"] = m_mapVar["lineshapeWeight"]*m_mapVar["puWeight"]*m_mapVar["vertexWeight"]*m_mapVar["SFWeight_1"]*m_mapVar["SFWeight_2"];
+
+  if ( m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {
+    if ( m_pileup ) {
+      m_pileup->apply( *m_eventInfo );
+      m_mapVar["puWeight"] = m_eventInfo->auxdecor< float >( "PileupWeight" );
+      m_mapHist["puWeight"]->Fill( m_mapVar["puWeight"] );
+    }
+
+    if ( m_vtxTool ) {
+      m_vtxTool->getWeight( m_mapVar[ "vertexWeight" ] );
+      m_mapHist["vertexWeight"]->Fill( m_mapVar[ "vertexWeight" ] );
+    }
+    
+    if ( m_electronSFReco ) {
+      double sf1, sf2;
+      m_electronSFReco->getEfficiencyScaleFactor(*m_veGood[0],sf1);
+      m_electronSFReco->getEfficiencyScaleFactor(*m_veGood[1],sf2);
+      m_mapHist["SFReco"]->Fill( sf1 );
+      m_mapHist["SFReco"]->Fill( sf2 );
+      m_mapVar["SFReco"] = sf1*sf2;
+    }
+
+    if ( m_electronSFID ) {
+      double sf1, sf2;
+      m_electronSFID->getEfficiencyScaleFactor(*m_veGood[0],sf1);
+      m_electronSFID->getEfficiencyScaleFactor(*m_veGood[1],sf2);
+      m_mapHist["SFID"]->Fill( sf1 );
+      m_mapHist["SFID"]->Fill( sf2 );
+      m_mapVar["SFID"] = sf1*sf2;
+    }
+
+  }
+
+  m_mapVar["weight"] = m_mapVar["lineshapeWeight"]*m_mapVar["puWeight"]*m_mapVar["vertexWeight"]*m_mapVar["SFReco"]*m_mapVar["SFID"];
   m_selectionTree->Fill();
   if ( m_debug ) cout << "Analysis::FillSelectionTree done" << endl;
   return 0;
@@ -637,8 +642,6 @@ int Analysis::FillSelectionTree() {
 
 //=====================================================
 int Analysis::InitializeTools () {
-
-
 
   //Setup the calibration tool
   m_EgammaCalibrationAndSmearingTool  = new CP::EgammaCalibrationAndSmearingTool("EgammaCalibrationAndSmearingTool"); 
@@ -704,11 +707,11 @@ int Analysis::InitializeTools () {
   }
   else {
     m_pileup->setProperty("DataScaleFactor",1./1.16);
-    //m_pileup->SetDataScaleFactors(1/1.16); // For 2015
-    confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "PileUpReweighting_50ns_prw.root");
-    confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "PileUpReweighting_25ns_prw.root");
+    // confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "PileUpReweighting_50ns_prw.root");
+    // confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "PileUpReweighting_25nsa_prw.root");
+    confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "PileUpReweighting_25nsb_prw.root");
     lcalcFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "ilumicalc_histograms_None_13TeV_25ns.root");
-    lcalcFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "ilumicalc_histograms_None_13TeV_50ns.root");
+    //    lcalcFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "ilumicalc_histograms_None_13TeV_50ns.root");
   }
   dynamic_cast<CP::PileupReweightingTool&>(*m_pileup).setProperty( "ConfigFiles", confFiles);
   dynamic_cast<CP::PileupReweightingTool&>(*m_pileup).setProperty( "LumiCalcFiles", lcalcFiles);
@@ -716,27 +719,30 @@ int Analysis::InitializeTools () {
   m_pileup->initialize();
 
 
-  // m_vtxTool = new CP::VertexPositionReweightingTool( "VertexPosition" );  
-  // m_vtxTool->setProperty("DataMean", -25.7903);
-  // m_vtxTool->setProperty("DataSigma", 43.7201);
+  m_vtxTool = new CP::VertexPositionReweightingTool( "VertexPosition" );  
+  m_vtxTool->setProperty("DataMean", -25.7903);
+  m_vtxTool->setProperty("DataSigma", 43.7201);
 
 
-  m_electronSF = new AsgElectronEfficiencyCorrectionTool( "AsgElectronEfficiencyCorrectionTool" ) ;
+  m_electronSFReco = new AsgElectronEfficiencyCorrectionTool( "AsgElectronEfficiencyCorrectionTool" ) ;
+  m_electronSFID = new AsgElectronEfficiencyCorrectionTool( "AsgElectronEfficiencyCorrectionTool" ) ;
   //define input file
-  vector<string> inputFilesSF;
-  inputFilesSF.push_back( "ElectronEfficiencyCorrection/efficiencySF.offline.RecoTrk.2015.13TeV.rel20p0.25ns.v02.root" );
-  inputFilesSF.push_back( "ElectronEfficiencyCorrection/efficiencySF.offline.MediumLLH_d0z0.2015.13TeV.rel20p0.25ns.v02.root" );
-  //  inputFilesSF.push_back( "ElectronEfficiencyCorrection/efficiencySF.e24_lhmedium_L1EM20VH_OR_e60_lhmedium_OR_e120_lhloose.MediumLLH_d0z0_v8.2015.13TeV.rel20p0.25ns.v02.root" );
-  //  inputFilesSF.push_back( "ElectronEfficiencyCorrection/efficiencySF.e24_lhmedium_L1EM20VH_OR_e60_lhmedium_OR_e120_lhloose.MediumLLH_d0z0_v8.2015.13TeV.rel20p0.25ns.v02.root" );
+  vector<string> filePerTool;
+  filePerTool.push_back( "ElectronEfficiencyCorrection/efficiencySF.offline.RecoTrk.2015.13TeV.rel20p0.25ns.v02.root" );
+  filePerTool.push_back( "ElectronEfficiencyCorrection/efficiencySF.offline.MediumLLH_d0z0.2015.13TeV.rel20p0.25ns.v02.root" );
 
-  m_electronSF->setProperty("CorrectionFileNameList",inputFilesSF);
-  //set datatype, 0-Data(or dont use the tool - faster), 1-FULLSIM, 3-AF2
-  m_electronSF->setProperty("ForceDataType",1);
-  //if you want to use the apply function and put a prefix/name (default: "") to the new branch (ends with "SF"), not needed otherwise
-  m_electronSF->setProperty("ResultPrefix", "my");
-  m_electronSF->setProperty("ResultName", "name" );
-  //init the tool
-  m_electronSF->initialize();
+  vector<AsgElectronEfficiencyCorrectionTool*> dumVectorTool = { m_electronSFReco, m_electronSFID };
+  for ( unsigned int iTool = 0; iTool < dumVectorTool.size(); iTool++ ) {
+    vector<string> inputFile = { filePerTool[iTool] };
+    dumVectorTool[iTool]->setProperty("CorrectionFileNameList",inputFile);
+    //set datatype, 0-Data(or dont use the tool - faster), 1-FULLSIM, 3-AF2
+    dumVectorTool[iTool]->setProperty("ForceDataType",1);
+    //if you want to use the apply function and put a prefix/name (default: "") to the new branch (ends with "SF"), not needed otherwise
+    dumVectorTool[iTool]->setProperty("ResultPrefix", "my");
+    dumVectorTool[iTool]->setProperty("ResultName", "name" );
+    //init the tool
+    dumVectorTool[iTool]->initialize();
+  }
   return 0;
 }
 
@@ -834,7 +840,7 @@ double Analysis::GetLineShapeWeight() {
   LineShapeTool *lineShapeTool = new LineShapeTool();
   m_mapVar["m12_True"] = ti->z3.M()*1e-3;
   weight = lineShapeTool->reweightPowhegToImprovedBorn(ti->pdg1,ti->pdg2,ti->z3.M()*1e-3);
-  m_lineshapeWeight->Fill( weight );
+  m_mapHist["lineshapeWeight"]->Fill( weight );
   //  cout << "lineshapeWeight : " << weight << endl;
   return weight;
 }

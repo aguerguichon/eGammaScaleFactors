@@ -27,6 +27,10 @@ using std::map;
 #include "TrigDecisionTool/TrigDecisionTool.h"
 #include "AsgTools/ToolHandle.h"
 
+using namespace Trig;
+using namespace TrigConf;
+using namespace xAOD;
+
 class GoodRunsListSelectionTool;
 class LineShapeTool;
 /**\class < Analysis > [<Analysis.h>]
@@ -54,7 +58,7 @@ class Analysis
      - Keeping the name of the first analysis
      - Summing the counters of events
    */
-  void Add( const Analysis & analysis  );
+  void Add( Analysis & analysis  );
   
 
   /**\brief Add a ROOT file to the list of input files.
@@ -98,7 +102,7 @@ class Analysis
   void SetDoSmearing( int doSmearing ) { m_doSmearing = doSmearing; }
   void SetElectronID( int electronID ) { m_electronID = electronID; }  
   void SetPtCut( double ptCut ) { m_ptCut = ptCut; }
-  TH1D* GetZMass() const { return m_ZMass;}
+  TH1* GetHist( string histName )  { return m_mapHist[histName]; }
 
   /**\brief Create an Analysis object from a ROOT file saving
      \param fileName ROOT file created by Analysis::Save 
@@ -176,20 +180,12 @@ class Analysis
   int m_doSmearing;
   int m_doScaleFactor;
 
-  //output histograms
-  TH1D *m_ZMass;
-  TH1D *m_elEta;
-  TH1D *m_elPt;
-  TH1D *m_eventZVertex;
-  TH1D *m_puWeight;
-  TH1D *m_lineshapeWeight;
-
   /**\brief TTree containing minimal information of selected events
    */
   TTree *m_selectionTree;
 
   //Store pointers of histograms to lighten the saving and reading code
-  vector< TH1* > v_hist;
+  map< string, TH1* > m_mapHist;
 
   //Store electron container and its shallow copy 
   const xAOD::ElectronContainer* m_eContainer;
@@ -201,10 +197,11 @@ class Analysis
     
   //Electron calibration tool
   CP::EgammaCalibrationAndSmearingTool *m_EgammaCalibrationAndSmearingTool;
-  ToolHandle<CP::IPileupReweightingTool> m_pileup;
-  //CP::PileupReweightingTool *m_pileup;
+  //  ToolHandle<CP::IPileupReweightingTool*> m_pileup;
+  CP::PileupReweightingTool *m_pileup;
   CP::VertexPositionReweightingTool *m_vtxTool;
-  AsgElectronEfficiencyCorrectionTool *m_electronSF;
+  AsgElectronEfficiencyCorrectionTool *m_electronSFReco;
+  AsgElectronEfficiencyCorrectionTool *m_electronSFID;
   
   const xAOD::EventInfo* m_eventInfo;
   AsgElectronLikelihoodTool* m_LHToolMedium2012;
@@ -235,10 +232,6 @@ class Analysis
   /**\brief TFile to save the content of the analysis
    */
   TFile *m_logFile;
-
-  TH1D* m_cutFlow;
-  TH1D* m_vertexWeight;
-  TH1D* m_SFWeight;
 
   map<string, double> m_mapVar;
   map<string, long long int> m_mapLongVar;
