@@ -4,6 +4,7 @@ import numpy as np
 
 
 def GetDataFiles( inputs, scale, doScale, eleID, electronID, inFileIndex, outFilePrefix, esModel, ptCut, ptCutVect ) :
+#def GetDataFiles( inputs, inFileIndex, outFilePrefix, options, optionLine ) :
 
     path= '/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/DatasetList/'
     fileList = {}

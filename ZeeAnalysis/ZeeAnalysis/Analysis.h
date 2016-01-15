@@ -100,7 +100,6 @@ class Analysis
   void SetEsModel( string esModel ) { m_esModel = esModel;} 
   void SetDebug( bool debug ) { m_debug = debug; }
   void SetDoScaleFactor( int doScale ) { m_doScaleFactor = doScale;}
-  void SetDoSmearing( int doSmearing ) { m_doSmearing = doSmearing; }
   void SetElectronID( int electronID ) { m_electronID = electronID; }  
   void SetPtCut( double ptCut ) { m_ptCut = ptCut; }
   void SetFBremCut( double fBremCut ) { m_fBremCut = fBremCut; }
@@ -179,7 +178,6 @@ class Analysis
   /* int m_goodEvent; */
 
   //Configuration attributes
-  int m_doSmearing;
   int m_doScaleFactor;
 
   /**\brief TTree containing minimal information of selected events

@@ -29,7 +29,6 @@ int main( int argc, char* argv[] ) {
     ("outName", po::value<string >(&outName)->default_value("/sps/atlas/c/cgoudet/Calibration/DataxAOD/TestAnalysis.root") , "Name of the output file")
     ("infile", po::value< vector< string > >(&infile), "The name of xAOD rootfiles")
     ("anaName", po::value< string >( &anaName )->default_value( "Analysis" ), "Name of the object")
-    ("doSmearing", po::value<int >( &doSmearing )->default_value( false )->implicit_value( true ), "Switch on the smearing")
     ("doScale", po::value<int >( &doScale )->default_value( false )->implicit_value( true ), "Switch on the scale")
     ("electronID", po::value< int >( &electronID )->default_value( 1 ), "" )
     ("esModel", po::value< string >( &esModel )->default_value( "es2015PRE" ), "" )
@@ -71,7 +70,6 @@ int main( int argc, char* argv[] ) {
     analysisData.SetDebug( false );
     if ( vm.count( "ptCut" ) ) analysisData.SetPtCut( ptCut );
     if ( vm.count( "fBremCut" ) ) analysisData.SetFBremCut( fBremCut );
-    analysisData.SetDoSmearing( doSmearing );
     analysisData.SetDoScaleFactor( doScale );
     analysisData.SetElectronID( electronID );
     analysisData.SetEsModel( esModel );
