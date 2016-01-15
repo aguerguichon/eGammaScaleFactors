@@ -45,6 +45,8 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_vtxTool = 0;
   m_electronSFReco = 0;
   m_electronSFID = 0;
+  m_trigDecisionTool = 0;
+  m_trigConfigTool = 0;
 
   //Initialize histograms
   m_mapHist["ZMass"] = new TH1D ("ZMass", "ZMass", 40, 80, 100); //Masses in GeV
@@ -67,7 +69,7 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_mapHist["eventZVertex"]->GetYaxis()->SetTitle( "Event / 5 mm" );
   m_mapHist["eventZVertex"]->Sumw2();
 
-  vector<TString> cutFlowNames = { "init", "GRL", "initEl", "mediumID", "eta", "pt",  "OQ", "2el", "charge", "ZVertex" };
+  vector<TString> cutFlowNames = { "init", "GRL", "Trigger", "initEl", "mediumID", "eta", "pt",  "OQ", "2el", "charge", "ZVertex" };
   m_mapHist["cutFlow"] = new TH1D( "cutFlow", "cutFlow", cutFlowNames.size(), 0.5, cutFlowNames.size()+0.5);
   m_mapHist["cutFlow"]->GetXaxis()->SetTitle( "Cuts" );
   m_mapHist["cutFlow"]->GetYaxis()->SetTitle( "# Events" );
@@ -93,33 +95,10 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_mapHist["SFID"]->GetXaxis()->SetTitle("SFID");
   m_mapHist["SFID"]->Sumw2();
 
+  m_mapHist["fBrem"] = new TH1D ("fBrem", "fBrem", 100, 0, 1 );
+  m_mapHist["fBrem"]->GetXaxis()->SetTitle("fBrem");
+  m_mapHist["fBrem"]->Sumw2();
 
-  m_mapVar["energy_1"]=0;
-  m_mapVar["pt_1"]=0;
-  m_mapVar["eta_1"]=0;
-  m_mapVar["phi_1"]=0;
-  m_mapVar["eta_cl_1"]=0;
-  m_mapVar["eta_calo_1"]=0;
-  m_mapVar["e1_1"]=0;
-  m_mapVar["e2_1"]=0;
-  m_mapVar["energy_2"]=0;
-  m_mapVar["pt_2"]=0;
-  m_mapVar["eta_2"]=0;
-  m_mapVar["phi_2"]=0;
-  m_mapVar["eta_cl_2"]=0;
-  m_mapVar["eta_calo_2"]=0;
-  m_mapVar["e1_2"]=0;
-  m_mapVar["e2_2"]=0;
-  m_mapVar["m12"]=0;
-  m_mapVar["SFReco"]=1;
-  m_mapVar["SFID"]=1;
-  m_mapVar["weight"]=1;
-  m_mapVar["puWeight"]=1;
-  m_mapVar[ "vertexWeight" ] = 1;
-  m_mapVar["lineshapeWeight"]=1;
-  m_mapLongVar["runNumber"]=0;
-  m_mapLongVar["eventNumber"]=0;
-  m_mapVar["m12_True"]=0;
 
   if ( m_debug ) cout << "Analysis::Analysis() Done" << endl;  
 }
@@ -187,6 +166,8 @@ Analysis::~Analysis() {
   if ( m_electronSFReco ) delete m_electronSFReco;
   if ( m_electronSFID ) delete m_electronSFID;
   if ( m_vtxTool ) delete m_vtxTool;
+  if( m_trigConfigTool ) delete m_trigConfigTool;
+  if( m_trigDecisionTool ) delete m_trigDecisionTool;
 
   if ( m_tfile ) {
     m_tfile->Close();
@@ -399,12 +380,6 @@ void Analysis::TreatEvents(int nevent) {
   //Setup m_SelectionTree
   m_selectionTree = new TTree( TString( m_name.c_str() ) + "_selectionTree", "selectionTree" ); 
   m_selectionTree->SetDirectory( 0 );
-  for ( map<string, double>::iterator it = m_mapVar.begin(); it != m_mapVar.end(); it++) {
-    m_selectionTree->Branch( it->first.c_str(), &it->second );
-  }
-  for ( map<string, long long int>::iterator it = m_mapLongVar.begin(); it != m_mapLongVar.end(); it++) {
-    m_selectionTree->Branch( it->first.c_str(), &it->second );
-  }
 
   //Loop on all TFile stored in the class
   for (unsigned int i_file = 0 ; i_file < m_fileName.size() ; i_file++) {
@@ -444,7 +419,6 @@ void Analysis::TreatEvents(int nevent) {
       m_eShallowContainer = xAOD::shallowCopyContainer( *m_eContainer );
 
       //GRL
-
       m_mapHist["cutFlow"]->Fill( "init", 1 );
       if ( ! m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {//test if is data
 	if ( !m_grl->passRunLB(*m_eventInfo) ) continue;  //passes the GRL
@@ -453,8 +427,24 @@ void Analysis::TreatEvents(int nevent) {
 	     || (m_eventInfo->isEventFlagBitSet(xAOD::EventInfo::Core, 18) )  )
 	  continue;
       }
-	
       m_mapHist["cutFlow"]->Fill( "GRL", 1 );
+
+      //Trigger
+      bool passTrig = false;
+      auto chainGroup = m_trigDecisionTool->getChainGroup(".*");
+      //auto chainGroup = m_trigDecisionTool->getChainGroup("HLT_2e12_lhloose_L12EM10VH.*");
+      //      auto chainGroup = m_trigDecisionTool->getChainGroup("HLT_e24_lhmedium_L1EM18VH.*");
+      std::map<std::string,int> triggerCounts;
+      for(auto &trig : chainGroup->getListOfTriggers()) {
+	auto cg = m_trigDecisionTool->getChainGroup(trig);
+	std::string thisTrig = trig;
+	m_mapVar["TrigPS"] = cg->getPrescale();
+	passTrig = passTrig || cg->isPassed();
+	//	Info( "execute()", "%30s chain passed(1)/failed(0): %d total chain prescale (L1*HLT): %.1f", thisTrig.c_str(), cg->isPassed(), cg->getPrescale() );
+      }
+      m_mapHist["cutFlow"]->Fill("Trigger", 1);
+      if ( !passTrig ) continue;
+
       //      Make the electron selection and fill m_eGoodContainer
       int err = (int) PassSelection();
       if ( m_debug ) cout << "PassSelection : " << err << endl;
@@ -579,23 +569,34 @@ int Analysis::FillSelectionTree() {
   if ( m_debug ) cout << "Analysis::FillSelectionTree" << endl;
   //RELEASE
   if ( m_veGood.size() != 2 ) return 1;
-  m_mapVar["pt_1"] = m_veGood[0]->pt();
-  m_mapVar["eta_1"] = m_veGood[0]->eta();
-  m_mapVar["phi_1"] = m_veGood[0]->phi();
-  m_mapVar["eta_cl_1"] = m_veGood[0]->caloCluster()->eta();
-  m_veGood[0]->caloCluster()->retrieveMoment(xAOD::CaloCluster::ETACALOFRAME,m_mapVar["eta_calo_1"]); 
-  m_mapVar["e1_1"] = m_veGood[0]->caloCluster()->energyBE(1);
-  m_mapVar["e2_1"] = m_veGood[0]->caloCluster()->energyBE(2);
-  m_mapVar["energy_1"] = m_veGood[0]->e();
 
-  m_mapVar["pt_2"] = m_veGood[1]->pt();
-  m_mapVar["eta_2"] = m_veGood[1]->eta();
-  m_mapVar["phi_2"] = m_veGood[1]->phi();
-  m_mapVar["eta_cl_2"] = m_veGood[1]->caloCluster()->eta();
-  m_veGood[1]->caloCluster()->retrieveMoment(xAOD::CaloCluster::ETACALOFRAME,m_mapVar["eta_calo_2"]); 
-  m_mapVar["e1_2"] = m_veGood[1]->caloCluster()->energyBE(1);
-  m_mapVar["e2_2"] = m_veGood[1]->caloCluster()->energyBE(2);
-  m_mapVar["energy_2"] = m_veGood[1]->e();
+  for ( unsigned int iEl = 0; iEl < 2; iEl++ ) {
+    m_mapVar[string(TString::Format( "pt_%d", iEl+1 ))] = m_veGood[iEl]->pt();
+    m_mapVar[string(TString::Format( "eta_%d", iEl+1 ))] = m_veGood[iEl]->eta();
+    m_mapVar[string(TString::Format( "phi_%d", iEl+1 ))] = m_veGood[iEl]->phi();
+    m_mapVar[string(TString::Format( "eta_cl_%d", iEl+1 ))] = m_veGood[iEl]->caloCluster()->eta();
+    m_veGood[iEl]->caloCluster()->retrieveMoment(xAOD::CaloCluster::ETACALOFRAME,m_mapVar[string(TString::Format( "eta_calo_%d", iEl+1 ))]); 
+    m_mapVar[string(TString::Format( "e1_%d", iEl+1 ))] = m_veGood[iEl]->caloCluster()->energyBE(1);
+    m_mapVar[string(TString::Format( "e2_%d", iEl+1 ))] = m_veGood[iEl]->caloCluster()->energyBE(2);
+    m_mapVar[string(TString::Format( "energy_%d", iEl+1 ))] = m_veGood[iEl]->e();
+
+    //Get the fbrm variable as computed in the likelihood code
+    const xAOD::TrackParticle* t = m_veGood[iEl]->trackParticle();
+    if (t) {
+      float trackqoverp = t->qOverP();
+      unsigned int index;
+      if( t->indexOfParameterAtPosition(index, xAOD::LastMeasurement) ) {
+	double refittedTrack_LMqoverp  = 
+	  t->charge() / sqrt(std::pow(t->parameterPX(index), 2) +
+			     std::pow(t->parameterPY(index), 2) +
+			     std::pow(t->parameterPZ(index), 2));
+	m_mapVar[string(TString::Format("fBrem_%d", iEl+1))] = 1 - trackqoverp/(refittedTrack_LMqoverp);
+	m_mapHist["fBrem"]->Fill(m_mapVar[string(TString::Format("fBrem_%d", iEl))]);
+      }
+    }
+
+  }//end for iEl
+
 
   m_mapLongVar["runNumber"] = m_eventInfo->runNumber();
   m_mapLongVar["eventNumber"] = m_eventInfo->eventNumber();
@@ -616,11 +617,26 @@ int Analysis::FillSelectionTree() {
     
     if ( m_electronSFReco ) {
       double sf1, sf2;
+      double sf1_syst, sf2_syst;
       m_electronSFReco->getEfficiencyScaleFactor(*m_veGood[0],sf1);
       m_electronSFReco->getEfficiencyScaleFactor(*m_veGood[1],sf2);
       m_mapHist["SFReco"]->Fill( sf1 );
       m_mapHist["SFReco"]->Fill( sf2 );
       m_mapVar["SFReco"] = sf1*sf2;
+
+      // Get a list of systematics
+      // CP::SystematicSet recSysts = m_electronSFReco->recommendedSystematics();
+      // // Convert into a simple list
+      // std::vector<CP::SystematicSet> sysList = CP::make_systematics_vector(recSysts);
+      // // Loop over systematics
+      // for(const auto& sys : systList){
+      // 	double systematic = 0; 
+      // 	m_electronSFReco->applySystematicVariation(sys);
+      // }
+      m_electronSFReco->applySystematicVariation( m_electronSFReco->recommendedSystematics() );
+      m_electronSFReco->getEfficiencyScaleFactor(*m_veGood[0],sf1_syst);
+      m_electronSFReco->getEfficiencyScaleFactor(*m_veGood[1],sf2_syst);
+      m_mapVar["SFReco_syst"] =sf1_syst*sf2_syst;
     }
 
     if ( m_electronSFID ) {
@@ -634,7 +650,17 @@ int Analysis::FillSelectionTree() {
 
   }
 
+
+
   m_mapVar["weight"] = m_mapVar["lineshapeWeight"]*m_mapVar["puWeight"]*m_mapVar["vertexWeight"]*m_mapVar["SFReco"]*m_mapVar["SFID"];
+  if ( !m_selectionTree->GetEntries() ) {
+  for ( map<string, double>::iterator it = m_mapVar.begin(); it != m_mapVar.end(); it++) {
+    m_selectionTree->Branch( it->first.c_str(), &it->second );
+  }
+  for ( map<string, long long int>::iterator it = m_mapLongVar.begin(); it != m_mapLongVar.end(); it++) {
+    m_selectionTree->Branch( it->first.c_str(), &it->second );
+  }
+  }
   m_selectionTree->Fill();
   if ( m_debug ) cout << "Analysis::FillSelectionTree done" << endl;
   return 0;
@@ -715,14 +741,11 @@ int Analysis::InitializeTools () {
   }
   dynamic_cast<CP::PileupReweightingTool&>(*m_pileup).setProperty( "ConfigFiles", confFiles);
   dynamic_cast<CP::PileupReweightingTool&>(*m_pileup).setProperty( "LumiCalcFiles", lcalcFiles);
-  
   m_pileup->initialize();
-
 
   m_vtxTool = new CP::VertexPositionReweightingTool( "VertexPosition" );  
   m_vtxTool->setProperty("DataMean", -25.7903);
   m_vtxTool->setProperty("DataSigma", 43.7201);
-
 
   m_electronSFReco = new AsgElectronEfficiencyCorrectionTool( "AsgElectronEfficiencyCorrectionTool" ) ;
   m_electronSFID = new AsgElectronEfficiencyCorrectionTool( "AsgElectronEfficiencyCorrectionTool" ) ;
@@ -743,6 +766,16 @@ int Analysis::InitializeTools () {
     //init the tool
     dumVectorTool[iTool]->initialize();
   }
+
+
+  m_trigConfigTool = new TrigConf::xAODConfigTool("xAODConfigTool"); // gives us access to the meta-data
+  ToolHandle< TrigConf::ITrigConfigTool > trigConfigHandle( m_trigConfigTool );
+  m_trigDecisionTool = new Trig::TrigDecisionTool("TrigDecisionTool");
+  // connect the TrigDecisionTool to the ConfigTool
+  m_trigDecisionTool->setProperty( "ConfigTool", trigConfigHandle );
+  m_trigDecisionTool->setProperty( "TrigDecisionKey", "xTrigDecision" );
+  m_trigDecisionTool->initialize();
+
   return 0;
 }
 
