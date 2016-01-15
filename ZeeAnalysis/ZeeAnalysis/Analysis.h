@@ -96,14 +96,16 @@ class Analysis
   int GetNEvents() const { return m_numEvent; }
   double GetPtCut() const { return m_ptCut; }
 
+
   void SetEsModel( string esModel ) { m_esModel = esModel;} 
   void SetDebug( bool debug ) { m_debug = debug; }
   void SetDoScaleFactor( int doScale ) { m_doScaleFactor = doScale;}
   void SetDoSmearing( int doSmearing ) { m_doSmearing = doSmearing; }
   void SetElectronID( int electronID ) { m_electronID = electronID; }  
   void SetPtCut( double ptCut ) { m_ptCut = ptCut; }
+  void SetFBremCut( double fBremCut ) { m_fBremCut = fBremCut; }
   TH1* GetHist( string histName )  { return m_mapHist[histName]; }
-
+  double GetFBrem( xAOD::Electron *el );
   /**\brief Create an Analysis object from a ROOT file saving
      \param fileName ROOT file created by Analysis::Save 
 
@@ -252,5 +254,6 @@ class Analysis
   */
 
   double m_ptCut;
+  double m_fBremCut;
 };
 #endif

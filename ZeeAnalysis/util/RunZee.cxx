@@ -23,7 +23,7 @@ int main( int argc, char* argv[] ) {
   vector<string> infile;
   string outName,anaName, esModel;
   int doSmearing, doScale, electronID;
-  double ptCut;
+  double ptCut, fBremCut;
   desc.add_options()
     ("help", "Display this help message")
     ("outName", po::value<string >(&outName)->default_value("/sps/atlas/c/cgoudet/Calibration/DataxAOD/TestAnalysis.root") , "Name of the output file")
@@ -34,6 +34,7 @@ int main( int argc, char* argv[] ) {
     ("electronID", po::value< int >( &electronID )->default_value( 1 ), "" )
     ("esModel", po::value< string >( &esModel )->default_value( "es2015PRE" ), "" )
     ("ptCut", po::value<double>( &ptCut ), "" )
+    ("fBremCut", po::value<double>( &fBremCut ), "" )
     ;
 
   //Define options gathered by position                                              
@@ -69,6 +70,7 @@ int main( int argc, char* argv[] ) {
     Analysis analysisData( anaName,  infile, outName );
     analysisData.SetDebug( false );
     if ( vm.count( "ptCut" ) ) analysisData.SetPtCut( ptCut );
+    if ( vm.count( "fBremCut" ) ) analysisData.SetFBremCut( fBremCut );
     analysisData.SetDoSmearing( doSmearing );
     analysisData.SetDoScaleFactor( doScale );
     analysisData.SetElectronID( electronID );

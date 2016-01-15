@@ -22,7 +22,7 @@ namespace po = boost::program_options;
 
 Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess), 
 		       m_debug( false), m_name( "Analysis" ), m_numEvent(0), m_goodEvent(0),
-		       m_doSmearing(false), m_doScaleFactor(false), m_electronID(1), m_esModel( "es2015PRE" ), m_ptCut( 27000 )
+		       m_doSmearing(false), m_doScaleFactor(false), m_electronID(1), m_esModel( "es2015PRE" ), m_ptCut( 27000 ), m_fBremCut( 1 )
 {
   if ( m_debug ) cout << "Analysis::Analysis()" << endl;
   //  cout << "m_debug : " << m_debug << endl;
@@ -69,7 +69,7 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_mapHist["eventZVertex"]->GetYaxis()->SetTitle( "Event / 5 mm" );
   m_mapHist["eventZVertex"]->Sumw2();
 
-  vector<TString> cutFlowNames = { "init", "GRL", "Trigger", "initEl", "mediumID", "eta", "pt",  "OQ", "2el", "charge", "ZVertex" };
+  vector<TString> cutFlowNames = { "init", "GRL", "Trigger", "initEl", "mediumID", "fBrem", "eta", "pt",  "OQ", "2el", "charge", "ZVertex" };
   m_mapHist["cutFlow"] = new TH1D( "cutFlow", "cutFlow", cutFlowNames.size(), 0.5, cutFlowNames.size()+0.5);
   m_mapHist["cutFlow"]->GetXaxis()->SetTitle( "Cuts" );
   m_mapHist["cutFlow"]->GetYaxis()->SetTitle( "# Events" );
@@ -519,6 +519,11 @@ void Analysis::MakeElectronCut() {
     
     m_mapHist["cutFlow"]->Fill( "mediumID", 1 );
 
+    //Get the fbrm variable as computed in the likelihood code
+    double fBrem = GetFBrem( *eContItr );
+    if ( fBrem > m_fBremCut  ) continue;
+    m_mapHist["cutFlow"]->Fill( "fBrem", 1 );
+
     //Calibrate this new electron
     //    cout << (*eContItr)->pt() << " ";
     m_EgammaCalibrationAndSmearingTool->applyCorrection( **eContItr );
@@ -581,19 +586,7 @@ int Analysis::FillSelectionTree() {
     m_mapVar[string(TString::Format( "energy_%d", iEl+1 ))] = m_veGood[iEl]->e();
 
     //Get the fbrm variable as computed in the likelihood code
-    const xAOD::TrackParticle* t = m_veGood[iEl]->trackParticle();
-    if (t) {
-      float trackqoverp = t->qOverP();
-      unsigned int index;
-      if( t->indexOfParameterAtPosition(index, xAOD::LastMeasurement) ) {
-	double refittedTrack_LMqoverp  = 
-	  t->charge() / sqrt(std::pow(t->parameterPX(index), 2) +
-			     std::pow(t->parameterPY(index), 2) +
-			     std::pow(t->parameterPZ(index), 2));
-	m_mapVar[string(TString::Format("fBrem_%d", iEl+1))] = 1 - trackqoverp/(refittedTrack_LMqoverp);
-	m_mapHist["fBrem"]->Fill(m_mapVar[string(TString::Format("fBrem_%d", iEl))]);
-      }
-    }
+    m_mapVar[string(TString::Format("fBrem_%d", iEl+1))] = GetFBrem( m_veGood[iEl] );
 
   }//end for iEl
 
@@ -877,3 +870,23 @@ double Analysis::GetLineShapeWeight() {
   //  cout << "lineshapeWeight : " << weight << endl;
   return weight;
 }
+
+
+double Analysis::GetFBrem( xAOD::Electron *el ) {
+    //Get the fbrm variable as computed in the likelihood code
+    const xAOD::TrackParticle* t = el->trackParticle();
+    if (t) {
+      float trackqoverp = t->qOverP();
+      unsigned int index;
+      if( t->indexOfParameterAtPosition(index, xAOD::LastMeasurement) ) {
+	double refittedTrack_LMqoverp  = 
+	  t->charge() / sqrt(std::pow(t->parameterPX(index), 2) +
+			     std::pow(t->parameterPY(index), 2) +
+			     std::pow(t->parameterPZ(index), 2));
+	return  1 - trackqoverp/(refittedTrack_LMqoverp);
+      }
+    }
+    return 2;
+
+}
+
