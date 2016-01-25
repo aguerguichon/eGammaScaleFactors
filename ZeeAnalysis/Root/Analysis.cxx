@@ -69,7 +69,7 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_mapHist["eventZVertex"]->GetYaxis()->SetTitle( "Event / 5 mm" );
   m_mapHist["eventZVertex"]->Sumw2();
 
-  vector<TString> cutFlowNames = { "init", "GRL", "Trigger", "initEl", "mediumID", "fBrem", "eta", "pt",  "OQ", "2el", "charge", "ZVertex" };
+  vector<TString> cutFlowNames = { "init", "GRL", "Trigger", "initEl", "fBrem", "mediumID",  "eta", "pt",  "OQ", "2el", "charge", "ZVertex" };
   m_mapHist["cutFlow"] = new TH1D( "cutFlow", "cutFlow", cutFlowNames.size(), 0.5, cutFlowNames.size()+0.5);
   m_mapHist["cutFlow"]->GetXaxis()->SetTitle( "Cuts" );
   m_mapHist["cutFlow"]->GetYaxis()->SetTitle( "# Events" );
@@ -456,7 +456,7 @@ void Analysis::TreatEvents(int nevent) {
 	cout << "Error Filling selectionTree" << endl;
 	exit(2);
       }
-      }      
+      }
       
       // Free the memory from copy
       if ( m_eShallowContainer.first )  delete m_eShallowContainer.first;
@@ -511,6 +511,11 @@ void Analysis::MakeElectronCut() {
   for ( xAOD::ElectronContainer::iterator eContItr = (m_eShallowContainer.first)->begin(); eContItr != (m_eShallowContainer.first)->end(); eContItr++ ) {
 
     m_mapHist["cutFlow"]->Fill( "initEl", 1 );
+
+    double fBrem = GetFBrem( *eContItr );
+    if ( fBrem > m_fBremCut  ) continue;
+    m_mapHist["cutFlow"]->Fill( "fBrem", 1 );
+
     //  Cut on the quality of the **eContItrectron
     if ( !(m_electronID/3)  && !m_LHToolMedium2012->accept( **eContItr ) ) continue;
     if ( (m_electronID/3) && !m_CutToolMedium2012->accept( **eContItr ) ) continue;
@@ -518,9 +523,6 @@ void Analysis::MakeElectronCut() {
     m_mapHist["cutFlow"]->Fill( "mediumID", 1 );
 
     //Get the fbrm variable as computed in the likelihood code
-    double fBrem = GetFBrem( *eContItr );
-    if ( fBrem > m_fBremCut  ) continue;
-    m_mapHist["cutFlow"]->Fill( "fBrem", 1 );
 
     //Calibrate this new electron
     //    cout << (*eContItr)->pt() << " ";
@@ -535,7 +537,7 @@ void Analysis::MakeElectronCut() {
     if ( fabs( eta_calo ) > 2.47 ) continue;
     m_mapHist["cutFlow"]->Fill( "eta", 1 );
 
-    if ( (*eContItr)->pt() < 27e3 ) continue;
+    if ( (*eContItr)->pt() < m_ptCut ) continue;
     m_mapHist["cutFlow"]->Fill( "pt", 1 );
     
     //  OQ cut
@@ -593,6 +595,8 @@ int Analysis::FillSelectionTree() {
   m_mapLongVar["eventNumber"] = m_eventInfo->eventNumber();
   m_mapVar["m12"] = ComputeZMass( m_veGood );
 
+
+  m_mapVar["NVertex"] = m_ZVertex->size();
 
   if ( m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {
     if ( m_pileup ) {

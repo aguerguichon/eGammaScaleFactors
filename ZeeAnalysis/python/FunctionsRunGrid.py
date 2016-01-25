@@ -3,8 +3,8 @@ from string import *
 import numpy as np
 
 
-def GetDataFiles( inputs, scale, doScale, eleID, electronID, inFileIndex, outFilePrefix, esModel, ptCut, ptCutVect ) :
-#def GetDataFiles( inputs, inFileIndex, outFilePrefix, options, optionLine ) :
+#def GetDataFiles( inputs, scale, doScale, eleID, electronID, inFileIndex, outFilePrefix, esModel, ptCut, ptCutVect ) :
+def GetDataFiles( inputs, inFileIndex, options  ) :
 
     path= '/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/DatasetList/'
     fileList = {}
@@ -21,10 +21,13 @@ def GetDataFiles( inputs, scale, doScale, eleID, electronID, inFileIndex, outFil
     fileList['MC_8TeV_Zee_DiLepton'] = [ 'mc14_8TeV.129680.PowhegPythia8_AU2CT10_Zee_DiLeptonFilter.merge.AOD.e1861_s1933_s1911_r6241_r6197/', 'es2012c']
     fileList['MC_8TeV_Zee_1Lepton'] = ['mc14_8TeV.129685.PowhegPythia8_AU2CT10_Zee_Exactly1LeptonFilter.merge.AOD.e2095_s1933_s1911_r6241_r6197/', 'es2012c']
 
-    inputs.append( fileList[inFileIndex][0] )
+    options["esModel"] = fileList[inFileIndex][1];
+    options["outName"] = inFileIndex;
+
+    inputs.append( [[fileList[inFileIndex][0]], options] )
 #remove comments and empty lines from datasets
-    doScale.append( scale )
-    electronID.append( eleID )
-    esModel.append( fileList[inFileIndex][1] )
-    outFilePrefix.append( inFileIndex )
-    ptCutVect.append( ptCut )
+    # doScale.append( scale )
+    # electronID.append( eleID )
+    # esModel.append( fileList[inFileIndex][1] )
+    #outFilePrefix.append( inFileIndex )
+    # ptCutVect.append( ptCut )

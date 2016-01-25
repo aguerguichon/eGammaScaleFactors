@@ -1,4 +1,2 @@
 0 Test
 0 Test
-7422233 user.cgoudet.Data_13TeV_Zee_25ns_Lkh2_4_Ntuple.root
-7422177 user.cgoudet.Data_13TeV_Zee_25ns_Lkh1_pt30_5_Ntuple.root
