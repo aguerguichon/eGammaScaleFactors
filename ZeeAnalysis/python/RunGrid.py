@@ -120,6 +120,22 @@ for option in sys.argv:
     if 'BKG' == option : 
         GetDataFiles( inputs, 'MC_13TeV_Ztautau_25ns', {'doScale' : 0, 'electronID' : 1} )     
 
+    if option=='clean' :
+        path = '/sps/atlas/c/cgoudet/Calibration/DataxAOD/'
+        datasets = os.popen( 'ls ' + path ).read().split()
+        for file in datasets : 
+            if '.root' in file : continue
+            if 'MC_' not in file and 'Data_' not in file : continue
+            os.chdir( path + file )            
+            versions = os.popen( 'ls ' ).read().split()
+            print file
+            versions[:] = [value for value in versions if 'user' in value ]
+            versions.sort()
+            while len( versions ) > 2 :
+                os.popen( 'rm -r ' + versions[0] )
+                versions.remove( versions[0] )
+
+
 ##==================================================================
     if option=='download' :
         missingFiles=[]

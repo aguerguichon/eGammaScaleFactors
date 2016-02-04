@@ -22,7 +22,7 @@ int main( int argc, char* argv[] ) {
   //define all options in the program                                                
   vector<string> infile;
   string outName,anaName, esModel, pileupFile;
-  int doSmearing, doScale, electronID;
+  int  doScale, electronID;
   double ptCut, fBremCut;
   vector<double> datasetWeight;
 
