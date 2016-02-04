@@ -22,7 +22,8 @@ namespace po = boost::program_options;
 
 Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess), 
 		       m_debug( false), m_name( "Analysis" ), m_numEvent(0), m_goodEvent(0),
-		       m_doScaleFactor(false), m_electronID(1), m_esModel( "es2015PRE" ), m_ptCut( 27000 ), m_fBremCut( 1 )
+		       m_doScaleFactor(false), m_electronID(1), m_esModel( "es2015PRE" ), m_ptCut( 27000 ), m_fBremCut( 1 ), 
+		       m_pileupFile( "PileUpReweighting_25nsb_prw.root" )
 {
   if ( m_debug ) cout << "Analysis::Analysis()" << endl;
   //  cout << "m_debug : " << m_debug << endl;
@@ -47,7 +48,7 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_electronSFID = 0;
   m_trigDecisionTool = 0;
   m_trigConfigTool = 0;
-
+  m_Z=0;
   //Initialize histograms
   m_mapHist["ZMass"] = new TH1D ("ZMass", "ZMass", 40, 80, 100); //Masses in GeV
   m_mapHist["ZMass"]->GetXaxis()->SetTitle("M_{ee} [GeV]");
@@ -388,6 +389,9 @@ void Analysis::TreatEvents(int nevent) {
       m_tfile = 0;
     }
     m_tfile = TFile::Open( m_fileName[i_file].c_str() );
+
+    m_mapVar["datasetWeight"] = m_datasetWeight.size() ? ( i_file >= m_datasetWeight.size() ? m_datasetWeight.back() : m_datasetWeight[i_file] ) : 1;
+   
     // Set the TEvent on the current TFile
     m_tevent.readFrom( m_tfile ).ignore();
     int nentries = m_tevent.getEntries();
@@ -403,6 +407,11 @@ void Analysis::TreatEvents(int nevent) {
       }
       // Read event 
       m_tevent.getEntry( i_event );
+      m_mapVar["lineshapeWeight"] = 1;
+      m_mapVar["puWeight"]=1;
+      m_mapVar["vertexWeight"]=1;
+      m_mapVar["SFReco"]=1;
+      m_mapVar["SFID"]=1;
 
 
       //Retrieve the electron container                  
@@ -451,7 +460,9 @@ void Analysis::TreatEvents(int nevent) {
       m_goodEvent++;
       //Should not contain events in bin 0
 
-      m_mapHist["ZMass"]->Fill( ComputeZMass( m_veGood ) );
+      m_Z = new TLorentzVector();
+      *m_Z = m_veGood.front()->p4() + m_veGood.back()->p4();
+      m_mapHist["ZMass"]->Fill( m_Z->M() /1000. );
       if ( FillSelectionTree() ) {
 	cout << "Error Filling selectionTree" << endl;
 	exit(2);
@@ -461,7 +472,7 @@ void Analysis::TreatEvents(int nevent) {
       // Free the memory from copy
       if ( m_eShallowContainer.first )  delete m_eShallowContainer.first;
       if ( m_eShallowContainer.second ) delete m_eShallowContainer.second;
-
+      delete m_Z; m_Z=0;
       //Reset elecron vector to size 0
       while ( m_veGood.size() ) {
 	//delete m_veGood.back();
@@ -581,6 +592,7 @@ int Analysis::FillSelectionTree() {
     m_mapVar[string(TString::Format( "phi_%d", iEl+1 ))] = m_veGood[iEl]->phi();
     m_mapVar[string(TString::Format( "eta_cl_%d", iEl+1 ))] = m_veGood[iEl]->caloCluster()->eta();
     m_veGood[iEl]->caloCluster()->retrieveMoment(xAOD::CaloCluster::ETACALOFRAME,m_mapVar[string(TString::Format( "eta_calo_%d", iEl+1 ))]); 
+    m_mapVar[string(TString::Format( "e0_%d", iEl+1 ))] = m_veGood[iEl]->caloCluster()->energyBE(0);
     m_mapVar[string(TString::Format( "e1_%d", iEl+1 ))] = m_veGood[iEl]->caloCluster()->energyBE(1);
     m_mapVar[string(TString::Format( "e2_%d", iEl+1 ))] = m_veGood[iEl]->caloCluster()->energyBE(2);
     m_mapVar[string(TString::Format( "energy_%d", iEl+1 ))] = m_veGood[iEl]->e();
@@ -593,7 +605,8 @@ int Analysis::FillSelectionTree() {
 
   m_mapLongVar["runNumber"] = m_eventInfo->runNumber();
   m_mapLongVar["eventNumber"] = m_eventInfo->eventNumber();
-  m_mapVar["m12"] = ComputeZMass( m_veGood );
+  m_mapVar["m12"] = m_Z->M() / 1000.;
+  m_mapVar["ptZ"] = m_Z->Pt() / 1000.;
 
 
   m_mapVar["NVertex"] = m_ZVertex->size();
@@ -604,11 +617,13 @@ int Analysis::FillSelectionTree() {
       m_mapVar["puWeight"] = m_eventInfo->auxdecor< float >( "PileupWeight" );
       m_mapHist["puWeight"]->Fill( m_mapVar["puWeight"] );
     }
+    else m_mapVar["puWeight"] = 1;
 
     if ( m_vtxTool ) {
       m_vtxTool->getWeight( m_mapVar[ "vertexWeight" ] );
       m_mapHist["vertexWeight"]->Fill( m_mapVar[ "vertexWeight" ] );
     }
+    else m_mapVar["vertexWeight"] = 1;
     
     if ( m_electronSFReco ) {
       double sf1, sf2;
@@ -633,6 +648,7 @@ int Analysis::FillSelectionTree() {
       m_electronSFReco->getEfficiencyScaleFactor(*m_veGood[1],sf2_syst);
       m_mapVar["SFReco_syst"] =sf1_syst*sf2_syst;
     }
+    else m_mapVar["SFReco"]=1;
 
     if ( m_electronSFID ) {
       double sf1, sf2;
@@ -642,12 +658,13 @@ int Analysis::FillSelectionTree() {
       m_mapHist["SFID"]->Fill( sf2 );
       m_mapVar["SFID"] = sf1*sf2;
     }
+    else m_mapVar["SFID"] = 1;
 
   }
 
 
 
-  m_mapVar["weight"] = m_mapVar["lineshapeWeight"]*m_mapVar["puWeight"]*m_mapVar["vertexWeight"]*m_mapVar["SFReco"]*m_mapVar["SFID"];
+  m_mapVar["weight"] = m_mapVar["lineshapeWeight"]*m_mapVar["puWeight"]*m_mapVar["vertexWeight"]*m_mapVar["SFReco"]*m_mapVar["SFID"]*m_mapVar["datasetWeight"];
   if ( !m_selectionTree->GetEntries() ) {
   for ( map<string, double>::iterator it = m_mapVar.begin(); it != m_mapVar.end(); it++) {
     m_selectionTree->Branch( it->first.c_str(), &it->second );
@@ -728,11 +745,8 @@ int Analysis::InitializeTools () {
   }
   else {
     m_pileup->setProperty("DataScaleFactor",1./1.16);
-    // confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "PileUpReweighting_50ns_prw.root");
-    // confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "PileUpReweighting_25nsa_prw.root");
-    confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "PileUpReweighting_25nsb_prw.root");
+    confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + m_pileupFile );
     lcalcFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "ilumicalc_histograms_None_13TeV_25ns.root");
-    //    lcalcFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "ilumicalc_histograms_None_13TeV_50ns.root");
   }
   dynamic_cast<CP::PileupReweightingTool&>(*m_pileup).setProperty( "ConfigFiles", confFiles);
   dynamic_cast<CP::PileupReweightingTool&>(*m_pileup).setProperty( "LumiCalcFiles", lcalcFiles);

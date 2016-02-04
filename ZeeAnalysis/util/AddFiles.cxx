@@ -73,11 +73,14 @@ int main( int argc, char* argv[] ) {
       counterAnalysis++;
     }
   }
+  if ( final_analysis ) {
   cout << "saving : " << name << endl;
+  cout << "final_analysis : " << final_analysis << endl;
   cout << "GoodEvents : " << final_analysis->GetGoodEvents() << endl;
   final_analysis->Save();
   delete final_analysis;
   final_analysis = 0;
+  }
 
   
   cout << "Saved " << counterAnalysis+1 << " files"<< endl;

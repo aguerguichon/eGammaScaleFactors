@@ -129,13 +129,15 @@ class Analysis
   */
   void Save();
 
+  void SetDatasetWeight( vector<double> datasetWeight ) { m_datasetWeight = datasetWeight; }
+
   /**\brief Change the name of the Analysis
      \param name new name
      
      The change of name will be propagated to the titles and names of attributes.
   */  
   void SetName(string name);
-
+  void SetPileupFile( string pileupFile ) { m_pileupFile = pileupFile; }
 
   /**\brief Event per event analysis
      \param nevent Number of events to run over
@@ -253,5 +255,8 @@ class Analysis
 
   double m_ptCut;
   double m_fBremCut;
+  vector<double> m_datasetWeight;
+  string m_pileupFile;
+  TLorentzVector *m_Z;
 };
 #endif

@@ -63,7 +63,7 @@ for option in sys.argv:
         treeDatasets.FillDatasets( datasets )
  
         np.savetxt( path + savingFile, datasetList, delimiter=' ', fmt='%s')
-        rangeMax = 6
+        rangeMax = 7
 # electronID doScale pt
 # 0 : 1 0  27
 # 1 : 1 1  27
@@ -71,33 +71,29 @@ for option in sys.argv:
 # 3 : 1 0  35
 # 4 : 1 0  20
 # 5 : 2 0  27
+# 6 fBrem
         for iLaunch in range( 0, rangeMax ) :
-            if iLaunch > 0 : continue
+            if iLaunch <=1 : continue
             options = { 'esModel' : 'es2015PRE' }
             options['outName'] = 'Data_13TeV_Zee_25ns'
-            options['electronID'] = ( 1 if iLaunch<5 else 2 )
+            options['electronID'] = ( 2 if iLaunch==5 else 1 )
             options['doScale'] = ( 1 if iLaunch==1 else 0 )
             if iLaunch == 3 : options["ptCut"] =  35
             elif iLaunch==2 : options["ptCut"] =  30
             elif iLaunch==4 : options["ptCut"] =  20
             else : options["ptCut"] =  27
+            if iLaunch == 6 : options['fBremCut'] = 0.5
             inputs.append( [datasets, options] )
 
     if 'MC25' == option :
 #        GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1} )     
+        # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'fBremCut' : 0.5 } )     
         # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 2} )     
         # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 1, 'electronID' : 1} )     
         GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'ptCut' : 30} )     
-        # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'ptCut' : 20} )     
-        # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'ptCut' : 35} )     
-#        print inputs
-
-#        GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns', outFilePrefix, esModel, 27, ptCutVect)
-        # GetDataFiles( inputs, 0, doScale, 2, electronID, 'MC_13TeV_Zee_25ns', outFilePrefix, esModel, 27, ptCutVect)
-        # GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns', outFilePrefix, esModel, 30, ptCutVect)
-        # GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns', outFilePrefix, esModel, 20, ptCutVect)
-        # GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns', outFilePrefix, esModel, 35, ptCutVect)
-        # GetDataFiles( inputs, 1, doScale, 1, electronID, 'MC_13TeV_Zee_25ns', outFilePrefix, esModel, 27, ptCutVect)
+        GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'ptCut' : 20} )     
+        GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'ptCut' : 35} )     
+#       print inputs
 
     if 'MC25_dis' == option :
         GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns_geo02', outFilePrefix, esModel, 27, ptCutVect)
@@ -120,6 +116,9 @@ for option in sys.argv:
     if 'DATA8' == option :
         GetDataFiles( inputs, 0, doScale, 1, electronID, 'Data_8TeV_Zee', outFilePrefix, esModel, 27, ptCutVect)
         GetDataFiles( inputs, 1, doScale, 1, electronID, 'Data_8TeV_Zee', outFilePrefix, esModel, 27, ptCutVect)
+
+    if 'BKG' == option : 
+        GetDataFiles( inputs, 'MC_13TeV_Ztautau_25ns', {'doScale' : 0, 'electronID' : 1} )     
 
 ##==================================================================
     if option=='download' :
@@ -196,6 +195,13 @@ if len( inputs ) :
         optionLine=""
         outFileName = inputs[iFile][1]['outName']
 
+
+        if 'esModel' in inputs[iFile][1].keys() :
+            optionLine += ' --esModel ' + inputs[iFile][1]['esModel']
+
+        if 'pileupFile' in inputs[iFile][1].keys() :
+            optionLine += ' --pileupFile ' + inputs[iFile][1]['pileupFile']
+
         if  'electronID' in inputs[iFile][1].keys() :
             electronIDTitle = ""
             if ( inputs[iFile][1]['electronID'] / 3 < 1 ) : electronIDTitle += "Lkh"
@@ -213,11 +219,11 @@ if len( inputs ) :
 
         if "ptCut" in inputs[iFile][1].keys() :
             if inputs[iFile][1]['ptCut'] != 27 : outFileName += '_pt' + str( inputs[iFile][1]['ptCut'] )    
-            optionLine += ' --ptCut ' + str( inputs[iFile][1]['ptCut'] )
+            optionLine += ' --ptCut ' + str( inputs[iFile][1]['ptCut']*1000 )
             pass
 
         if "fBremCut" in inputs[iFile][1].keys() :
-            if inputs[iFile][1]['fBremCut'] != 1 : outFileName += '_fBrem' + str( inputs[iFile][1]['fBremCut']*100 )    
+            if inputs[iFile][1]['fBremCut'] != 1 : outFileName += '_fBrem' + str( int( inputs[iFile][1]['fBremCut']*100) )    
             optionLine += ' --fBremCut ' + str( inputs[iFile][1]['fBremCut'] )
             pass
 
@@ -243,7 +249,7 @@ if len( inputs ) :
                         + '"'
                         + ' --outDS user.cgoudet.' + outFileName + ' --inDS ' + datasetList + ' --outputs Ntuple.root '
                         + ( ' --useRootCore '
-                            + '--extFile=lumicalc_histograms_None_200842-215643.root,ilumicalc_histograms_None_13TeV_25ns.root,ilumicalc_histograms_None_13TeV_50ns.root,PileUpReweighting_25nsa_prw.root,PileUpReweighting_25nsb_prw.root,PileUpReweighting_50ns_prw.root '
+                            + '--extFile=lumicalc_histograms_None_200842-215643.root,ilumicalc_histograms_None_13TeV_25ns.root,ilumicalc_histograms_None_13TeV_50ns.root,PileUpReweighting_25nsa_prw.root,PileUpReweighting_25nsb_prw.root,PileUpReweighting_50ns_prw.root,PileUpReweighting_Ztautau_prw.root '
                             + ' --tmpDir /tmp '
                             )
                         )

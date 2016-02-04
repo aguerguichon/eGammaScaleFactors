@@ -21,9 +21,11 @@ int main( int argc, char* argv[] ) {
   po::options_description desc("LikelihoodProfiel Usage");
   //define all options in the program                                                
   vector<string> infile;
-  string outName,anaName, esModel;
+  string outName,anaName, esModel, pileupFile;
   int doSmearing, doScale, electronID;
   double ptCut, fBremCut;
+  vector<double> datasetWeight;
+
   desc.add_options()
     ("help", "Display this help message")
     ("outName", po::value<string >(&outName)->default_value("/sps/atlas/c/cgoudet/Calibration/DataxAOD/TestAnalysis.root") , "Name of the output file")
@@ -34,6 +36,8 @@ int main( int argc, char* argv[] ) {
     ("esModel", po::value< string >( &esModel )->default_value( "es2015PRE" ), "" )
     ("ptCut", po::value<double>( &ptCut ), "" )
     ("fBremCut", po::value<double>( &fBremCut ), "" )
+    ("datasetWeight", po::value<vector<double>>( &datasetWeight )->multitoken(), "" )
+    ("pileupFile", po::value<string>( &pileupFile ), "" )
     ;
 
   //Define options gathered by position                                              
@@ -67,6 +71,8 @@ int main( int argc, char* argv[] ) {
     cout << "infile size : " << infile.size() << endl;
     
     Analysis analysisData( anaName,  infile, outName );
+    analysisData.SetDatasetWeight( datasetWeight );
+    if ( pileupFile != "" ) analysisData.SetPileupFile( pileupFile );
     analysisData.SetDebug( false );
     if ( vm.count( "ptCut" ) ) analysisData.SetPtCut( ptCut );
     if ( vm.count( "fBremCut" ) ) analysisData.SetFBremCut( fBremCut );

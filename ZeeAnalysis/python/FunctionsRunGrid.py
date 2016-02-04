@@ -8,22 +8,23 @@ def GetDataFiles( inputs, inFileIndex, options  ) :
 
     path= '/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/DatasetList/'
     fileList = {}
-    fileList['MC_13TeV_Zee_25nsa'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2576_s2132_r6765_r6282/', 'es2015PRE']
-    fileList['MC_13TeV_Zee_25ns'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2576_s2132_r7267_p2470', 'es2015PRE']
-    fileList['MC_13TeV_Zee_25ns_geo02'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2763_r7359_r6282_p2470/', 'es2015PRE' ]
-    fileList['MC_13TeV_Zee_25ns_geo11'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2764_r7359_r6282_p2470/', 'es2015PRE' ]
-    fileList['MC_13TeV_Zee_25ns_geo12'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2765_r7359_r6282_p2470/', 'es2015PRE' ]
-    fileList['MC_13TeV_Zee_25ns_geo13'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2766_r7359_r6282_p2470/', 'es2015PRE' ]
-    fileList['MC_13TeV_Zee_25ns_geo14'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2767_r7359_r6282_p2470/', 'es2015PRE' ]
-    fileList['MC_13TeV_Zee_25ns_geo15'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2768_r7359_r6282_p2470/', 'es2015PRE' ]
-    fileList['MC_13TeV_Zee_50ns'] = [ 'mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2576_s2132_r6630_r6264_p2395/', 'es2015PRE']
+    fileList['MC_13TeV_Zee_25nsa'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2576_s2132_r6765_r6282/', 'es2015PRE', 'PileUpReweighting_25nsa_prw.root' ]
+    fileList['MC_13TeV_Zee_25ns'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2576_s2132_r7267_p2470', 'es2015PRE', 'PileUpReweighting_25nsb_prw.root' ]
+    fileList['MC_13TeV_Zee_25ns_geo02'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2763_r7359_r6282_p2470/', 'es2015PRE', 'PileUpReweighting_25nsb_prw.root']
+    fileList['MC_13TeV_Zee_25ns_geo11'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2764_r7359_r6282_p2470/', 'es2015PRE', 'PileUpReweighting_25nsb_prw.root' ]
+    fileList['MC_13TeV_Zee_25ns_geo12'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2765_r7359_r6282_p2470/', 'es2015PRE', 'PileUpReweighting_25nsb_prw.root' ]
+    fileList['MC_13TeV_Zee_25ns_geo13'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2766_r7359_r6282_p2470/', 'es2015PRE', 'PileUpReweighting_25nsb_prw.root' ]
+    fileList['MC_13TeV_Zee_25ns_geo14'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2767_r7359_r6282_p2470/', 'es2015PRE', 'PileUpReweighting_25nsb_prw.root' ]
+    fileList['MC_13TeV_Zee_25ns_geo15'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2768_r7359_r6282_p2470/', 'es2015PRE', 'PileUpReweighting_25nsb_prw.root' ]
+    fileList['MC_13TeV_Zee_50ns'] = [ 'mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2576_s2132_r6630_r6264_p2395/', 'es2015PRE', 'PileUpReweighting_50ns_prw.root' ]
     fileList['Data_8TeV_Zee'] = ['data12_8TeV.periodAllYear.physics_Egamma.PhysCont.DAOD_ZEE.repro17_v01/', 'es2012c']
     fileList['MC_8TeV_Zee_DiLepton'] = [ 'mc14_8TeV.129680.PowhegPythia8_AU2CT10_Zee_DiLeptonFilter.merge.AOD.e1861_s1933_s1911_r6241_r6197/', 'es2012c']
     fileList['MC_8TeV_Zee_1Lepton'] = ['mc14_8TeV.129685.PowhegPythia8_AU2CT10_Zee_Exactly1LeptonFilter.merge.AOD.e2095_s1933_s1911_r6241_r6197/', 'es2012c']
+    fileList['MC_13TeV_Ztautau_25ns'] = ['mc15_13TeV.361108.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Ztautau.merge.DAOD_STDM3.e3601_s2576_s2132_r7267_r6282_p2470/', 'es2015PRE', 'PileUpReweighting_Ztautau_prw.root' ]
 
     options["esModel"] = fileList[inFileIndex][1];
     options["outName"] = inFileIndex;
-
+    if len( fileList[inFileIndex] ) > 2 : options['pileupFile'] = fileList[inFileIndex][2]
     inputs.append( [[fileList[inFileIndex][0]], options] )
 #remove comments and empty lines from datasets
     # doScale.append( scale )
