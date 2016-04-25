@@ -22,7 +22,7 @@ int main( int argc, char* argv[] ) {
   //define all options in the program                                                
   vector<string> infile;
   string outName,anaName, esModel, pileupFile;
-  int  doScale, electronID;
+  int  doScale, electronID, scaleSyst;
   double ptCut, fBremCut;
   vector<double> datasetWeight;
 
@@ -38,6 +38,7 @@ int main( int argc, char* argv[] ) {
     ("fBremCut", po::value<double>( &fBremCut ), "" )
     ("datasetWeight", po::value<vector<double>>( &datasetWeight )->multitoken(), "" )
     ("pileupFile", po::value<string>( &pileupFile ), "" )
+    ( "scaleSyst", po::value<int>( &scaleSyst )->default_value(0), "" )
     ;
 
   //Define options gathered by position                                              
@@ -79,6 +80,7 @@ int main( int argc, char* argv[] ) {
     analysisData.SetDoScaleFactor( doScale );
     analysisData.SetElectronID( electronID );
     analysisData.SetEsModel( esModel );
+    analysisData.SetScaleSyst( scaleSyst );
     analysisData.TreatEvents();
     analysisData.Save( );
   }

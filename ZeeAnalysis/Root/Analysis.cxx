@@ -11,6 +11,9 @@
 #include "CaloGeoHelpers/CaloSampling.h"
 #include "../LineShapeTool/LineShapeTool/LineShapeTool.h"
 #include "xAODTruth/TruthEventContainer.h"
+#include "PATInterfaces/SystematicRegistry.h"
+#include "PATInterfaces/SystematicVariation.h"
+#include "PATInterfaces/SystematicsUtil.h"
 
 using std::cout;
 using std::endl;
@@ -23,7 +26,7 @@ namespace po = boost::program_options;
 Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess), 
 		       m_debug( false), m_name( "Analysis" ), m_numEvent(0), m_goodEvent(0),
 		       m_doScaleFactor(false), m_electronID(1), m_esModel( "es2015PRE" ), m_ptCut( 27000 ), m_fBremCut( 1 ), 
-		       m_pileupFile( "PileUpReweighting_25nsb_prw.root" )
+		       m_pileupFile( "PileUpReweighting_25nsb_prw.root" ), m_scaleSyst(0)
 {
   if ( m_debug ) cout << "Analysis::Analysis()" << endl;
   //  cout << "m_debug : " << m_debug << endl;
@@ -421,6 +424,7 @@ void Analysis::TreatEvents(int nevent) {
       if ( ! m_tevent.retrieve( m_ZVertex, "PrimaryVertices" ).isSuccess() ){ cout << "Can Not retrieve Vertex Info" << endl; exit(1); }
 
 
+
       //Create a shallow copy
       // Allow to modify electrons properties for calibration
       m_eShallowContainer = xAOD::shallowCopyContainer( *m_eContainer );
@@ -468,7 +472,8 @@ void Analysis::TreatEvents(int nevent) {
 	exit(2);
       }
       }
-      
+      if ( i_event > 10 ) exit(0);
+
       // Free the memory from copy
       if ( m_eShallowContainer.first )  delete m_eShallowContainer.first;
       if ( m_eShallowContainer.second ) delete m_eShallowContainer.second;
@@ -596,10 +601,13 @@ int Analysis::FillSelectionTree() {
     m_mapVar[string(TString::Format( "e1_%d", iEl+1 ))] = m_veGood[iEl]->caloCluster()->energyBE(1);
     m_mapVar[string(TString::Format( "e2_%d", iEl+1 ))] = m_veGood[iEl]->caloCluster()->energyBE(2);
     m_mapVar[string(TString::Format( "energy_%d", iEl+1 ))] = m_veGood[iEl]->e();
-
+    m_mapVar[string(TString::Format( "gain_%d", iEl+1 ) )] = m_veGood[iEl]->auxdata<int>( "maxEcell_gain");
     //Get the fbrm variable as computed in the likelihood code
     m_mapVar[string(TString::Format("fBrem_%d", iEl+1))] = GetFBrem( m_veGood[iEl] );
-
+    m_mapVar[string(TString::Format("E_Lr2_HiG_%d", iEl+1))] = m_veGood[iEl]->auxdata<float>( "Cells3x7_Lr2_HiG");
+    m_mapVar[string(TString::Format("E_Lr2_MdG_%d", iEl+1))] = m_veGood[iEl]->auxdata<double>( "Lr2_MdG");
+    m_mapVar[string(TString::Format("E_Lr2_LwG_%d", iEl+1))] = m_veGood[iEl]->auxdata<double>( "Lr2_LwG");
+    if ( m_mapVar[string(TString::Format("E_Lr2_MdG_%d", iEl+1))] )    cout << m_mapVar[string(TString::Format("E_Lr2_HiG_%d", iEl+1))] << " " << m_mapVar[string(TString::Format("E_Lr2_MdG_%d", iEl+1))] << " " << m_mapVar[string(TString::Format("E_Lr2_HiG_%d", iEl+1))] << endl;
   }//end for iEl
 
 
@@ -627,36 +635,22 @@ int Analysis::FillSelectionTree() {
     
     if ( m_electronSFReco ) {
       double sf1, sf2;
-      double sf1_syst, sf2_syst;
       m_electronSFReco->getEfficiencyScaleFactor(*m_veGood[0],sf1);
       m_electronSFReco->getEfficiencyScaleFactor(*m_veGood[1],sf2);
       m_mapHist["SFReco"]->Fill( sf1 );
       m_mapHist["SFReco"]->Fill( sf2 );
       m_mapVar["SFReco"] = sf1*sf2;
-
-      // Get a list of systematics
-      // CP::SystematicSet recSysts = m_electronSFReco->recommendedSystematics();
-      // // Convert into a simple list
-      // std::vector<CP::SystematicSet> sysList = CP::make_systematics_vector(recSysts);
-      // // Loop over systematics
-      // for(const auto& sys : systList){
-      // 	double systematic = 0; 
-      // 	m_electronSFReco->applySystematicVariation(sys);
-      // }
-      m_electronSFReco->applySystematicVariation( m_electronSFReco->recommendedSystematics() );
-      m_electronSFReco->getEfficiencyScaleFactor(*m_veGood[0],sf1_syst);
-      m_electronSFReco->getEfficiencyScaleFactor(*m_veGood[1],sf2_syst);
-      m_mapVar["SFReco_syst"] =sf1_syst*sf2_syst;
     }
     else m_mapVar["SFReco"]=1;
 
     if ( m_electronSFID ) {
-      double sf1, sf2;
+      double sf1, sf2, sf1_syst;
       m_electronSFID->getEfficiencyScaleFactor(*m_veGood[0],sf1);
       m_electronSFID->getEfficiencyScaleFactor(*m_veGood[1],sf2);
       m_mapHist["SFID"]->Fill( sf1 );
       m_mapHist["SFID"]->Fill( sf2 );
       m_mapVar["SFID"] = sf1*sf2;
+
     }
     else m_mapVar["SFID"] = 1;
 
@@ -756,14 +750,32 @@ int Analysis::InitializeTools () {
   m_vtxTool->setProperty("DataMean", -25.7903);
   m_vtxTool->setProperty("DataSigma", 43.7201);
 
-  m_electronSFReco = new AsgElectronEfficiencyCorrectionTool( "AsgElectronEfficiencyCorrectionTool" ) ;
-  m_electronSFID = new AsgElectronEfficiencyCorrectionTool( "AsgElectronEfficiencyCorrectionTool" ) ;
+
+  m_electronSFReco = new AsgElectronEfficiencyCorrectionTool( "ElectronEfficiencyCorrectionTool" ) ;
+  m_electronSFID = new AsgElectronEfficiencyCorrectionTool( "ElectronEfficiencyCorrectionTool" ) ;
   //define input file
+ 
   vector<string> filePerTool;
   filePerTool.push_back( "ElectronEfficiencyCorrection/efficiencySF.offline.RecoTrk.2015.13TeV.rel20p0.25ns.v02.root" );
-  filePerTool.push_back( "ElectronEfficiencyCorrection/efficiencySF.offline.MediumLLH_d0z0.2015.13TeV.rel20p0.25ns.v02.root" );
+  switch ( m_electronID ) {
+  case 1 : 
+    filePerTool.push_back( "ElectronEfficiencyCorrection/efficiencySF.offline.MediumLLH_d0z0.2015.13TeV.rel20p0.25ns.v02.root" );
+    break;
+  case 2 :
+    filePerTool.push_back( "ElectronEfficiencyCorrection/efficiencySF.offline.TightLLH_d0z0.2015.13TeV.rel20p0.25ns.v02.root" );
+    break;
+  default :
+    cout << "SFReco file not defined for m_electronID=" << m_electronID << endl;
+    exit(0);
+  }
+
+  
+
+      
+
 
   vector<AsgElectronEfficiencyCorrectionTool*> dumVectorTool = { m_electronSFReco, m_electronSFID };
+  vector<string> SFSyst = { "EL_EFF_Reco_TotalCorrUncertainty__1up", "EL_EFF_ID_TotalCorrUncertainty__1up" };
   for ( unsigned int iTool = 0; iTool < dumVectorTool.size(); iTool++ ) {
     vector<string> inputFile = { filePerTool[iTool] };
     dumVectorTool[iTool]->setProperty("CorrectionFileNameList",inputFile);
@@ -774,6 +786,9 @@ int Analysis::InitializeTools () {
     dumVectorTool[iTool]->setProperty("ResultName", "name" );
     //init the tool
     dumVectorTool[iTool]->initialize();
+
+    CP::SystematicVariation systVar( SFSyst[iTool-1] );
+    dumVectorTool[iTool]->applySystematicVariation(CP::SystematicSet({systVar}));
   }
 
 

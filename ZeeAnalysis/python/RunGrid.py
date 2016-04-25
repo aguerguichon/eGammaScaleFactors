@@ -73,7 +73,7 @@ for option in sys.argv:
 # 5 : 2 0  27
 # 6 fBrem
         for iLaunch in range( 0, rangeMax ) :
-            if iLaunch <=1 : continue
+#            if iLaunch >1 : continue
             options = { 'esModel' : 'es2015PRE' }
             options['outName'] = 'Data_13TeV_Zee_25ns'
             options['electronID'] = ( 2 if iLaunch==5 else 1 )
@@ -86,10 +86,10 @@ for option in sys.argv:
             inputs.append( [datasets, options] )
 
     if 'MC25' == option :
-#        GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1} )     
-        # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'fBremCut' : 0.5 } )     
-        # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 2} )     
-        # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 1, 'electronID' : 1} )     
+        GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1} )     
+        GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'fBremCut' : 0.5 } )     
+        GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 2} )     
+        GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 1, 'electronID' : 1} )     
         GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'ptCut' : 30} )     
         GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'ptCut' : 20} )     
         GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'ptCut' : 35} )     
@@ -119,6 +119,10 @@ for option in sys.argv:
 
     if 'BKG' == option : 
         GetDataFiles( inputs, 'MC_13TeV_Ztautau_25ns', {'doScale' : 0, 'electronID' : 1} )     
+        GetDataFiles( inputs, 'MC_13TeV_Ztautau_25ns', {'doScale' : 1, 'electronID' : 1} )     
+        GetDataFiles( inputs, 'MC_13TeV_Zttbar_25ns', {'doScale' : 0, 'electronID' : 1} )     
+        GetDataFiles( inputs, 'MC_13TeV_Zttbar_25ns', {'doScale' : 1, 'electronID' : 1} )     
+
 
     if option=='clean' :
         path = '/sps/atlas/c/cgoudet/Calibration/DataxAOD/'
@@ -176,6 +180,15 @@ for option in sys.argv:
                     addFileLine= 'AddFiles ' + job[1] + '/* --outName ' + directory + '.root'
                     print addFileLine
                     os.system( addFileLine )
+#create boost file to ease plotting
+                    boostFile=open( os.popen( 'pwd' ).read().split()[0]+'/' + directory+'.boost', 'w')
+                    rootFiles = os.popen( 'ls ' + directory + '*.root' ).read().split('\n')
+                    rootFiles.remove('')
+                    rootFiles = [ os.popen( 'pwd' ).read().split()[0]+'/' + f for f in rootFiles ]
+                    boostFile.write( 'rootFileName=' + ' '.join( rootFiles ) + '\n' )
+                    rootFiles = [ StripName( x ) + '_selectionTree' for x in rootFiles]
+                    boostFile.write( 'objName=' + ' '.join( rootFiles ) + '\n' )
+                    boostFile.close();
                     toRemove.append( job[0] )
                 else :
                     missingFiles.append( [ job[1], nMiss ] )
@@ -243,6 +256,9 @@ if len( inputs ) :
             optionLine += ' --fBremCut ' + str( inputs[iFile][1]['fBremCut'] )
             pass
 
+        if "datasetWeight" in inputs[iFile][1].keys() and inputs[iFile][1]['datasetWeight'] != 1 : optionLine += ' --datasetWeight ' + str( inputs[iFile][1]['datasetWeight'] )
+
+
         for iName in tab :
             if  iName[0] == outFileName  : version=str( int(iName[1] ) + 1); iName[1]=str(version)
 
@@ -265,7 +281,7 @@ if len( inputs ) :
                         + '"'
                         + ' --outDS user.cgoudet.' + outFileName + ' --inDS ' + datasetList + ' --outputs Ntuple.root '
                         + ( ' --useRootCore '
-                            + '--extFile=lumicalc_histograms_None_200842-215643.root,ilumicalc_histograms_None_13TeV_25ns.root,ilumicalc_histograms_None_13TeV_50ns.root,PileUpReweighting_25nsa_prw.root,PileUpReweighting_25nsb_prw.root,PileUpReweighting_50ns_prw.root,PileUpReweighting_Ztautau_prw.root '
+                            + '--extFile=lumicalc_histograms_None_200842-215643.root,ilumicalc_histograms_None_13TeV_25ns.root,ilumicalc_histograms_None_13TeV_50ns.root,PileUpReweighting_25nsa_prw.root,PileUpReweighting_25nsb_prw.root,PileUpReweighting_50ns_prw.root,PileUpReweighting_Ztautau_prw.root,PileUpReweighting_Zttbar_prw.root,PileUpReweighting_25ns_prw.root '
                             + ' --tmpDir /tmp '
                             )
                         )

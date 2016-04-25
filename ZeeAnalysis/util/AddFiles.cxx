@@ -64,7 +64,7 @@ int main( int argc, char* argv[] ) {
       dummy_analysis.Load( infile[i] );
       final_analysis->Add( dummy_analysis );
     }
-    if ( final_analysis->GetGoodEvents()>3400000 ) {
+    if ( final_analysis->GetGoodEvents()>2500000 ) {
       cout << "saving : " << name << endl;
       cout << "GoodEvents : " << final_analysis->GetGoodEvents() << endl;
       final_analysis->Save();

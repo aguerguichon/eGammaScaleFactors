@@ -1,5 +1,2 @@
 0 Test
 0 Test
-7618327 user.cgoudet.MC_13TeV_Zee_25ns_Lkh1_scaled_13_Ntuple.root
-7624143 user.cgoudet.Data_13TeV_Zee_25ns_Lkh1_fBrem50_2_Ntuple.root
-7624161 user.cgoudet.MC_13TeV_Zee_25ns_Lkh2_10_Ntuple.root
