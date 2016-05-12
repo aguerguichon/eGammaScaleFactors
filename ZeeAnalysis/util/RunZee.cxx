@@ -32,7 +32,7 @@ int main( int argc, char* argv[] ) {
     ("outName", po::value<string >(&outName)->default_value("/sps/atlas/c/cgoudet/Calibration/DataxAOD/TestAnalysis.root") , "Name of the output file")
     ("infile", po::value< vector< string > >(&infile), "The name of xAOD rootfiles")
     ("anaName", po::value< string >( &anaName )->default_value( "Analysis" ), "Name of the object")
-    ("doScale", po::value<int >( &doScale )->default_value( false )->implicit_value( true ), "Switch on the scale")
+    ("doScale", po::value<int >( &doScale )->default_value( false ), "Switch on the scale")
     ("electronID", po::value< int >( &electronID )->default_value( 1 ), "" )
     ("esModel", po::value< string >( &esModel )->default_value( "es2015PRE" ), "" )
     ("ptCut", po::value<double>( &ptCut ), "" )

@@ -27,6 +27,10 @@ using std::map;
 #include "TrigDecisionTool/TrigDecisionTool.h"
 #include "AsgTools/ToolHandle.h"
 
+namespace CP {
+  class IsolationSelectionTool;
+}
+
 using namespace Trig;
 using namespace TrigConf;
 using namespace xAOD;
@@ -204,6 +208,7 @@ class Analysis
   CP::VertexPositionReweightingTool *m_vtxTool;
   AsgElectronEfficiencyCorrectionTool *m_electronSFReco;
   AsgElectronEfficiencyCorrectionTool *m_electronSFID;
+  AsgElectronEfficiencyCorrectionTool *m_electronSFIso;
   
   const xAOD::EventInfo* m_eventInfo;
   AsgElectronLikelihoodTool* m_LHToolMedium2012;
@@ -234,6 +239,8 @@ class Analysis
   /**\brief TFile to save the content of the analysis
    */
   TFile *m_logFile;
+
+  CP::IsolationSelectionTool *m_IsoSelTool; //!
 
   map<string, double> m_mapVar;
   map<string, long long int> m_mapLongVar;

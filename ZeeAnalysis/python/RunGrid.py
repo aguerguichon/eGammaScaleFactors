@@ -49,7 +49,7 @@ for option in sys.argv:
             if option == 'DATA50' and run > 276261 and run != 276731 : continue
             print run
 
-            line='dq2-ls data15_13TeV.00'+ str( run )+'.physics_Main.merge.DAOD_EGAM1.*p2582/'
+            line='dq2-ls data15_13TeV.00'+ str( run )+'.physics_Main.merge.DAOD_EGAM1.*p2470/'
             output = os.popen(line).read().split()
             print line
             for file in output :
@@ -75,7 +75,8 @@ for option in sys.argv:
 # 7 RecoSyst
 # 8 IDsyst
         for iLaunch in range( 0, rangeMax ) :
-            options = { 'esModel' : 'es2015cPRE' }
+            if iLaunch : break
+            options = { 'esModel' : 'es2015PRE' }
             options['outName'] = 'Data_13TeV_Zee_25ns'
             options['electronID'] = ( 2 if iLaunch==5 else 1 )
             options['doScale'] = ( 1 if iLaunch==1 else 0 )
