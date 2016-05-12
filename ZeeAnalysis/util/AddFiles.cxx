@@ -53,15 +53,22 @@ int main( int argc, char* argv[] ) {
       final_analysis = new Analysis( "Final", dumOutName.insert( dumOutName.find_last_of( "."), buffer ));
       final_analysis->SetName( "Analysis" );
       final_analysis->Load( infile[i] );
-
+      if ( !final_analysis->GetGoodEvents() ) {
+	delete final_analysis; final_analysis = 0;
+	continue;
+      }
       name = dumOutName;  
       if ( name.find_last_of( "/" ) != string::npos ) name = name.substr( name.find_last_of( "/" ) +1 );
       name = name.substr( 0, name.find_last_of( "." ) );
-      final_analysis->SetName( name );}
+      final_analysis->SetName( name );
+
+
+}
     else {
       Analysis dummy_analysis;
       dummy_analysis.SetName( "Analysis" );
       dummy_analysis.Load( infile[i] );
+      if ( !dummy_analysis.GetGoodEvents() ) continue;
       final_analysis->Add( dummy_analysis );
     }
     if ( final_analysis->GetGoodEvents()>2500000 ) {

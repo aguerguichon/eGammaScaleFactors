@@ -25,7 +25,7 @@ def GetDataFiles( inputs, inFileIndex, options  ) :
     fileList['MC_13TeV_Ztautau_25ns'] = ['mc15_13TeV.361108.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Ztautau.merge.DAOD_STDM3.e3601_s2576_s2132_r7267_r6282_p2470/', 'es2015PRE', 4.3862, 'PileUpReweighting_Ztautau_prw.root' ]
     fileList['MC_13TeV_Zttbar_25ns'] = ['mc15_13TeV.410000.PowhegPythiaEvtGen_P2012_ttbar_hdamp172p5_nonallhad.merge.DAOD_STDM2.e3698_s2608_s2183_r7267_r6282_p2482/', 'es2015PRE', 0.237, 'PileUpReweighting_Zttbar_prw.root' ]
 
-    fileList['MC_13TeV_Zee_25ns'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2576_s2132_r7773_r7676/', 'es2015PRE', 1, 'PileUpReweighting_25ns_prw.root' ]
+    fileList['MC_13TeV_Zee_25ns'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2576_s2132_r7773_r7676/', 'es2015cPRE', 1, 'PileUpReweighting_25nsbc_prw.root' ]
 
     options["esModel"] = fileList[inFileIndex][1];
     options["outName"] = inFileIndex;

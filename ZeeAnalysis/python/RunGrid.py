@@ -29,7 +29,7 @@ for option in sys.argv:
         savingFile="DatasetList/Data_13TeV_Zee_" + ( '25' if option == 'DATA25' else '50' ) + "ns.csv"
         datasetList = np.genfromtxt( path + savingFile, dtype='S100', delimiter=' ' )
         runs = []
-        grlList=os.popen( 'ls /afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/data15*').read().split()
+        grlList=os.popen( 'ls /afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/data15*v75*').read().split()
         for grl  in grlList :
             file = open( grl )
             for line in file :
@@ -49,7 +49,7 @@ for option in sys.argv:
             if option == 'DATA50' and run > 276261 and run != 276731 : continue
             print run
 
-            line='dq2-ls data15_13TeV.00'+ str( run )+'.physics_Main.merge.DAOD_EGAM1.*/'
+            line='dq2-ls data15_13TeV.00'+ str( run )+'.physics_Main.merge.DAOD_EGAM1.*p2582/'
             output = os.popen(line).read().split()
             print line
             for file in output :
@@ -63,7 +63,7 @@ for option in sys.argv:
         treeDatasets.FillDatasets( datasets )
  
         np.savetxt( path + savingFile, datasetList, delimiter=' ', fmt='%s')
-        rangeMax = 7
+        rangeMax = 9
 # electronID doScale pt
 # 0 : 1 0  27
 # 1 : 1 1  27
@@ -72,9 +72,10 @@ for option in sys.argv:
 # 4 : 1 0  20
 # 5 : 2 0  27
 # 6 fBrem
+# 7 RecoSyst
+# 8 IDsyst
         for iLaunch in range( 0, rangeMax ) :
-#            if iLaunch >1 : continue
-            options = { 'esModel' : 'es2015PRE' }
+            options = { 'esModel' : 'es2015cPRE' }
             options['outName'] = 'Data_13TeV_Zee_25ns'
             options['electronID'] = ( 2 if iLaunch==5 else 1 )
             options['doScale'] = ( 1 if iLaunch==1 else 0 )
@@ -82,18 +83,22 @@ for option in sys.argv:
             elif iLaunch==2 : options["ptCut"] =  30
             elif iLaunch==4 : options["ptCut"] =  20
             else : options["ptCut"] =  27
-            if iLaunch == 6 : options['fBremCut'] = 0.5
+            if iLaunch == 6 : options['fBremCut'] = 0.3
+            if iLaunch == 7 or iLaunch == 8 : options['scaleSyst'] = iLaunch-6
             inputs.append( [datasets, options] )
 
+
     if 'MC25' == option :
-        GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1} )     
-        GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'fBremCut' : 0.5 } )     
-        GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 2} )     
-        GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 1, 'electronID' : 1} )     
-        GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'ptCut' : 30} )     
-        GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'ptCut' : 20} )     
-        GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'ptCut' : 35} )     
-#       print inputs
+        GetDataFiles( inputs, 'MC_13TeV_Zee_25nsb', {'doScale' : 0, 'electronID' : 1} )     
+        # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'fBremCut' : 0.3 } )     
+        # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 2} )     
+        # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 1, 'electronID' : 1} )     
+        # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'ptCut' : 30} )     
+        # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'ptCut' : 20} )     
+        # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'ptCut' : 35} )     
+        # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'scaleSyst' : 1 } )     
+        # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'scaleSyst' : 2 } )     
+        # print inputs
 
     if 'MC25_dis' == option :
         GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns_geo02', outFilePrefix, esModel, 27, ptCutVect)
@@ -156,11 +161,10 @@ for option in sys.argv:
             output = os.popen( 'curl '+ line).read().split('\n')
             status=''
             for htmlLine in output :
+                if not 'status' in htmlLine : continue
 #check if the job is in the 'done' state
-                if 'class=\'done_fill\'' in htmlLine : 
-                    status='done'
-                    break
-
+                if 'class=\'done_fill\'' in htmlLine : status='done'; break
+            print status
 #create the name of the repository were the dataset must be downloaded
             directory = job[1].replace( 'user.cgoudet.', '' ).replace('_Ntuple.root', '' )
             directory = directory[:directory.rfind('_')]
@@ -245,6 +249,11 @@ if len( inputs ) :
             optionLine += ' --doScale ' + str( inputs[iFile][1]['doScale' ] )
             pass
 
+        if "scaleSyst" in inputs[iFile][1].keys() and inputs[iFile][1]['scaleSyst'] : 
+            outFileName += '_' + ( 'reco' if inputs[iFile][1]['scaleSyst']==1 else 'ID' ) + 'Syst'
+            optionLine += ' --scaleSyst ' + str( inputs[iFile][1]['scaleSyst' ] )
+            pass
+
 
         if "ptCut" in inputs[iFile][1].keys() :
             if inputs[iFile][1]['ptCut'] != 27 : outFileName += '_pt' + str( inputs[iFile][1]['ptCut'] )    
@@ -281,13 +290,11 @@ if len( inputs ) :
                         + '"'
                         + ' --outDS user.cgoudet.' + outFileName + ' --inDS ' + datasetList + ' --outputs Ntuple.root '
                         + ( ' --useRootCore '
-                            + '--extFile=lumicalc_histograms_None_200842-215643.root,ilumicalc_histograms_None_13TeV_25ns.root,ilumicalc_histograms_None_13TeV_50ns.root,PileUpReweighting_25nsa_prw.root,PileUpReweighting_25nsb_prw.root,PileUpReweighting_50ns_prw.root,PileUpReweighting_Ztautau_prw.root,PileUpReweighting_Zttbar_prw.root,PileUpReweighting_25ns_prw.root '
+                            + '--extFile=lumicalc_histograms_None_200842-215643.root,ilumicalc_histograms_None_13TeV_25ns.root,ilumicalc_histograms_None_13TeV_25nsb.root,ilumicalc_histograms_None_13TeV_50ns.root,PileUpReweighting_25nsa_prw.root,PileUpReweighting_25nsb_prw.root,PileUpReweighting_50ns_prw.root,PileUpReweighting_Ztautau_prw.root,PileUpReweighting_Zttbar_prw.root,PileUpReweighting_25nsbc_prw.root '
                             + ' --tmpDir /tmp '
                             )
                         )
 
-        # print commandLine
-        # exit(0)
         result=''
         result = sub.check_output([commandLine], shell=1, stderr=sub.STDOUT)    
         #        result = os.popen( commandLine ).read()

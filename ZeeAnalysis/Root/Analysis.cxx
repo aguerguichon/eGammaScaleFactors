@@ -84,12 +84,12 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_mapHist["puWeight"] = new TH1D( "puWeight", "puWeight", 100, 0, 2 );
   m_mapHist["puWeight"]->GetXaxis()->SetTitle( "puWeights" );
 
-  m_mapHist["lineshapeWeight"] = new TH1D( "lineshapeWeight", "lineshapeWeight", 100, 0.9, 1.1 );
-  m_mapHist["lineshapeWeight"]->GetXaxis()->SetTitle( "lineshapeWeights" );
+  // m_mapHist["lineshapeWeight"] = new TH1D( "lineshapeWeight", "lineshapeWeight", 100, 0.9, 1.1 );
+  // m_mapHist["lineshapeWeight"]->GetXaxis()->SetTitle( "lineshapeWeights" );
 
-  m_mapHist["vertexWeight"] = new TH1D ("vertexWeight", "vertexWeight", 100, 0, 2 ); 
-  m_mapHist["vertexWeight"]->GetXaxis()->SetTitle("vertexWeight");
-  m_mapHist["vertexWeight"]->Sumw2();
+  // m_mapHist["vertexWeight"] = new TH1D ("vertexWeight", "vertexWeight", 100, 0, 2 ); 
+  // m_mapHist["vertexWeight"]->GetXaxis()->SetTitle("vertexWeight");
+  // m_mapHist["vertexWeight"]->Sumw2();
 
   m_mapHist["SFReco"] = new TH1D ("SFReco", "SFReco", 100, 0.98, 1.01 );
   m_mapHist["SFReco"]->GetXaxis()->SetTitle("SFReco");
@@ -261,9 +261,7 @@ void Analysis::Save( ) {
   if ( m_debug ) cout << "Analysis::Save()" << endl;
   m_logFile->cd();
 
-  for ( auto it = m_mapHist.begin(); it != m_mapHist.end(); it++)  {
-    it->second->Write( "", TObject::kOverwrite );
-  }
+  for ( auto it = m_mapHist.begin(); it != m_mapHist.end(); it++) it->second->Write( "", TObject::kOverwrite );
 
   TString bufferName = TString::Format( "%s", m_name.c_str() );
   TTree * treeout = new TTree( "InfoTree" , "InfoTree" );
@@ -410,9 +408,9 @@ void Analysis::TreatEvents(int nevent) {
       }
       // Read event 
       m_tevent.getEntry( i_event );
-      m_mapVar["lineshapeWeight"] = 1;
+      //      m_mapVar["lineshapeWeight"] = 1;
       m_mapVar["puWeight"]=1;
-      m_mapVar["vertexWeight"]=1;
+      //      m_mapVar["vertexWeight"]=1;
       m_mapVar["SFReco"]=1;
       m_mapVar["SFID"]=1;
 
@@ -472,7 +470,7 @@ void Analysis::TreatEvents(int nevent) {
 	exit(2);
       }
       }
-      if ( i_event > 10 ) exit(0);
+      //      if ( i_event > 10 ) exit(0);
 
       // Free the memory from copy
       if ( m_eShallowContainer.first )  delete m_eShallowContainer.first;
@@ -529,9 +527,10 @@ void Analysis::MakeElectronCut() {
     m_mapHist["cutFlow"]->Fill( "initEl", 1 );
 
     double fBrem = GetFBrem( *eContItr );
+    m_mapHist["fBrem"]->Fill( fBrem );
     if ( fBrem > m_fBremCut  ) continue;
-    m_mapHist["cutFlow"]->Fill( "fBrem", 1 );
-
+    m_mapHist["cutFlow"]->Fill( "fBrem", fBrem );
+    cout << "fBrem : " << fBrem << endl;
     //  Cut on the quality of the **eContItrectron
     if ( !(m_electronID/3)  && !m_LHToolMedium2012->accept( **eContItr ) ) continue;
     if ( (m_electronID/3) && !m_CutToolMedium2012->accept( **eContItr ) ) continue;
@@ -559,6 +558,7 @@ void Analysis::MakeElectronCut() {
     //  OQ cut
     if ( !(*eContItr)->isGoodOQ( xAOD::EgammaParameters::BADCLUSELECTRON ) ) continue;
     m_mapHist["cutFlow"]->Fill( "OQ", 1 );
+
     
     m_veGood.push_back( 0 );
     m_veGood.back() = *eContItr;
@@ -601,13 +601,13 @@ int Analysis::FillSelectionTree() {
     m_mapVar[string(TString::Format( "e1_%d", iEl+1 ))] = m_veGood[iEl]->caloCluster()->energyBE(1);
     m_mapVar[string(TString::Format( "e2_%d", iEl+1 ))] = m_veGood[iEl]->caloCluster()->energyBE(2);
     m_mapVar[string(TString::Format( "energy_%d", iEl+1 ))] = m_veGood[iEl]->e();
-    m_mapVar[string(TString::Format( "gain_%d", iEl+1 ) )] = m_veGood[iEl]->auxdata<int>( "maxEcell_gain");
+    //    m_mapVar[string(TString::Format( "gain_%d", iEl+1 ) )] = m_veGood[iEl]->auxdata<int>( "maxEcell_gain");
     //Get the fbrm variable as computed in the likelihood code
-    m_mapVar[string(TString::Format("fBrem_%d", iEl+1))] = GetFBrem( m_veGood[iEl] );
-    m_mapVar[string(TString::Format("E_Lr2_HiG_%d", iEl+1))] = m_veGood[iEl]->auxdata<float>( "Cells3x7_Lr2_HiG");
-    m_mapVar[string(TString::Format("E_Lr2_MdG_%d", iEl+1))] = m_veGood[iEl]->auxdata<double>( "Lr2_MdG");
-    m_mapVar[string(TString::Format("E_Lr2_LwG_%d", iEl+1))] = m_veGood[iEl]->auxdata<double>( "Lr2_LwG");
-    if ( m_mapVar[string(TString::Format("E_Lr2_MdG_%d", iEl+1))] )    cout << m_mapVar[string(TString::Format("E_Lr2_HiG_%d", iEl+1))] << " " << m_mapVar[string(TString::Format("E_Lr2_MdG_%d", iEl+1))] << " " << m_mapVar[string(TString::Format("E_Lr2_HiG_%d", iEl+1))] << endl;
+    //    m_mapVar[string(TString::Format("fBrem_%d", iEl+1))] = GetFBrem( m_veGood[iEl] );
+    // m_mapVar[string(TString::Format("E_Lr2_HiG_%d", iEl+1))] = m_veGood[iEl]->auxdata<float>( "Cells3x7_Lr2_HiG");
+    // m_mapVar[string(TString::Format("E_Lr2_MdG_%d", iEl+1))] = m_veGood[iEl]->auxdata<double>( "Lr2_MdG");
+    // m_mapVar[string(TString::Format("E_Lr2_LwG_%d", iEl+1))] = m_veGood[iEl]->auxdata<double>( "Lr2_LwG");
+    // if ( m_mapVar[string(TString::Format("E_Lr2_MdG_%d", iEl+1))] )    cout << m_mapVar[string(TString::Format("E_Lr2_HiG_%d", iEl+1))] << " " << m_mapVar[string(TString::Format("E_Lr2_MdG_%d", iEl+1))] << " " << m_mapVar[string(TString::Format("E_Lr2_HiG_%d", iEl+1))] << endl;
   }//end for iEl
 
 
@@ -616,22 +616,21 @@ int Analysis::FillSelectionTree() {
   m_mapVar["m12"] = m_Z->M() / 1000.;
   m_mapVar["ptZ"] = m_Z->Pt() / 1000.;
 
-
-  m_mapVar["NVertex"] = m_ZVertex->size();
+  //  m_mapVar["NVertex"] = m_ZVertex->size();
 
   if ( m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {
     if ( m_pileup ) {
-      m_pileup->apply( *m_eventInfo );
+      m_pileup->apply( *m_eventInfo, 1 );
       m_mapVar["puWeight"] = m_eventInfo->auxdecor< float >( "PileupWeight" );
-      m_mapHist["puWeight"]->Fill( m_mapVar["puWeight"] );
     }
     else m_mapVar["puWeight"] = 1;
-
-    if ( m_vtxTool ) {
-      m_vtxTool->getWeight( m_mapVar[ "vertexWeight" ] );
-      m_mapHist["vertexWeight"]->Fill( m_mapVar[ "vertexWeight" ] );
-    }
-    else m_mapVar["vertexWeight"] = 1;
+    m_mapHist["puWeight"]->Fill( m_mapVar["puWeight"] );
+    
+    // if ( m_vtxTool ) {
+    //   m_vtxTool->getWeight( m_mapVar[ "vertexWeight" ] );
+    //   m_mapHist["vertexWeight"]->Fill( m_mapVar[ "vertexWeight" ] );
+    // }
+    // else m_mapVar["vertexWeight"] = 1;
     
     if ( m_electronSFReco ) {
       double sf1, sf2;
@@ -644,7 +643,7 @@ int Analysis::FillSelectionTree() {
     else m_mapVar["SFReco"]=1;
 
     if ( m_electronSFID ) {
-      double sf1, sf2, sf1_syst;
+      double sf1, sf2;
       m_electronSFID->getEfficiencyScaleFactor(*m_veGood[0],sf1);
       m_electronSFID->getEfficiencyScaleFactor(*m_veGood[1],sf2);
       m_mapHist["SFID"]->Fill( sf1 );
@@ -658,7 +657,8 @@ int Analysis::FillSelectionTree() {
 
 
 
-  m_mapVar["weight"] = m_mapVar["lineshapeWeight"]*m_mapVar["puWeight"]*m_mapVar["vertexWeight"]*m_mapVar["SFReco"]*m_mapVar["SFID"]*m_mapVar["datasetWeight"];
+  //  m_mapVar["weight"] = m_mapVar["lineshapeWeight"]*m_mapVar["puWeight"]*m_mapVar["vertexWeight"]*m_mapVar["SFReco"]*m_mapVar["SFID"]*m_mapVar["datasetWeight"];
+  m_mapVar["weight"] = m_mapVar["puWeight"]*m_mapVar["SFReco"]*m_mapVar["SFID"]*m_mapVar["datasetWeight"];
   if ( !m_selectionTree->GetEntries() ) {
   for ( map<string, double>::iterator it = m_mapVar.begin(); it != m_mapVar.end(); it++) {
     m_selectionTree->Branch( it->first.c_str(), &it->second );
@@ -712,12 +712,40 @@ int Analysis::InitializeTools () {
   m_grl = new GoodRunsListSelectionTool("GoodRunsListSelectionTool");
   std::vector<std::string> vecStringGRL;
   string grlLocalFile = "/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/";
-  vector< string > grlFile = {
-    "data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml",
-    "data15_13TeV.periodAllYear_DetStatus-v73-pro19-08_DQDefects-00-01-02_PHYS_StandardGRL_All_Good_25ns.xml"
-  };
-  bool isLocal = system( ("ls " + grlFile[0]).c_str() );    
-  
+  vector< string > grlFile;
+  bool isLocal = system("ls data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml" );    
+    // "data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml",
+    // "data15_13TeV.periodAllYear_DetStatus-v73-pro19-08_DQDefects-00-01-02_PHYS_StandardGRL_All_Good_25ns.xml",
+  //    "data15_13TeV.periodAllYear_DetStatus-v75-repro20-01_DQDefects-00-02-02_PHYS_StandardGRL_All_Good_25ns.xml"
+      //  };
+
+  Info("","Declaring pileup reweighting tool");
+  m_pileup = new CP::PileupReweightingTool("prw");
+  std::vector<std::string> confFiles;
+  std::vector<std::string> lcalcFiles;
+  if ( m_esModel.find( "2015" ) == string::npos ) {
+    grlFile.push_back( "data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml" );
+    m_pileup->setProperty("DataScaleFactor",1./1.09);    //    m_pileup.SetDataScaleFactors(1/1.09); // For 2012
+    confFiles.push_back("PileupReweighting/mc14v1_defaults.prw.root");
+    lcalcFiles.push_back("ilumicalc_histograms_None_200842-215643.root");
+  }
+  else if ( m_esModel == "es2015PRE" ) {
+    grlFile.push_back( "data15_13TeV.periodAllYear_DetStatus-v73-pro19-08_DQDefects-00-01-02_PHYS_StandardGRL_All_Good_25ns.xml" );
+    m_pileup->setProperty("DataScaleFactor",1./1.16);
+    confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + m_pileupFile );
+    lcalcFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "ilumicalc_histograms_None_13TeV_25nsb.root");
+  }
+  else if ( m_esModel == "es2015cPRE" ) {
+    m_pileup->setProperty("DataScaleFactor",1./1.16);
+    confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + m_pileupFile );
+    lcalcFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "ilumicalc_histograms_None_13TeV_25ns.root");
+    grlFile.push_back( "data15_13TeV.periodAllYear_DetStatus-v75-repro20-01_DQDefects-00-02-02_PHYS_StandardGRL_All_Good_25ns.xml" );
+  }
+  dynamic_cast<CP::PileupReweightingTool&>(*m_pileup).setProperty( "ConfigFiles", confFiles);
+  dynamic_cast<CP::PileupReweightingTool&>(*m_pileup).setProperty( "LumiCalcFiles", lcalcFiles);
+  m_pileup->initialize();
+
+
   for ( unsigned int i = 0; i< grlFile.size(); i++ ) 
     vecStringGRL.push_back( string( isLocal ? grlLocalFile : "" ) + grlFile[i] );
   
@@ -728,55 +756,33 @@ int Analysis::InitializeTools () {
     exit(1);
   }
 
-  Info("","Declaring pileup reweighting tool");
-  m_pileup = new CP::PileupReweightingTool("prw");
-  std::vector<std::string> confFiles;
-  std::vector<std::string> lcalcFiles;
-  if ( m_esModel.find( "2015" ) == string::npos ) {
-    m_pileup->setProperty("DataScaleFactor",1./1.09);    //    m_pileup.SetDataScaleFactors(1/1.09); // For 2012
-    confFiles.push_back("PileupReweighting/mc14v1_defaults.prw.root");
-    lcalcFiles.push_back("ilumicalc_histograms_None_200842-215643.root");
-  }
-  else {
-    m_pileup->setProperty("DataScaleFactor",1./1.16);
-    confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + m_pileupFile );
-    lcalcFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "ilumicalc_histograms_None_13TeV_25ns.root");
-  }
-  dynamic_cast<CP::PileupReweightingTool&>(*m_pileup).setProperty( "ConfigFiles", confFiles);
-  dynamic_cast<CP::PileupReweightingTool&>(*m_pileup).setProperty( "LumiCalcFiles", lcalcFiles);
-  m_pileup->initialize();
-
   m_vtxTool = new CP::VertexPositionReweightingTool( "VertexPosition" );  
   m_vtxTool->setProperty("DataMean", -25.7903);
   m_vtxTool->setProperty("DataSigma", 43.7201);
 
 
-  m_electronSFReco = new AsgElectronEfficiencyCorrectionTool( "ElectronEfficiencyCorrectionTool" ) ;
-  m_electronSFID = new AsgElectronEfficiencyCorrectionTool( "ElectronEfficiencyCorrectionTool" ) ;
+  m_electronSFReco = new AsgElectronEfficiencyCorrectionTool( "ElectronEfficiencyReco" ) ;
+  m_electronSFID = new AsgElectronEfficiencyCorrectionTool( "ElectronEfficiencyID" ) ;
   //define input file
  
   vector<string> filePerTool;
-  filePerTool.push_back( "ElectronEfficiencyCorrection/efficiencySF.offline.RecoTrk.2015.13TeV.rel20p0.25ns.v02.root" );
+  filePerTool.push_back( "ElectronEfficiencyCorrection/efficiencySF.offline.RecoTrk.2015.13TeV.rel20p0.25ns.v04.root" );
   switch ( m_electronID ) {
   case 1 : 
-    filePerTool.push_back( "ElectronEfficiencyCorrection/efficiencySF.offline.MediumLLH_d0z0.2015.13TeV.rel20p0.25ns.v02.root" );
+    filePerTool.push_back( "ElectronEfficiencyCorrection/efficiencySF.offline.MediumLH.2015.13TeV.rel20p0.25ns.v01.root" );
     break;
   case 2 :
-    filePerTool.push_back( "ElectronEfficiencyCorrection/efficiencySF.offline.TightLLH_d0z0.2015.13TeV.rel20p0.25ns.v02.root" );
+    filePerTool.push_back( "ElectronEfficiencyCorrection/efficiencySF.offline.TightLLH_d0z0.2015.13TeV.rel20p0.25ns.v04.root" );
     break;
   default :
     cout << "SFReco file not defined for m_electronID=" << m_electronID << endl;
     exit(0);
   }
 
-  
-
-      
-
-
   vector<AsgElectronEfficiencyCorrectionTool*> dumVectorTool = { m_electronSFReco, m_electronSFID };
   vector<string> SFSyst = { "EL_EFF_Reco_TotalCorrUncertainty__1up", "EL_EFF_ID_TotalCorrUncertainty__1up" };
   for ( unsigned int iTool = 0; iTool < dumVectorTool.size(); iTool++ ) {
+    cout << "iTool : " << iTool << endl;
     vector<string> inputFile = { filePerTool[iTool] };
     dumVectorTool[iTool]->setProperty("CorrectionFileNameList",inputFile);
     //set datatype, 0-Data(or dont use the tool - faster), 1-FULLSIM, 3-AF2
@@ -787,10 +793,13 @@ int Analysis::InitializeTools () {
     //init the tool
     dumVectorTool[iTool]->initialize();
 
-    CP::SystematicVariation systVar( SFSyst[iTool-1] );
-    dumVectorTool[iTool]->applySystematicVariation(CP::SystematicSet({systVar}));
+    if ( m_scaleSyst == (int) iTool+1 ) {
+      CP::SystematicVariation systVar( SFSyst[iTool] );
+      dumVectorTool[iTool]->applySystematicVariation(CP::SystematicSet({systVar}));
+    }
   }
 
+  cout << "trig tool" << endl;
 
   m_trigConfigTool = new TrigConf::xAODConfigTool("xAODConfigTool"); // gives us access to the meta-data
   ToolHandle< TrigConf::ITrigConfigTool > trigConfigHandle( m_trigConfigTool );
@@ -897,7 +906,7 @@ double Analysis::GetLineShapeWeight() {
   LineShapeTool *lineShapeTool = new LineShapeTool();
   m_mapVar["m12_True"] = ti->z3.M()*1e-3;
   weight = lineShapeTool->reweightPowhegToImprovedBorn(ti->pdg1,ti->pdg2,ti->z3.M()*1e-3);
-  m_mapHist["lineshapeWeight"]->Fill( weight );
+  //m_mapHist["lineshapeWeight"]->Fill( weight );
   //  cout << "lineshapeWeight : " << weight << endl;
   return weight;
 }
