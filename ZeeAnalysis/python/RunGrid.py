@@ -49,7 +49,7 @@ for option in sys.argv:
             if option == 'DATA50' and run > 276261 and run != 276731 : continue
             print run
 
-            line='dq2-ls data15_13TeV.00'+ str( run )+'.physics_Main.merge.DAOD_EGAM1.*p2470/'
+            line='dq2-ls data15_13TeV.00'+ str( run )+'.physics_Main.merge.DAOD_EGAM1.*p2470/'#*p2582/'
             output = os.popen(line).read().split()
             print line
             for file in output :
@@ -58,12 +58,13 @@ for option in sys.argv:
                 treeDatasets.Insert( file.split('.')[-1].split('/')[0].split('_'), file.split('.')[1] )
                 pass        
             pass
+
         datasets=[]
         treeDatasets.CreateTag('')
         treeDatasets.FillDatasets( datasets )
  
         np.savetxt( path + savingFile, datasetList, delimiter=' ', fmt='%s')
-        rangeMax = 9
+        rangeMax = 8
 # electronID doScale pt
 # 0 : 1 0  27
 # 1 : 1 1  27
@@ -72,10 +73,10 @@ for option in sys.argv:
 # 4 : 1 0  20
 # 5 : 2 0  27
 # 6 fBrem
-# 7 RecoSyst
-# 8 IDsyst
+# 7 noIso
+
         for iLaunch in range( 0, rangeMax ) :
-            if iLaunch : break
+            if iLaunch >0 : continue
             options = { 'esModel' : 'es2015PRE' }
             options['outName'] = 'Data_13TeV_Zee_25ns'
             options['electronID'] = ( 2 if iLaunch==5 else 1 )
@@ -84,30 +85,36 @@ for option in sys.argv:
             elif iLaunch==2 : options["ptCut"] =  30
             elif iLaunch==4 : options["ptCut"] =  20
             else : options["ptCut"] =  27
-            if iLaunch == 6 : options['fBremCut'] = 0.3
-            if iLaunch == 7 or iLaunch == 8 : options['scaleSyst'] = iLaunch-6
+            if iLaunch == 6 : options['fBremCut'] = 0.7
+            if iLaunch == 7 : options['doIso']=0
             inputs.append( [datasets, options] )
-
+        
 
     if 'MC25' == option :
-        GetDataFiles( inputs, 'MC_13TeV_Zee_25nsb', {'doScale' : 0, 'electronID' : 1} )     
-        # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'fBremCut' : 0.3 } )     
+        # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1} )     
+        GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'fBremCut' : 0.7 } )     
         # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 2} )     
-        # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 1, 'electronID' : 1} )     
+#        GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 1, 'electronID' : 1} )     
         # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'ptCut' : 30} )     
         # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'ptCut' : 20} )     
         # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'ptCut' : 35} )     
         # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'scaleSyst' : 1 } )     
         # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'scaleSyst' : 2 } )     
+        # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'scaleSyst' : 3 } )     
+        # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'doIso' : 0} )     
         # print inputs
 
     if 'MC25_dis' == option :
-        GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns_geo02', outFilePrefix, esModel, 27, ptCutVect)
-        GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns_geo11', outFilePrefix, esModel, 27, ptCutVect)
-        GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns_geo12', outFilePrefix, esModel, 27, ptCutVect)
-        GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns_geo13', outFilePrefix, esModel, 27, ptCutVect)
-        GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns_geo14', outFilePrefix, esModel, 27, ptCutVect)
-        GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns_geo15', outFilePrefix, esModel, 27, ptCutVect)
+        # GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns_geo02', outFilePrefix, esModel, 27, ptCutVect)
+        # GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns_geo11', outFilePrefix, esModel, 27, ptCutVect)
+        # GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns_geo12', outFilePrefix, esModel, 27, ptCutVect)
+        # GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns_geo13', outFilePrefix, esModel, 27, ptCutVect)
+        # GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns_geo14', outFilePrefix, esModel, 27, ptCutVect)
+        # GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns_geo15', outFilePrefix, esModel, 27, ptCutVect)
+        GetDataFiles( inputs, 'MC_13TeV_Zee_25nsb', {'doScale' : 0, 'electronID' : 1} )     
+        GetDataFiles( inputs, 'MC_13TeV_Zee_25nsb_IBL', {'doScale' : 0, 'electronID' : 1} )     
+
+
 
     if 'MC50' == option :
         GetDataFiles( inputs, 0, doScale, 2, electronID, 'MC_13TeV_Zee_50ns', outFilePrefix, esModel, 27, ptCutVect)
@@ -124,10 +131,10 @@ for option in sys.argv:
         GetDataFiles( inputs, 1, doScale, 1, electronID, 'Data_8TeV_Zee', outFilePrefix, esModel, 27, ptCutVect)
 
     if 'BKG' == option : 
-        GetDataFiles( inputs, 'MC_13TeV_Ztautau_25ns', {'doScale' : 0, 'electronID' : 1} )     
-        GetDataFiles( inputs, 'MC_13TeV_Ztautau_25ns', {'doScale' : 1, 'electronID' : 1} )     
+#        GetDataFiles( inputs, 'MC_13TeV_Ztautau_25ns', {'doScale' : 0, 'electronID' : 1} )     
+#        GetDataFiles( inputs, 'MC_13TeV_Ztautau_25ns', {'doScale' : 1, 'electronID' : 1} )     
         GetDataFiles( inputs, 'MC_13TeV_Zttbar_25ns', {'doScale' : 0, 'electronID' : 1} )     
-        GetDataFiles( inputs, 'MC_13TeV_Zttbar_25ns', {'doScale' : 1, 'electronID' : 1} )     
+ #       GetDataFiles( inputs, 'MC_13TeV_Zttbar_25ns', {'doScale' : 1, 'electronID' : 1} )     
 
 
     if option=='clean' :
@@ -230,13 +237,13 @@ if len( inputs ) :
         outFileName = inputs[iFile][1]['outName']
 
 
-        if 'esModel' in inputs[iFile][1].keys() :
+        if 'esModel' in inputs[iFile][1] :
             optionLine += ' --esModel ' + inputs[iFile][1]['esModel']
 
-        if 'pileupFile' in inputs[iFile][1].keys() :
+        if 'pileupFile' in inputs[iFile][1] :
             optionLine += ' --pileupFile ' + inputs[iFile][1]['pileupFile']
 
-        if  'electronID' in inputs[iFile][1].keys() :
+        if  'electronID' in inputs[iFile][1] :
             electronIDTitle = ""
             if ( inputs[iFile][1]['electronID'] / 3 < 1 ) : electronIDTitle += "Lkh"
             else : electronIDTitle += "CB"
@@ -245,14 +252,16 @@ if len( inputs ) :
             optionLine += ' --electronID ' + str( inputs[iFile][1]['electronID'] )
             pass
              
-        if "doScale" in inputs[iFile][1].keys() : 
-            if ( inputs[iFile][1]['doScale'] ) : outFileName += "_scaled"
-            optionLine += ' --doScale ' + str( inputs[iFile][1]['doScale' ] )
-            pass
+        if "doScale" in inputs[iFile][1] : 
+            if ( inputs[iFile][1]['doScale'] ) : outFileName += "_scaled"; optionLine += ' --doScale ' 
 
-        if "scaleSyst" in inputs[iFile][1].keys() and inputs[iFile][1]['scaleSyst'] : 
-            outFileName += '_' + ( 'reco' if inputs[iFile][1]['scaleSyst']==1 else 'ID' ) + 'Syst'
+        if "scaleSyst" in inputs[iFile][1] and inputs[iFile][1]['scaleSyst'] : 
             optionLine += ' --scaleSyst ' + str( inputs[iFile][1]['scaleSyst' ] )
+            systName=''
+            if inputs[iFile][1]['scaleSyst']==1 : systName = 'iso'
+            elif inputs[iFile][1]['scaleSyst']==2 : systName = 'reco'
+            elif inputs[iFile][1]['scaleSyst']==3 : systName = 'ID'
+            outFileName += '_' + systName + 'Syst'
             pass
 
 
@@ -266,8 +275,10 @@ if len( inputs ) :
             optionLine += ' --fBremCut ' + str( inputs[iFile][1]['fBremCut'] )
             pass
 
-        if "datasetWeight" in inputs[iFile][1].keys() and inputs[iFile][1]['datasetWeight'] != 1 : optionLine += ' --datasetWeight ' + str( inputs[iFile][1]['datasetWeight'] )
-
+        if "datasetWeight" in inputs[iFile][1] and inputs[iFile][1]['datasetWeight'] != 1 : optionLine += ' --datasetWeight ' + str( inputs[iFile][1]['datasetWeight'] )
+        if 'doIso' in inputs[iFile][1] and inputs[iFile][1]['doIso'] != 1 : 
+            optionLine += ' --doIso ' + str( inputs[iFile][1]['doIso'] ) 
+            outFileName += "_doIso" + str( inputs[iFile][1]['doIso'] ) 
 
         for iName in tab :
             if  iName[0] == outFileName  : version=str( int(iName[1] ) + 1); iName[1]=str(version)
@@ -279,7 +290,6 @@ if len( inputs ) :
         outFileName +=  "_" + str( version )
 
         print outFileName
-        print optionLine 
 
         datasetList = ""
         for dataset in inputs[iFile][0] : datasetList += dataset + ( ',' if dataset != inputs[iFile][0][-1] else '' )

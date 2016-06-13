@@ -25,9 +25,9 @@ namespace po = boost::program_options;
 
 
 Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess), 
-		       m_debug( false), m_name( "Analysis" ), m_numEvent(0), m_goodEvent(0),
+		       m_debug( true), m_name( "Analysis" ), m_numEvent(0), m_goodEvent(0),
 		       m_doScaleFactor(false), m_electronID(1), m_esModel( "es2015PRE" ), m_ptCut( 27000 ), m_fBremCut( 1 ), 
-		       m_pileupFile( "PileUpReweighting_25nsb_prw.root" ), m_scaleSyst(0)
+		       m_pileupFile( "PileUpReweighting_25nsb_prw.root" ), m_scaleSyst(0), m_doIso(1)
 {
   if ( m_debug ) cout << "Analysis::Analysis()" << endl;
   //  cout << "m_debug : " << m_debug << endl;
@@ -514,7 +514,7 @@ bool Analysis::PassSelection() {
   m_mapHist["cutFlow"]->Fill( "charge", 1 );
   //Cut on the position of the primary Vertex
   if ( m_esModel.find( "2015" ) == string::npos && fabs( (*m_ZVertex)[0]->z() ) > 150 ) return false;
-    m_mapHist["cutFlow"]->Fill( "ZVertex", 1 );
+  m_mapHist["cutFlow"]->Fill( "ZVertex", 1 );
 
   //if (ComputeZMass( m_veGood ) > 100 || ComputeZMass( m_veGood ) < 80) return false;
   if ( m_debug ) cout << "Analysis::PassSelection done" << endl;
@@ -535,8 +535,8 @@ void Analysis::MakeElectronCut() {
     m_mapHist["cutFlow"]->Fill( "fBrem", fBrem );
 
     bool isIso =  m_IsoSelTool->accept(**eContItr) ? true : false;
-    // if ( !isIso ) continue;
-    // m_mapHist["cutFlow"]->Fill( "Isolation", 1 );
+    if ( !isIso && m_doIso ) continue;
+    m_mapHist["cutFlow"]->Fill( "Isolation", 1 );
 
     //  Cut on the quality of the **eContItrectron
     if ( !(m_electronID/3)  && !m_LHToolMedium2012->accept( **eContItr ) ) continue;
@@ -610,7 +610,7 @@ int Analysis::FillSelectionTree() {
     m_mapVar[string(TString::Format( "energy_%d", iEl+1 ))] = m_veGood[iEl]->e();
     //    m_mapVar[string(TString::Format( "gain_%d", iEl+1 ) )] = m_veGood[iEl]->auxdata<int>( "maxEcell_gain");
     //Get the fbrm variable as computed in the likelihood code
-    //    m_mapVar[string(TString::Format("fBrem_%d", iEl+1))] = GetFBrem( m_veGood[iEl] );
+    m_mapVar[string(TString::Format("fBrem_%d", iEl+1))] = GetFBrem( m_veGood[iEl] );
     // m_mapVar[string(TString::Format("E_Lr2_HiG_%d", iEl+1))] = m_veGood[iEl]->auxdata<float>( "Cells3x7_Lr2_HiG");
     // m_mapVar[string(TString::Format("E_Lr2_MdG_%d", iEl+1))] = m_veGood[iEl]->auxdata<double>( "Lr2_MdG");
     // m_mapVar[string(TString::Format("E_Lr2_LwG_%d", iEl+1))] = m_veGood[iEl]->auxdata<double>( "Lr2_LwG");
@@ -623,7 +623,7 @@ int Analysis::FillSelectionTree() {
   m_mapVar["m12"] = m_Z->M() / 1000.;
   m_mapVar["ptZ"] = m_Z->Pt() / 1000.;
 
-  //  m_mapVar["NVertex"] = m_ZVertex->size();
+  m_mapVar["NVertex"] = m_ZVertex->size();
 
   if ( m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {
     if ( m_pileup ) {
@@ -633,46 +633,47 @@ int Analysis::FillSelectionTree() {
     else m_mapVar["puWeight"] = 1;
     m_mapHist["puWeight"]->Fill( m_mapVar["puWeight"] );
     
-    // if ( m_vtxTool ) {
-    //   m_vtxTool->getWeight( m_mapVar[ "vertexWeight" ] );
-    //   m_mapHist["vertexWeight"]->Fill( m_mapVar[ "vertexWeight" ] );
-    // }
-    // else m_mapVar["vertexWeight"] = 1;
+    if ( m_vtxTool ) {
+      m_vtxTool->getWeight( m_mapVar[ "vertexWeight" ] );
+      m_mapHist["vertexWeight"]->Fill( m_mapVar[ "vertexWeight" ] );
+    }
+    else m_mapVar["vertexWeight"] = 1;
 
     vector<AsgElectronEfficiencyCorrectionTool*> dumVectorTool = { m_electronSFIso, m_electronSFReco, m_electronSFID };    
     vector<string> names = { "SFIso", "SFReco", "SFID" };
-    cout << "dumVectorToolSize : " << dumVectorTool.size() << endl;
+    //    cout << "dumVectorToolSize : " << dumVectorTool.size() << endl;
     for ( unsigned int  iTool = 0; iTool < dumVectorTool.size(); iTool++ ) {
+      //      cout << "iTool : " << iTool << endl;
       if ( !dumVectorTool[iTool] )  { 
 	m_mapVar[names[iTool]]=1;
 	continue;
       }
       double sf1=1, sf2=1;
-
       dumVectorTool[iTool]->getEfficiencyScaleFactor(*m_veGood[0],sf1);
       dumVectorTool[iTool]->getEfficiencyScaleFactor(*m_veGood[1],sf2);
       // m_mapHist[tool->GetName()]->Fill( sf1 );
       // m_mapHist[tool->GetName()]->Fill( sf2 );
       m_mapVar[names[iTool]] = sf1*sf2;
-      cout << names[iTool] << " " << sf1 << endl;
+      //      cout << names[iTool] << " " << sf1 << endl;
     }//end for
-  }
+  }//end isSimulation
 
   //  m_mapVar["weight"] = m_mapVar["lineshapeWeight"]*m_mapVar["puWeight"]*m_mapVar["vertexWeight"]*m_mapVar["SFReco"]*m_mapVar["SFID"]*m_mapVar["datasetWeight"];
   m_mapVar["weight"] = m_mapVar["puWeight"]*m_mapVar["SFReco"]*m_mapVar["SFID"]*m_mapVar["datasetWeight"]*m_mapVar["SFIso"];
-
+  
   if ( !m_selectionTree->GetEntries() ) {
-  for ( map<string, double>::iterator it = m_mapVar.begin(); it != m_mapVar.end(); it++) {
-    m_selectionTree->Branch( it->first.c_str(), &it->second );
+    for ( map<string, double>::iterator it = m_mapVar.begin(); it != m_mapVar.end(); it++) {
+      m_selectionTree->Branch( it->first.c_str(), &it->second );
+    }
+    for ( map<string, long long int>::iterator it = m_mapLongVar.begin(); it != m_mapLongVar.end(); it++) {
+      m_selectionTree->Branch( it->first.c_str(), &it->second );
+    }
   }
-  for ( map<string, long long int>::iterator it = m_mapLongVar.begin(); it != m_mapLongVar.end(); it++) {
-    m_selectionTree->Branch( it->first.c_str(), &it->second );
-  }
-  }
+
   m_selectionTree->Fill();
   if ( m_debug ) cout << "Analysis::FillSelectionTree done" << endl;
   return 0;
-  }
+}
 
 //=====================================================
 int Analysis::InitializeTools () {
@@ -758,14 +759,14 @@ int Analysis::InitializeTools () {
     exit(1);
   }
 
-  m_vtxTool = new CP::VertexPositionReweightingTool( "VertexPosition" );  
-  m_vtxTool->setProperty("DataMean", -25.7903);
-  m_vtxTool->setProperty("DataSigma", 43.7201);
+  //  m_vtxTool = new CP::VertexPositionReweightingTool( "VertexPosition" );  
+  // m_vtxTool->setProperty("DataMean", -25.7903);
+  // m_vtxTool->setProperty("DataSigma", 43.7201);
 
 
   m_electronSFReco = new AsgElectronEfficiencyCorrectionTool( "SFReco" ) ;
   m_electronSFID = new AsgElectronEfficiencyCorrectionTool( "SFID" ) ;
-  m_electronSFIso = new AsgElectronEfficiencyCorrectionTool( "SFIso" ) ;
+  if ( m_doIso )  m_electronSFIso = new AsgElectronEfficiencyCorrectionTool( "SFIso" ) ;
   //define input file
  
   vector<string> filePerTool;
@@ -786,7 +787,7 @@ int Analysis::InitializeTools () {
   vector<AsgElectronEfficiencyCorrectionTool*> dumVectorTool = { m_electronSFIso, m_electronSFReco, m_electronSFID };
   vector<string> SFSyst = { "EL_EFF_Iso_CorrUncertainty__1up", "EL_EFF_Reco_TOTAL_UncorrUncertainty__1up", "EL_EFF_ID_TOTAL_UncorrUncertainty__1up" };
   for ( unsigned int iTool = 0; iTool < dumVectorTool.size(); iTool++ ) {
-    cout << "iTool : " << iTool << endl;
+    if ( !dumVectorTool[iTool] ) continue;
     vector<string> inputFile = { filePerTool[iTool] };
     dumVectorTool[iTool]->setProperty("CorrectionFileNameList",inputFile);
     //set datatype, 0-Data(or dont use the tool - faster), 1-FULLSIM, 3-AF2

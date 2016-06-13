@@ -100,6 +100,7 @@ class Analysis
   int GetNEvents() const { return m_numEvent; }
   double GetPtCut() const { return m_ptCut; }
 
+  void SetDoIso( int doIso ) { m_doIso = doIso; }
   void SetScaleSyst( int scaleSyst ) { m_scaleSyst = scaleSyst; }
   void SetEsModel( string esModel ) { m_esModel = esModel;} 
   void SetDebug( bool debug ) { m_debug = debug; }
@@ -266,5 +267,6 @@ class Analysis
   string m_pileupFile;
   TLorentzVector *m_Z;
   int m_scaleSyst;
+  int m_doIso;
 };
 #endif
