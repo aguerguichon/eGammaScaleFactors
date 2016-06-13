@@ -310,8 +310,7 @@ if len( inputs ) :
                         )
 
         result=''
-        result = sub.check_output([commandLine], shell=1, stderr=sub.STDOUT)    
-        #        result = os.popen( commandLine ).read()
+#        result = sub.check_output([commandLine], shell=1, stderr=sub.STDOUT)    
         print result
         jobIDList=[]
         for line in result.split() :
