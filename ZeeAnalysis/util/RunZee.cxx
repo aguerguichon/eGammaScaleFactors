@@ -1,3 +1,4 @@
+
 //C++ libraries
 #include <iostream>
 #include <string>
@@ -22,7 +23,7 @@ int main( int argc, char* argv[] ) {
   //define all options in the program                                                
   vector<string> infile;
   string outName,anaName, esModel, pileupFile;
-  int doSmearing, doScale, electronID;
+  int  doScale, electronID, scaleSyst, doIso;
   double ptCut, fBremCut;
   vector<double> datasetWeight;
 
@@ -31,13 +32,15 @@ int main( int argc, char* argv[] ) {
     ("outName", po::value<string >(&outName)->default_value("/sps/atlas/c/cgoudet/Calibration/DataxAOD/TestAnalysis.root") , "Name of the output file")
     ("infile", po::value< vector< string > >(&infile), "The name of xAOD rootfiles")
     ("anaName", po::value< string >( &anaName )->default_value( "Analysis" ), "Name of the object")
-    ("doScale", po::value<int >( &doScale )->default_value( false )->implicit_value( true ), "Switch on the scale")
+    ("doScale", po::value<int >( &doScale )->default_value( false )->implicit_value(true), "Switch on the scale")
     ("electronID", po::value< int >( &electronID )->default_value( 1 ), "" )
     ("esModel", po::value< string >( &esModel )->default_value( "es2015PRE" ), "" )
     ("ptCut", po::value<double>( &ptCut ), "" )
     ("fBremCut", po::value<double>( &fBremCut ), "" )
     ("datasetWeight", po::value<vector<double>>( &datasetWeight )->multitoken(), "" )
     ("pileupFile", po::value<string>( &pileupFile ), "" )
+    ("scaleSyst", po::value<int>( &scaleSyst )->default_value(0), "" )
+    ("doIso", po::value<int>( &doIso )->default_value(1), "" )
     ;
 
   //Define options gathered by position                                              
@@ -79,6 +82,8 @@ int main( int argc, char* argv[] ) {
     analysisData.SetDoScaleFactor( doScale );
     analysisData.SetElectronID( electronID );
     analysisData.SetEsModel( esModel );
+    analysisData.SetScaleSyst( scaleSyst );
+    analysisData.SetDoIso( doIso );
     analysisData.TreatEvents();
     analysisData.Save( );
   }

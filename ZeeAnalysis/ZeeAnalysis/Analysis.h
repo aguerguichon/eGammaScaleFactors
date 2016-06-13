@@ -27,6 +27,10 @@ using std::map;
 #include "TrigDecisionTool/TrigDecisionTool.h"
 #include "AsgTools/ToolHandle.h"
 
+namespace CP {
+  class IsolationSelectionTool;
+}
+
 using namespace Trig;
 using namespace TrigConf;
 using namespace xAOD;
@@ -96,7 +100,8 @@ class Analysis
   int GetNEvents() const { return m_numEvent; }
   double GetPtCut() const { return m_ptCut; }
 
-
+  void SetDoIso( int doIso ) { m_doIso = doIso; }
+  void SetScaleSyst( int scaleSyst ) { m_scaleSyst = scaleSyst; }
   void SetEsModel( string esModel ) { m_esModel = esModel;} 
   void SetDebug( bool debug ) { m_debug = debug; }
   void SetDoScaleFactor( int doScale ) { m_doScaleFactor = doScale;}
@@ -204,6 +209,7 @@ class Analysis
   CP::VertexPositionReweightingTool *m_vtxTool;
   AsgElectronEfficiencyCorrectionTool *m_electronSFReco;
   AsgElectronEfficiencyCorrectionTool *m_electronSFID;
+  AsgElectronEfficiencyCorrectionTool *m_electronSFIso;
   
   const xAOD::EventInfo* m_eventInfo;
   AsgElectronLikelihoodTool* m_LHToolMedium2012;
@@ -235,6 +241,8 @@ class Analysis
    */
   TFile *m_logFile;
 
+  CP::IsolationSelectionTool *m_IsoSelTool; //!
+
   map<string, double> m_mapVar;
   map<string, long long int> m_mapLongVar;
 
@@ -258,5 +266,7 @@ class Analysis
   vector<double> m_datasetWeight;
   string m_pileupFile;
   TLorentzVector *m_Z;
+  int m_scaleSyst;
+  int m_doIso;
 };
 #endif
