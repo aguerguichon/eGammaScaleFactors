@@ -21,7 +21,7 @@ launcherPath = os.popen( 'pwd' ).read().split()[0]+'/'
 
 for option in sys.argv:
     if option == 'RunGrid.py' : continue
-
+    datasetsPath = '/sps/atlas/c/cgoudet/Calibration/DataxAOD/'
     if option in ['DATA25', 'DATA50'] :
 
 #Get the list of all the runs in the grl
@@ -88,7 +88,11 @@ for option in sys.argv:
             if iLaunch == 6 : options['fBremCut'] = 0.7
             if iLaunch == 7 : options['doIso']=0
             inputs.append( [datasets, options] )
-        
+
+    if 'DATA2016' == option :        
+        GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'esModel' : 'es2016PRE' } )     
+        GetDataFiles( inputs, 'Data_13TeV_Zee_2016', {'doScale' : 0 } )     
+
 
     if 'MC25' == option :
         # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1} )     
@@ -138,12 +142,12 @@ for option in sys.argv:
 
 
     if option=='clean' :
-        path = '/sps/atlas/c/cgoudet/Calibration/DataxAOD/'
-        datasets = os.popen( 'ls ' + path ).read().split()
+
+        datasets = os.popen( 'ls ' + datasetsPath ).read().split()
         for file in datasets : 
             if '.root' in file : continue
             if 'MC_' not in file and 'Data_' not in file : continue
-            os.chdir( path + file )            
+            os.chdir( datasetsPath + file )            
             versions = os.popen( 'ls ' ).read().split()
             print file
             versions[:] = [value for value in versions if 'user' in value ]
@@ -156,7 +160,6 @@ for option in sys.argv:
 ##==================================================================
     if option=='download' :
         missingFiles=[]
-        path='/sps/atlas/c/cgoudet/Calibration/DataxAOD/'
 
 #Get the list of jobs and datasets from the txt file
         gridJobIDList = np.genfromtxt( 'GridJobList.txt', dtype='S100', delimiter=' ' )
@@ -177,7 +180,7 @@ for option in sys.argv:
             directory = job[1].replace( 'user.cgoudet.', '' ).replace('_Ntuple.root', '' )
             directory = directory[:directory.rfind('_')]
             print directory
-            os.chdir( path + directory )
+            os.chdir( datasetsPath + directory )
 
 #download the dataset with rucio and get the number of failed download
             nMiss = os.popen( 'rucio download '+ job[1] ).read().split()[-1]

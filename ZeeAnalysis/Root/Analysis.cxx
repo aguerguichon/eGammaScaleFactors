@@ -742,8 +742,15 @@ int Analysis::InitializeTools () {
     m_pileup->setProperty("DataScaleFactor",1./1.16);
     confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + m_pileupFile );
     lcalcFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "ilumicalc_histograms_None_13TeV_25ns.root");
-    grlFile.push_back( "data15_13TeV.periodAllYear_DetStatus-v75-repro20-01_DQDefects-00-02-02_PHYS_StandardGRL_All_Good_25ns.xml" );
+    grlFile.push_back( "data15_13TeV.periodAllYear_DetStatus-v75-repro20-01_DQDefects-00-02-02_PHYS_StandardGRL_All_Good_25ns.xml" ); 
   }
+  else if ( m_esModel == "es2016PRE" ) {
+    m_pileup->setProperty("DataScaleFactor",1./1.16);
+    confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + m_pileupFile );
+    lcalcFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "ilumicalc_histograms_None_297730-300908.root");
+    grlFile.push_back( "data16_13TeV.periodAllYear_DetStatus-v78-pro20-04_DQDefects-00-02-02_PHYS_StandardGRL_All_Good_25ns_ignore_TOROID_STATUS.xml" ); 
+  }
+
   dynamic_cast<CP::PileupReweightingTool&>(*m_pileup).setProperty( "ConfigFiles", confFiles);
   dynamic_cast<CP::PileupReweightingTool&>(*m_pileup).setProperty( "LumiCalcFiles", lcalcFiles);
   m_pileup->initialize();

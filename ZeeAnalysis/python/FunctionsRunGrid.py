@@ -28,8 +28,9 @@ def GetDataFiles( inputs, inFileIndex, options  ) :
     fileList['MC_13TeV_Zttbar_25ns'] = ['mc15_13TeV.410000.PowhegPythiaEvtGen_P2012_ttbar_hdamp172p5_nonallhad.merge.DAOD_STDM2.e3698_s2608_s2183_r7725_r7676_p2596/', 'es2015cPRE', 0.237, 'PileUpReweighting_Zttbar_prw.root' ]
 
     fileList['MC_13TeV_Zee_25ns'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2576_s2132_r7773_r7676/', 'es2015cPRE', 1, 'PileUpReweighting_25nsbc_prw.root' ]
+    fileList['Data_13TeV_Zee_2016'] = ['data16_13TeV.*.physics_Main.merge.DAOD_EGAM*.*p2667/', 'es2016PRE' ]
 
-    options["esModel"] = fileList[inFileIndex][1];
+    if not "esModel" in options : options["esModel"] = fileList[inFileIndex][1];
     options["outName"] = inFileIndex;
     if len( fileList[inFileIndex] ) > 2 : options['datasetWeight'] = fileList[inFileIndex][2]
     if len( fileList[inFileIndex] ) > 3 : options['pileupFile'] = fileList[inFileIndex][3]
