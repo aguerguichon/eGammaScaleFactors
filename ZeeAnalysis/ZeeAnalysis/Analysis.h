@@ -157,6 +157,8 @@ class Analysis
   */
   void TreatEvents(int nevent=0);
   //  bool IsMedium(const xAOD::Electron* el ) const;
+  void SetTrigger( string trigName ) { m_trigName = trigName; }
+
  private :
   int InitializeTools();
   double GetLineShapeWeight();
@@ -268,5 +270,7 @@ class Analysis
   TLorentzVector *m_Z;
   int m_scaleSyst;
   int m_doIso;
+  string m_trigName;
+
 };
 #endif

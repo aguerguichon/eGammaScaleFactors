@@ -90,7 +90,7 @@ for option in sys.argv:
             inputs.append( [datasets, options] )
 
     if 'DATA2016' == option :        
-        GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'esModel' : 'es2016PRE' } )     
+#        GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'esModel' : 'es2016PRE' } )     
         GetDataFiles( inputs, 'Data_13TeV_Zee_2016', {'doScale' : 0 } )     
 
 
@@ -310,7 +310,7 @@ if len( inputs ) :
                         )
 
         result=''
-#        result = sub.check_output([commandLine], shell=1, stderr=sub.STDOUT)    
+        result = sub.check_output([commandLine], shell=1, stderr=sub.STDOUT)    
         print result
         jobIDList=[]
         for line in result.split() :

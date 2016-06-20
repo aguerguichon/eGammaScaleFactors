@@ -22,7 +22,7 @@ int main( int argc, char* argv[] ) {
   po::options_description desc("LikelihoodProfiel Usage");
   //define all options in the program                                                
   vector<string> infile;
-  string outName,anaName, esModel, pileupFile;
+  string outName,anaName, esModel, pileupFile, trigName;
   int  doScale, electronID, scaleSyst, doIso;
   double ptCut, fBremCut;
   vector<double> datasetWeight;
@@ -41,6 +41,7 @@ int main( int argc, char* argv[] ) {
     ("pileupFile", po::value<string>( &pileupFile ), "" )
     ("scaleSyst", po::value<int>( &scaleSyst )->default_value(0), "" )
     ("doIso", po::value<int>( &doIso )->default_value(1), "" )
+    ("trigger", po::value<string>( &trigName )->default_value(".*"), "" )
     ;
 
   //Define options gathered by position                                              
@@ -84,6 +85,7 @@ int main( int argc, char* argv[] ) {
     analysisData.SetEsModel( esModel );
     analysisData.SetScaleSyst( scaleSyst );
     analysisData.SetDoIso( doIso );
+    analysisData.SetTrigger( trigName );
     analysisData.TreatEvents();
     analysisData.Save( );
   }

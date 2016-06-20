@@ -27,7 +27,7 @@ namespace po = boost::program_options;
 Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess), 
 		       m_debug( true), m_name( "Analysis" ), m_numEvent(0), m_goodEvent(0),
 		       m_doScaleFactor(false), m_electronID(1), m_esModel( "es2015PRE" ), m_ptCut( 27000 ), m_fBremCut( 1 ), 
-		       m_pileupFile( "PileUpReweighting_25nsb_prw.root" ), m_scaleSyst(0), m_doIso(1)
+		       m_pileupFile( "PileUpReweighting_25nsb_prw.root" ), m_scaleSyst(0), m_doIso(1), m_trigName(".*")
 {
   if ( m_debug ) cout << "Analysis::Analysis()" << endl;
   //  cout << "m_debug : " << m_debug << endl;
@@ -89,9 +89,9 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   // m_mapHist["lineshapeWeight"] = new TH1D( "lineshapeWeight", "lineshapeWeight", 100, 0.9, 1.1 );
   // m_mapHist["lineshapeWeight"]->GetXaxis()->SetTitle( "lineshapeWeights" );
 
-  // m_mapHist["vertexWeight"] = new TH1D ("vertexWeight", "vertexWeight", 100, 0, 2 ); 
-  // m_mapHist["vertexWeight"]->GetXaxis()->SetTitle("vertexWeight");
-  // m_mapHist["vertexWeight"]->Sumw2();
+  m_mapHist["vertexWeight"] = new TH1D ("vertexWeight", "vertexWeight", 100, 0, 2 ); 
+  m_mapHist["vertexWeight"]->GetXaxis()->SetTitle("vertexWeight");
+  m_mapHist["vertexWeight"]->Sumw2();
 
   m_mapHist["SFReco"] = new TH1D ("SFReco", "SFReco", 100, 0.98, 1.01 );
   m_mapHist["SFReco"]->GetXaxis()->SetTitle("SFReco");
@@ -411,20 +411,12 @@ void Analysis::TreatEvents(int nevent) {
       }
       // Read event 
       m_tevent.getEntry( i_event );
-      //      m_mapVar["lineshapeWeight"] = 1;
-      m_mapVar["puWeight"]=1;
-      //      m_mapVar["vertexWeight"]=1;
-      m_mapVar["SFReco"]=1;
-      m_mapVar["SFID"]=1;
-
 
       //Retrieve the electron container                  
       //RELEASE      
       if ( ! m_tevent.retrieve( m_eContainer, "Electrons" ).isSuccess() ){ cout << "Can not retrieve ElectronContainer : ElectronCollection" << endl; exit(1); }// if retrieve                                                                 
       if ( ! m_tevent.retrieve( m_eventInfo, "EventInfo" ).isSuccess() ){ cout << "Can Not retrieve EventInfo" << endl; exit(1); }
       if ( ! m_tevent.retrieve( m_ZVertex, "PrimaryVertices" ).isSuccess() ){ cout << "Can Not retrieve Vertex Info" << endl; exit(1); }
-
-
 
       //Create a shallow copy
       // Allow to modify electrons properties for calibration
@@ -443,7 +435,8 @@ void Analysis::TreatEvents(int nevent) {
 
       //Trigger
       bool passTrig = false;
-      auto chainGroup = m_trigDecisionTool->getChainGroup(".*");
+      //      auto chainGroup = m_trigDecisionTool->getChainGroup( m_trigName.c_str() );
+      auto chainGroup = m_trigDecisionTool->getChainGroup( ".*" );
       //auto chainGroup = m_trigDecisionTool->getChainGroup("HLT_2e12_lhloose_L12EM10VH.*");
       //      auto chainGroup = m_trigDecisionTool->getChainGroup("HLT_e24_lhmedium_L1EM18VH.*");
       std::map<std::string,int> triggerCounts;
@@ -454,8 +447,9 @@ void Analysis::TreatEvents(int nevent) {
 	passTrig = passTrig || cg->isPassed();
 	//	Info( "execute()", "%30s chain passed(1)/failed(0): %d total chain prescale (L1*HLT): %.1f", thisTrig.c_str(), cg->isPassed(), cg->getPrescale() );
       }
-      m_mapHist["cutFlow"]->Fill("Trigger", 1);
       if ( !passTrig ) continue;
+      m_mapHist["cutFlow"]->Fill("Trigger", 1);
+
 
       //      Make the electron selection and fill m_eGoodContainer
       int err = (int) PassSelection();
@@ -473,7 +467,6 @@ void Analysis::TreatEvents(int nevent) {
 	exit(2);
       }
       }
-      //      if ( i_event > 10 ) exit(0);
 
       // Free the memory from copy
       if ( m_eShallowContainer.first )  delete m_eShallowContainer.first;
@@ -486,7 +479,7 @@ void Analysis::TreatEvents(int nevent) {
       }
       m_veGoodWeight.clear();
       //      map<string, int>::iterator it;
-      for ( auto it = m_mapVar.begin(); it != m_mapVar.end(); it++ ) it->second = 1;
+      //      for ( auto it = m_mapVar.begin(); it != m_mapVar.end(); it++ ) it->second = 1;
     }//for i_event    
   }//for i_file
 
@@ -516,7 +509,6 @@ bool Analysis::PassSelection() {
   if ( m_esModel.find( "2015" ) == string::npos && fabs( (*m_ZVertex)[0]->z() ) > 150 ) return false;
   m_mapHist["cutFlow"]->Fill( "ZVertex", 1 );
 
-  //if (ComputeZMass( m_veGood ) > 100 || ComputeZMass( m_veGood ) < 80) return false;
   if ( m_debug ) cout << "Analysis::PassSelection done" << endl;
   return true;
 }
@@ -547,9 +539,7 @@ void Analysis::MakeElectronCut() {
     //Get the fbrm variable as computed in the likelihood code
 
     //Calibrate this new electron
-    //    cout << (*eContItr)->pt() << " ";
     m_EgammaCalibrationAndSmearingTool->applyCorrection( **eContItr );
-    //    cout << (*eContItr)->pt() << endl;
     m_mapHist["elEta"]->Fill( (*eContItr)->eta() );
     m_mapHist["elPt"]->Fill( (*eContItr)->pt() /1000 );
     
@@ -620,53 +610,48 @@ int Analysis::FillSelectionTree() {
 
   m_mapLongVar["runNumber"] = m_eventInfo->runNumber();
   m_mapLongVar["eventNumber"] = m_eventInfo->eventNumber();
+  m_mapLongVar["timeStamp"] = m_eventInfo->timeStamp();
+
   m_mapVar["m12"] = m_Z->M() / 1000.;
   m_mapVar["ptZ"] = m_Z->Pt() / 1000.;
 
   m_mapVar["NVertex"] = m_ZVertex->size();
 
+  vector<string> weightNames = {  "SFIso", "SFReco", "SFID", "vertexWeight", "puWeight" };
+  for ( auto name : weightNames ) m_mapVar[name]=1;  
   if ( m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {
     if ( m_pileup ) {
       m_pileup->apply( *m_eventInfo, 1 );
       m_mapVar["puWeight"] = m_eventInfo->auxdecor< float >( "PileupWeight" );
     }
-    else m_mapVar["puWeight"] = 1;
     m_mapHist["puWeight"]->Fill( m_mapVar["puWeight"] );
     
     if ( m_vtxTool ) {
       m_vtxTool->getWeight( m_mapVar[ "vertexWeight" ] );
       m_mapHist["vertexWeight"]->Fill( m_mapVar[ "vertexWeight" ] );
     }
-    else m_mapVar["vertexWeight"] = 1;
 
+    
     vector<AsgElectronEfficiencyCorrectionTool*> dumVectorTool = { m_electronSFIso, m_electronSFReco, m_electronSFID };    
-    vector<string> names = { "SFIso", "SFReco", "SFID" };
-    //    cout << "dumVectorToolSize : " << dumVectorTool.size() << endl;
     for ( unsigned int  iTool = 0; iTool < dumVectorTool.size(); iTool++ ) {
-      //      cout << "iTool : " << iTool << endl;
-      if ( !dumVectorTool[iTool] )  { 
-	m_mapVar[names[iTool]]=1;
-	continue;
-      }
       double sf1=1, sf2=1;
       dumVectorTool[iTool]->getEfficiencyScaleFactor(*m_veGood[0],sf1);
       dumVectorTool[iTool]->getEfficiencyScaleFactor(*m_veGood[1],sf2);
-      // m_mapHist[tool->GetName()]->Fill( sf1 );
-      // m_mapHist[tool->GetName()]->Fill( sf2 );
-      m_mapVar[names[iTool]] = sf1*sf2;
-      //      cout << names[iTool] << " " << sf1 << endl;
+      m_mapVar[weightNames[iTool]] = sf1*sf2;
     }//end for
   }//end isSimulation
+  else {
 
-  //  m_mapVar["weight"] = m_mapVar["lineshapeWeight"]*m_mapVar["puWeight"]*m_mapVar["vertexWeight"]*m_mapVar["SFReco"]*m_mapVar["SFID"]*m_mapVar["datasetWeight"];
-  m_mapVar["weight"] = m_mapVar["puWeight"]*m_mapVar["SFReco"]*m_mapVar["SFID"]*m_mapVar["datasetWeight"]*m_mapVar["SFIso"];
+  }
+  //  m_mapVar["weight"] = m_mapVar["lineshapeWeight"]*m_mapVar["puWeight"]*m_mapVar["SFReco"]*m_mapVar["SFID"]*m_mapVar["datasetWeight"];
+  m_mapVar["weight"] = m_mapVar["puWeight"]*m_mapVar["SFReco"]*m_mapVar["SFID"]*m_mapVar["datasetWeight"]*m_mapVar["SFIso"]*m_mapVar["vertexWeight"];
   
   if ( !m_selectionTree->GetEntries() ) {
-    for ( map<string, double>::iterator it = m_mapVar.begin(); it != m_mapVar.end(); it++) {
-      m_selectionTree->Branch( it->first.c_str(), &it->second );
+    for ( auto &it : m_mapVar ) {
+      m_selectionTree->Branch( it.first.c_str(), &it.second );
     }
-    for ( map<string, long long int>::iterator it = m_mapLongVar.begin(); it != m_mapLongVar.end(); it++) {
-      m_selectionTree->Branch( it->first.c_str(), &it->second );
+    for ( auto &it : m_mapLongVar ) {
+      m_selectionTree->Branch( it.first.c_str(), &it.second );
     }
   }
 
@@ -717,16 +702,13 @@ int Analysis::InitializeTools () {
   string grlLocalFile = "/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/";
   vector< string > grlFile;
   bool isLocal = system("ls data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml" );    
-    // "data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml",
-    // "data15_13TeV.periodAllYear_DetStatus-v73-pro19-08_DQDefects-00-01-02_PHYS_StandardGRL_All_Good_25ns.xml",
-  //    "data15_13TeV.periodAllYear_DetStatus-v75-repro20-01_DQDefects-00-02-02_PHYS_StandardGRL_All_Good_25ns.xml"
-      //  };
+
 
   Info("","Declaring pileup reweighting tool");
   m_pileup = new CP::PileupReweightingTool("prw");
   std::vector<std::string> confFiles;
   std::vector<std::string> lcalcFiles;
-  if ( m_esModel.find( "2015" ) == string::npos ) {
+  if ( m_esModel.find( "2012" ) != string::npos ) {
     grlFile.push_back( "data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml" );
     m_pileup->setProperty("DataScaleFactor",1./1.09);    //    m_pileup.SetDataScaleFactors(1/1.09); // For 2012
     confFiles.push_back("PileupReweighting/mc14v1_defaults.prw.root");
@@ -756,8 +738,10 @@ int Analysis::InitializeTools () {
   m_pileup->initialize();
 
 
-  for ( unsigned int i = 0; i< grlFile.size(); i++ ) 
+  for ( unsigned int i = 0; i< grlFile.size(); i++ ) {
     vecStringGRL.push_back( string( isLocal ? grlLocalFile : "" ) + grlFile[i] );
+    cout << vecStringGRL.back() << endl;
+    }
   
   m_grl->setProperty( "GoodRunsListVec", vecStringGRL);
   m_grl->setProperty("PassThrough", false); // if true (default) will ignore result of GRL and will just pass all events
@@ -766,25 +750,26 @@ int Analysis::InitializeTools () {
     exit(1);
   }
 
-  //  m_vtxTool = new CP::VertexPositionReweightingTool( "VertexPosition" );  
-  // m_vtxTool->setProperty("DataMean", -25.7903);
-  // m_vtxTool->setProperty("DataSigma", 43.7201);
+  // m_vtxTool = new CP::VertexPositionReweightingTool( "VertexPosition" );  
+  // m_vtxTool->setProperty("DataMean", 0.);
+  // m_vtxTool->setProperty("DataSigma", 0.);
 
 
   m_electronSFReco = new AsgElectronEfficiencyCorrectionTool( "SFReco" ) ;
   m_electronSFID = new AsgElectronEfficiencyCorrectionTool( "SFID" ) ;
   if ( m_doIso )  m_electronSFIso = new AsgElectronEfficiencyCorrectionTool( "SFIso" ) ;
   //define input file
+  // std:string fileName = "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v1/offline/efficiencySF.offline.LooseAndBLayerLLH_d0z0_v11.2015_2016.13TeV.rel20.7.25ns.v01.root" 
  
   vector<string> filePerTool;
-  filePerTool.push_back( "ElectronEfficiencyCorrection/efficiencySF.Isolation.Loose.MediumLH.2015.13TeV.rel20p0.v03.root" );
-  filePerTool.push_back( "ElectronEfficiencyCorrection/efficiencySF.offline.RecoTrk.2015.13TeV.rel20p0.25ns.v04.root" );
+  filePerTool.push_back( "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v1/isolation/efficiencySF.Isolation.LooseAndBLayerLLH_d0z0_v11_isolLoose.2015_2016.13TeV.rel20.7.25ns.v01.root" );
+  filePerTool.push_back( "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v1/offline/efficiencySF.offline.RecoTrk.2015_2016.13TeV.rel20.7.25ns.v01.root" );
   switch ( m_electronID ) {
   case 1 : 
-    filePerTool.push_back( "ElectronEfficiencyCorrection/efficiencySF.offline.MediumLH.2015.13TeV.rel20p0.25ns.v01.root" );
+    filePerTool.push_back( "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v1/offline/efficiencySF.offline.MediumLLH_v11.2015_2016.13TeV.rel20.7.25ns.v01.root" );
     break;
   case 2 :
-    filePerTool.push_back( "ElectronEfficiencyCorrection/efficiencySF.offline.TightLLH_d0z0.2015.13TeV.rel20p0.25ns.v04.root" );
+    filePerTool.push_back( "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v1/offline/efficiencySF.offline.TightLLH_d0z0.2015.13TeV.rel20p0.25ns.v04.root" );
     break;
   default :
     cout << "SFReco file not defined for m_electronID=" << m_electronID << endl;

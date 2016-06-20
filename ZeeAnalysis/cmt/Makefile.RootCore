@@ -10,7 +10,7 @@
 PACKAGE          = ZeeAnalysis
 
 # the libraries to link with this one:
-PACKAGE_PRELOAD  = Hist Physics RooFitCore RooFit
+PACKAGE_PRELOAD  = Hist Physics RooFitCore RooFit 
 
 # additional compilation flags to pass (not propagated to dependent packages):
 PACKAGE_CXXFLAGS = 
@@ -28,7 +28,8 @@ PACKAGE_BINFLAGS = -lboost_program_options
 PACKAGE_LIBFLAGS = 
 
 # the list of packages we depend on:
-PACKAGE_DEP      =  xAODEgamma  xAODTruth  ElectronPhotonFourMomentumCorrection xAODEventInfo GoodRunsLists xAODTracking ElectronPhotonSelectorTools ElectronEfficiencyCorrection PileupReweighting LineShapeTool VertexPositionReweighting TrigDecisionTool TrigConfxAOD IsolationSelection
+PACKAGE_DEP      =  xAODEgamma  xAODTruth  ElectronPhotonFourMomentumCorrection xAODEventInfo GoodRunsLists xAODTracking ElectronPhotonSelectorTools ElectronEfficiencyCorrection PileupReweighting LineShapeTool TrigDecisionTool TrigConfxAOD IsolationSelection  VertexPositionReweighting
+#egammaAnalysisUtils
 # egammaMVACalib egammaLayerRecalibTool
 # the list of packages we use if present, but that we can work without :
 PACKAGE_TRYDEP   = 
