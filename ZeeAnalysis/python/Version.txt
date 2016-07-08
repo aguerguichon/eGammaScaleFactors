@@ -109,4 +109,12 @@ MC_13TeV_Zee_25ns_Lkh1_fBrem70 0
 MC_13TeV_Zee_25nsb+_Lkh1 0
 MC_13TeV_Zee_25nsb_IBL_Lkh1 1
 MC_13TeV_Zee_25ns 3
-Data_13TeV_Zee_2016 3
+Data_13TeV_Zee_2016 4
+Data_13TeV_Zee_2015_Lkh1 1
+Data_13TeV_Zee_2015_Lkh1_scaled 1
+Data_13TeV_Zee_2016_Lkh1_scaled 1
+MC_13TeV_Zee_2015c_Lkh1 3
+MC_13TeV_Zee_2015b_Lkh1 4
+MC_13TeV_Zee_2015b_Lkh1_scaled 0
+MC_13TeV_Zee_2015c_Lkh1_scaled 0
+Data_13TeV_Zee_2016_Lkh1 0

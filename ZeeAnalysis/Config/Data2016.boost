@@ -1,0 +1,4 @@
+esModel=es2016PRE 
+trigger=HLT_2e17_lhvloose_nod0.* 
+dataPUSF=0.8621
+grl=data16_13TeV.periodAllYear_DetStatus-v78-pro20-04_DQDefects-00-02-02_PHYS_StandardGRL_All_Good_25ns_ignore_TOROID_STATUS.xml

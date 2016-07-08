@@ -22,7 +22,7 @@ int main( int argc, char* argv[] ) {
   po::options_description desc("LikelihoodProfiel Usage");
   //define all options in the program                                                
   vector<string> infile;
-  string outName,anaName, esModel, pileupFile, trigName;
+  string outName,anaName, esModel, pileupFile, trigName, configFileName;
   int  doScale, electronID, scaleSyst, doIso;
   double ptCut, fBremCut;
   vector<double> datasetWeight;
@@ -34,14 +34,12 @@ int main( int argc, char* argv[] ) {
     ("anaName", po::value< string >( &anaName )->default_value( "Analysis" ), "Name of the object")
     ("doScale", po::value<int >( &doScale )->default_value( false )->implicit_value(true), "Switch on the scale")
     ("electronID", po::value< int >( &electronID )->default_value( 1 ), "" )
-    ("esModel", po::value< string >( &esModel )->default_value( "es2015PRE" ), "" )
     ("ptCut", po::value<double>( &ptCut ), "" )
     ("fBremCut", po::value<double>( &fBremCut ), "" )
     ("datasetWeight", po::value<vector<double>>( &datasetWeight )->multitoken(), "" )
-    ("pileupFile", po::value<string>( &pileupFile ), "" )
     ("scaleSyst", po::value<int>( &scaleSyst )->default_value(0), "" )
     ("doIso", po::value<int>( &doIso )->default_value(1), "" )
-    ("trigger", po::value<string>( &trigName )->default_value(".*"), "" )
+    ("configFile", po::value<string>( &configFileName ), "" )
     ;
 
   //Define options gathered by position                                              
@@ -75,17 +73,18 @@ int main( int argc, char* argv[] ) {
     cout << "infile size : " << infile.size() << endl;
     
     Analysis analysisData( anaName,  infile, outName );
+    analysisData.Configure( configFileName );
     analysisData.SetDatasetWeight( datasetWeight );
-    if ( pileupFile != "" ) analysisData.SetPileupFile( pileupFile );
+    //    if ( pileupFile != "" ) analysisData.SetPileupFile( pileupFile );
     analysisData.SetDebug( false );
     if ( vm.count( "ptCut" ) ) analysisData.SetPtCut( ptCut );
     if ( vm.count( "fBremCut" ) ) analysisData.SetFBremCut( fBremCut );
     analysisData.SetDoScaleFactor( doScale );
     analysisData.SetElectronID( electronID );
-    analysisData.SetEsModel( esModel );
+    if ( esModel != "" ) analysisData.SetEsModel( esModel );
     analysisData.SetScaleSyst( scaleSyst );
     analysisData.SetDoIso( doIso );
-    analysisData.SetTrigger( trigName );
+    //    analysisData.SetTrigger( trigName );
     analysisData.TreatEvents();
     analysisData.Save( );
   }

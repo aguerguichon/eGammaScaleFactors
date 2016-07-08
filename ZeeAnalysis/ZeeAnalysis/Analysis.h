@@ -95,14 +95,14 @@ class Analysis
    */
   void Divide ( Analysis & analysis );
 
-  string GetName() const { return m_name; }
+  string GetName() { return m_mapString["name"]; }
   int GetGoodEvents() const {return m_goodEvent; }
   int GetNEvents() const { return m_numEvent; }
   double GetPtCut() const { return m_ptCut; }
 
   void SetDoIso( int doIso ) { m_doIso = doIso; }
   void SetScaleSyst( int scaleSyst ) { m_scaleSyst = scaleSyst; }
-  void SetEsModel( string esModel ) { m_esModel = esModel;} 
+  void SetEsModel( string esModel ) { m_mapString["esModel"]=esModel;} 
   void SetDebug( bool debug ) { m_debug = debug; }
   void SetDoScaleFactor( int doScale ) { m_doScaleFactor = doScale;}
   void SetElectronID( int electronID ) { m_electronID = electronID; }  
@@ -142,7 +142,7 @@ class Analysis
      The change of name will be propagated to the titles and names of attributes.
   */  
   void SetName(string name);
-  void SetPileupFile( string pileupFile ) { m_pileupFile = pileupFile; }
+  void SetPileupFile( string pileupFile ) { m_mapVectString["pileupFile"].push_back( pileupFile ); }
 
   /**\brief Event per event analysis
      \param nevent Number of events to run over
@@ -157,7 +157,8 @@ class Analysis
   */
   void TreatEvents(int nevent=0);
   //  bool IsMedium(const xAOD::Electron* el ) const;
-  void SetTrigger( string trigName ) { m_trigName = trigName; }
+  void SetTrigger( string trigName ) { m_mapString["trigName"] = trigName; }
+  void Configure( string configFile );
 
  private :
   int InitializeTools();
@@ -176,9 +177,6 @@ class Analysis
 
   //Name of the object
   //This name will be displayed in the namme and title of all output histograms
-  string m_name;
-
-
 
   //Counters of events
   unsigned long long int m_numEvent;
@@ -212,6 +210,7 @@ class Analysis
   AsgElectronEfficiencyCorrectionTool *m_electronSFReco;
   AsgElectronEfficiencyCorrectionTool *m_electronSFID;
   AsgElectronEfficiencyCorrectionTool *m_electronSFIso;
+  AsgElectronEfficiencyCorrectionTool *m_electronSFTrig;
   
   const xAOD::EventInfo* m_eventInfo;
   AsgElectronLikelihoodTool* m_LHToolMedium2012;
@@ -247,6 +246,7 @@ class Analysis
 
   map<string, double> m_mapVar;
   map<string, long long int> m_mapLongVar;
+  map<string, string> m_mapString;
 
   /*
     O Likellihood Loose
@@ -257,7 +257,7 @@ class Analysis
     5 CutBased Tight
    */
   int m_electronID;
-  string m_esModel;
+
   /*
     2015 : es2015PRE
     2012 : es2012c
@@ -266,11 +266,10 @@ class Analysis
   double m_ptCut;
   double m_fBremCut;
   vector<double> m_datasetWeight;
-  string m_pileupFile;
   TLorentzVector *m_Z;
   int m_scaleSyst;
   int m_doIso;
-  string m_trigName;
-
+  map<string, vector<string>> m_mapVectString;
+  double m_dataPUSF;
 };
 #endif

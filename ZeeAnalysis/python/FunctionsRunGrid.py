@@ -2,9 +2,8 @@ import os
 from string import *
 import numpy as np
 
-
 #def GetDataFiles( inputs, scale, doScale, eleID, electronID, inFileIndex, outFilePrefix, esModel, ptCut, ptCutVect ) :
-def GetDataFiles( inputs, inFileIndex, options  ) :
+def GetDataFiles( inputs, inFileIndex, options, configuration=1  ) :
 
     path= '/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/DatasetList/'
     fileList = {}
@@ -28,20 +27,43 @@ def GetDataFiles( inputs, inFileIndex, options  ) :
     fileList['MC_13TeV_Zttbar_25ns'] = ['mc15_13TeV.410000.PowhegPythiaEvtGen_P2012_ttbar_hdamp172p5_nonallhad.merge.DAOD_STDM2.e3698_s2608_s2183_r7725_r7676_p2596/', 'es2015cPRE', 0.237, 'PileUpReweighting_Zttbar_prw.root' ]
 
     fileList['MC_13TeV_Zee_25ns'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2576_s2132_r7773_r7676/', 'es2015cPRE', 1, 'PileUpReweighting_25nsbc_prw.root' ]
-    fileList['Data_13TeV_Zee_2016'] = ['data16_13TeV.*.physics_Main.merge.DAOD_EGAM*.*p2667/', 'es2016PRE' ]
 
-    if not "esModel" in options : options["esModel"] = fileList[inFileIndex][1];
+    fileList['MC_13TeV_Zee_2015c'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2576_s2132_r7725_r7676_p2666/', 'ZeeAnalysis/Config/MC2015c.boost' ]
+    fileList['MC_13TeV_Zee_2015b'] = ['mc15_13TeV:mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2576_s2132_r7773_r7676_p2666/', 'ZeeAnalysis/Config/MC2015b.boost' ]
+
+    fileList['Data_13TeV_Zee_2016'] = ['data16_13TeV.*.physics_Main.merge.DAOD_EGAM1.*p2667/', 'ZeeAnalysis/Config/Data2016.boost' ]
+    fileList['Data_13TeV_Zee_2015'] = ['data15_13TeV.*.physics_Main.merge.DAOD_EGAM1.*p2667/', 'ZeeAnalysis/Config/Data2015.boost' ]
+
+#    if not "esModel" in options : options["esModel"] = fileList[inFileIndex][1];
     options["outName"] = inFileIndex;
-    if len( fileList[inFileIndex] ) > 2 : options['datasetWeight'] = fileList[inFileIndex][2]
-    if len( fileList[inFileIndex] ) > 3 : options['pileupFile'] = fileList[inFileIndex][3]
+    # if len( fileList[inFileIndex] ) > 2 : options['datasetWeight'] = fileList[inFileIndex][2]
+    # if len( fileList[inFileIndex] ) > 3 : options['pileupFile'] = fileList[inFileIndex][3]
+    if len ( fileList[inFileIndex] ) > 1 : options['configFile'] = fileList[inFileIndex][1]
+    if len ( fileList[inFileIndex] ) > 2 : options['extFile'] = fileList[inFileIndex][2]
 
-    inputs.append( [[fileList[inFileIndex][0]], options] )
-#remove comments and empty lines from datasets
-    # doScale.append( scale )
-    # electronID.append( eleID )
-    # esModel.append( fileList[inFileIndex][1] )
-    #outFilePrefix.append( inFileIndex )
-    # ptCutVect.append( ptCut )
+# electronID doScale pt
+# 0 : 1 0  27
+# 1 : 1 1  27
+# 2 : 1 0  30
+# 3 : 1 0  35
+# 4 : 1 0  20
+# 5 : 2 0  27
+# 6 fBrem
+# 7 noIso
+
+    minRange=0 if configuration>=0 else -configuration
+    for iLaunch in range( minRange, abs(configuration)+1 ) :
+        tmpOptions = options.copy()
+        tmpOptions['electronID'] = ( 2 if iLaunch==5 else 1 )
+        tmpOptions['doScale'] = ( 1 if iLaunch==1 else 0 )
+        if iLaunch == 3 : tmpOptions["ptCut"] =  35
+        elif iLaunch==2 : tmpOptions["ptCut"] =  30
+        elif iLaunch==4 : tmpOptions["ptCut"] =  20
+        else : tmpOptions["ptCut"] =  27
+        if iLaunch == 6 : tmpOptions['fBremCut'] = 0.7
+        if iLaunch == 7 : tmpOptions['doIso']=0
+        inputs.append( [[fileList[inFileIndex][0]], tmpOptions] )
+
 def StripName( line, doPrefix = 1, doSuffix = 1 ) :
     if ( line.rfind( '.' ) != -1 and doSuffix ) : 
         line = line[0:line.rfind( '.' )]

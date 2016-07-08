@@ -65,33 +65,12 @@ for option in sys.argv:
  
         np.savetxt( path + savingFile, datasetList, delimiter=' ', fmt='%s')
         rangeMax = 8
-# electronID doScale pt
-# 0 : 1 0  27
-# 1 : 1 1  27
-# 2 : 1 0  30
-# 3 : 1 0  35
-# 4 : 1 0  20
-# 5 : 2 0  27
-# 6 fBrem
-# 7 noIso
 
-        for iLaunch in range( 0, rangeMax ) :
-            if iLaunch >0 : continue
-            options = { 'esModel' : 'es2015PRE' }
-            options['outName'] = 'Data_13TeV_Zee_25ns'
-            options['electronID'] = ( 2 if iLaunch==5 else 1 )
-            options['doScale'] = ( 1 if iLaunch==1 else 0 )
-            if iLaunch == 3 : options["ptCut"] =  35
-            elif iLaunch==2 : options["ptCut"] =  30
-            elif iLaunch==4 : options["ptCut"] =  20
-            else : options["ptCut"] =  27
-            if iLaunch == 6 : options['fBremCut'] = 0.7
-            if iLaunch == 7 : options['doIso']=0
-            inputs.append( [datasets, options] )
+    if 'DATA2016' == option : GetDataFiles( inputs, 'Data_13TeV_Zee_2016', {}, 1 )     
+    if 'DATA2015' == option : GetDataFiles( inputs, 'Data_13TeV_Zee_2015', {}, 1 )     
+    if 'MC2015c' == option : GetDataFiles( inputs, 'MC_13TeV_Zee_2015c', {}, 1 )     
+    if 'MC2015b' == option : GetDataFiles( inputs, 'MC_13TeV_Zee_2015b', {}, 0 )     
 
-    if 'DATA2016' == option :        
-#        GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'esModel' : 'es2016PRE' } )     
-        GetDataFiles( inputs, 'Data_13TeV_Zee_2016', {'doScale' : 0 } )     
 
 
     if 'MC25' == option :
@@ -224,12 +203,6 @@ for option in sys.argv:
 #===================================================
 if len( inputs ) :
     os.chdir( '/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/' )
-    # if len( inputs ) != len( doScale ) or len( inputs ) != len( outFilePrefix ) or len( inputs ) != len( esModel ) :
-    #     print( "Wrong tabular sizes" )
-    #     exit(0)
-
-
-
     jobIDList=[]
 
     for iFile in range( 0, len( inputs ) ) :
@@ -239,12 +212,9 @@ if len( inputs ) :
         optionLine=""
         outFileName = inputs[iFile][1]['outName']
 
-
-        if 'esModel' in inputs[iFile][1] :
-            optionLine += ' --esModel ' + inputs[iFile][1]['esModel']
-
-        if 'pileupFile' in inputs[iFile][1] :
-            optionLine += ' --pileupFile ' + inputs[iFile][1]['pileupFile']
+        optionLine += ' '.join( [
+                '--'+ label + ' ' + inputs[iFile][1][label] 
+                for label in ['esModel', 'configFile', 'pileupFile', 'datasetWeight' ]  if label in inputs[iFile][1] ] )
 
         if  'electronID' in inputs[iFile][1] :
             electronIDTitle = ""
@@ -268,17 +238,16 @@ if len( inputs ) :
             pass
 
 
-        if "ptCut" in inputs[iFile][1].keys() :
+        if "ptCut" in inputs[iFile][1] :
             if inputs[iFile][1]['ptCut'] != 27 : outFileName += '_pt' + str( inputs[iFile][1]['ptCut'] )    
             optionLine += ' --ptCut ' + str( inputs[iFile][1]['ptCut']*1000 )
             pass
 
-        if "fBremCut" in inputs[iFile][1].keys() :
+        if "fBremCut" in inputs[iFile][1] :
             if inputs[iFile][1]['fBremCut'] != 1 : outFileName += '_fBrem' + str( int( inputs[iFile][1]['fBremCut']*100) )    
             optionLine += ' --fBremCut ' + str( inputs[iFile][1]['fBremCut'] )
             pass
 
-        if "datasetWeight" in inputs[iFile][1] and inputs[iFile][1]['datasetWeight'] != 1 : optionLine += ' --datasetWeight ' + str( inputs[iFile][1]['datasetWeight'] )
         if 'doIso' in inputs[iFile][1] and inputs[iFile][1]['doIso'] != 1 : 
             optionLine += ' --doIso ' + str( inputs[iFile][1]['doIso'] ) 
             outFileName += "_doIso" + str( inputs[iFile][1]['doIso'] ) 
@@ -292,7 +261,14 @@ if len( inputs ) :
             
         outFileName +=  "_" + str( version )
 
+        extFileLine=''
+        if 'configFile' in inputs[iFile][1] :
+            configFile = open( inputs[iFile][1]['configFile'], 'r' )
+            extFileLine= ','.join( [ line.split('\n')[0].split('=')[1] for line in configFile if 'ilumCalc' in line or 'pileupFile' in line ] )
+            configFile.close()
+        if extFileLine != '' : extFileLine = '--extFile='+ extFileLine
         print outFileName
+
 
         datasetList = ""
         for dataset in inputs[iFile][0] : datasetList += dataset + ( ',' if dataset != inputs[iFile][0][-1] else '' )
@@ -304,14 +280,14 @@ if len( inputs ) :
                         + '"'
                         + ' --outDS user.cgoudet.' + outFileName + ' --inDS ' + datasetList + ' --outputs Ntuple.root '
                         + ( ' --useRootCore '
-                            + '--extFile=lumicalc_histograms_None_200842-215643.root,ilumicalc_histograms_None_13TeV_25ns.root,ilumicalc_histograms_None_13TeV_25nsb.root,ilumicalc_histograms_None_13TeV_50ns.root,PileUpReweighting_25nsa_prw.root,PileUpReweighting_25nsb_prw.root,PileUpReweighting_50ns_prw.root,PileUpReweighting_Ztautau_prw.root,PileUpReweighting_Zttbar_prw.root,PileUpReweighting_25nsbc_prw.root '
+                            + extFileLine
                             + ' --tmpDir /tmp '
                             )
                         )
 
-        result=''
+#        print( commandLine )
+        # exit(0)
         result = sub.check_output([commandLine], shell=1, stderr=sub.STDOUT)    
-        print result
         jobIDList=[]
         for line in result.split() :
             if 'jediTaskID' in line : 

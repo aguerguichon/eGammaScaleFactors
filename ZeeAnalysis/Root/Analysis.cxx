@@ -16,6 +16,8 @@
 #include "PATInterfaces/SystematicsUtil.h"
 #include "IsolationSelection/IsolationSelectionTool.h"
 
+
+using std::ifstream;
 using std::cout;
 using std::endl;
 using std::vector;
@@ -25,13 +27,13 @@ namespace po = boost::program_options;
 
 
 Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess), 
-		       m_debug( true), m_name( "Analysis" ), m_numEvent(0), m_goodEvent(0),
-		       m_doScaleFactor(false), m_electronID(1), m_esModel( "es2015PRE" ), m_ptCut( 27000 ), m_fBremCut( 1 ), 
-		       m_pileupFile( "PileUpReweighting_25nsb_prw.root" ), m_scaleSyst(0), m_doIso(1), m_trigName(".*")
+		       m_debug( true),  m_numEvent(0), m_goodEvent(0),
+		       m_doScaleFactor(false), m_electronID(1), m_ptCut( 27000 ), m_fBremCut( 1 ), 
+		       m_scaleSyst(0), m_doIso(1)
 {
   if ( m_debug ) cout << "Analysis::Analysis()" << endl;
   //  cout << "m_debug : " << m_debug << endl;
-
+  m_mapString["name"] = "Analysis";
   m_fileName.clear();
 
   m_logFile = 0;
@@ -51,6 +53,7 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_electronSFReco = 0;
   m_electronSFID = 0;
   m_electronSFIso = 0;
+  m_electronSFTrig = 0;
   m_trigDecisionTool = 0;
   m_trigConfigTool = 0;
   m_Z=0;
@@ -111,9 +114,9 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
 
 Analysis::Analysis( string name , string outputFile ) : Analysis() {
   if ( m_debug ) cout << "Analysis::Analysis( string name , string outputFile )" << endl;
-  m_name = name;
+  m_mapString["name"] = name;
   for ( auto it = m_mapHist.begin(); it != m_mapHist.end(); it++) 
-    if ( it->second ) it->second->SetName( TString( m_name + "_" + it->second->GetName() ) );
+    if ( it->second ) it->second->SetName( TString( m_mapString["name"] + "_" + it->second->GetName() ) );
 
   m_logFile = new TFile( outputFile.c_str(), "RECREATE" );  
   if ( m_debug ) cout << "Analysis::Analysis( string name , string outputFile ) Done" << endl;
@@ -230,22 +233,22 @@ void Analysis::ResetTEvent() {
 //=======================================================
 void Analysis::SetName( string name ) { 
   if ( m_debug ) cout << "Analysis::SetName" << endl;
-  m_name = name; 
-  if ( m_debug )  cout << "Changed name : " << m_name << endl;
+  m_mapString["name"] = name; 
+  if ( m_debug )  cout << "Changed name : " << m_mapString["name"] << endl;
 
   for ( auto it = m_mapHist.begin(); it != m_mapHist.end(); it++)  {
-    if ( it->second ) it->second->SetName( TString( m_name + "_" + it->second->GetTitle() ) );
+    if ( it->second ) it->second->SetName( TString( m_mapString["name"] + "_" + it->second->GetTitle() ) );
     if ( m_debug && it->second)   cout << it->second->GetName() << endl;
   }
 
-  if ( m_selectionTree ) m_selectionTree->SetName( TString (m_name + "_" + m_selectionTree->GetTitle() ) ); 
+  if ( m_selectionTree ) m_selectionTree->SetName( TString (m_mapString["name"] + "_" + m_selectionTree->GetTitle() ) ); 
 }
 
 //=======================================================
 void Analysis::PlotResult(string fileName) {
 
   //check that the last character of directory is '/'
-  if ( fileName == "" ) fileName = m_name;
+  if ( fileName == "" ) fileName = m_mapString["name"];
 
 
   TCanvas *canvas = new TCanvas();
@@ -266,9 +269,9 @@ void Analysis::Save( ) {
 
   for ( auto it = m_mapHist.begin(); it != m_mapHist.end(); it++) it->second->Write( "", TObject::kOverwrite );
 
-  TString bufferName = TString::Format( "%s", m_name.c_str() );
+  TString bufferName = TString::Format( "%s", m_mapString["name"].c_str() );
   TTree * treeout = new TTree( "InfoTree" , "InfoTree" );
-  treeout->Branch( "m_name", &bufferName, "m_name/C" );
+  treeout->Branch( "name", &bufferName, "name/C" );
   treeout->Branch( "m_numEvent", &m_numEvent, "m_numEvent/l" );
   treeout->Branch( "m_goodEvent", &m_goodEvent, "m_goodEvent/l" );
   treeout->Branch( "m_doScaleFactor", &m_doScaleFactor);
@@ -299,12 +302,12 @@ int Analysis::Load( string fileName ) {
     char buffer_name[100];
     TTree *treeout = (TTree*) infile->Get( "InfoTree" );
     treeout->SetBranchStatus( "*", 1);
-    treeout->SetBranchAddress( "m_name", &buffer_name);
+    treeout->SetBranchAddress( "name", &buffer_name);
     treeout->SetBranchAddress( "m_numEvent", &m_numEvent);
     treeout->SetBranchAddress( "m_goodEvent", &m_goodEvent);
     treeout->SetBranchAddress( "m_doScaleFactor", &m_doScaleFactor );      
     treeout->GetEntry(0);
-    //    m_name = string( buffer_name );
+    //    m_mapString["name"] = string( buffer_name );
     delete treeout;
     treeout = 0;
   }
@@ -312,7 +315,7 @@ int Analysis::Load( string fileName ) {
   
   for ( auto it = m_mapHist.begin(); it != m_mapHist.end(); it++)  {
     if ( !it->second ) continue;
-    string histName = m_name + "_" + it->second->GetTitle();
+    string histName = m_mapString["name"] + "_" + it->second->GetTitle();
 
 
     if ( !infile->Get( histName.c_str() ) ) continue;
@@ -325,7 +328,7 @@ int Analysis::Load( string fileName ) {
 
 
   if ( m_selectionTree ) delete m_selectionTree;
-  m_selectionTree = (TTree* ) infile->Get( TString( m_name + "_selectionTree" ) );
+  m_selectionTree = (TTree* ) infile->Get( TString( m_mapString["name"] + "_selectionTree" ) );
   if ( !m_selectionTree ) return 4;
   m_selectionTree->SetDirectory( 0 );
 
@@ -370,18 +373,17 @@ void Analysis::Add( Analysis &analysis ) {
   m_selectionTree->Merge( list );
   if ( dumSelectionTreeEntries + analysis.m_selectionTree->GetEntries() != m_selectionTree->GetEntries() ) exit( 1 );
 
-  if ( m_debug ) cout << analysis.m_name << " Added" << endl;
+  if ( m_debug ) cout << analysis.m_mapString["name"] << " Added" << endl;
 }//Analysis
 
 //=======================================================
 void Analysis::TreatEvents(int nevent) {
   if ( m_debug ) cout << "Analysis::TreatEvents" << endl;
   int currentEvent=0;
-  
   InitializeTools();
   cout << "treat event initialize" << endl;
   //Setup m_SelectionTree
-  m_selectionTree = new TTree( TString( m_name.c_str() ) + "_selectionTree", "selectionTree" ); 
+  m_selectionTree = new TTree( TString( m_mapString["name"].c_str() ) + "_selectionTree", "selectionTree" ); 
   m_selectionTree->SetDirectory( 0 );
 
   //Loop on all TFile stored in the class
@@ -435,9 +437,9 @@ void Analysis::TreatEvents(int nevent) {
 
       //Trigger
       bool passTrig = false;
-      //      auto chainGroup = m_trigDecisionTool->getChainGroup( m_trigName.c_str() );
-      auto chainGroup = m_trigDecisionTool->getChainGroup( ".*" );
-      //auto chainGroup = m_trigDecisionTool->getChainGroup("HLT_2e12_lhloose_L12EM10VH.*");
+      auto chainGroup = m_trigDecisionTool->getChainGroup( m_mapString["trigName"].c_str() );
+      //auto chainGroup = m_trigDecisionTool->getChainGroup( ".*" );
+      //      auto chainGroup = m_trigDecisionTool->getChainGroup("HLT_2e17_lhvloose_nod0.*");
       //      auto chainGroup = m_trigDecisionTool->getChainGroup("HLT_e24_lhmedium_L1EM18VH.*");
       std::map<std::string,int> triggerCounts;
       for(auto &trig : chainGroup->getListOfTriggers()) {
@@ -506,7 +508,7 @@ bool Analysis::PassSelection() {
   if ( m_veGood[0]->charge() *  m_veGood[1]->charge() > 0 ) return false;
   m_mapHist["cutFlow"]->Fill( "charge", 1 );
   //Cut on the position of the primary Vertex
-  if ( m_esModel.find( "2015" ) == string::npos && fabs( (*m_ZVertex)[0]->z() ) > 150 ) return false;
+  if ( m_mapString["esModel"].find( "2015" ) == string::npos && fabs( (*m_ZVertex)[0]->z() ) > 150 ) return false;
   m_mapHist["cutFlow"]->Fill( "ZVertex", 1 );
 
   if ( m_debug ) cout << "Analysis::PassSelection done" << endl;
@@ -524,7 +526,7 @@ void Analysis::MakeElectronCut() {
     double fBrem = GetFBrem( *eContItr );
     m_mapHist["fBrem"]->Fill( fBrem );
     if ( fBrem > m_fBremCut  ) continue;
-    m_mapHist["cutFlow"]->Fill( "fBrem", fBrem );
+    m_mapHist["cutFlow"]->Fill( "fBrem", 1 );
 
     bool isIso =  m_IsoSelTool->accept(**eContItr) ? true : false;
     if ( !isIso && m_doIso ) continue;
@@ -616,6 +618,7 @@ int Analysis::FillSelectionTree() {
   m_mapVar["ptZ"] = m_Z->Pt() / 1000.;
 
   m_mapVar["NVertex"] = m_ZVertex->size();
+  m_mapVar["muPU"] = m_eventInfo->averageInteractionsPerCrossing();
 
   vector<string> weightNames = {  "SFIso", "SFReco", "SFID", "vertexWeight", "puWeight" };
   for ( auto name : weightNames ) m_mapVar[name]=1;  
@@ -625,19 +628,20 @@ int Analysis::FillSelectionTree() {
       m_mapVar["puWeight"] = m_eventInfo->auxdecor< float >( "PileupWeight" );
     }
     m_mapHist["puWeight"]->Fill( m_mapVar["puWeight"] );
-    
+
     if ( m_vtxTool ) {
       m_vtxTool->getWeight( m_mapVar[ "vertexWeight" ] );
       m_mapHist["vertexWeight"]->Fill( m_mapVar[ "vertexWeight" ] );
     }
-
     
-    vector<AsgElectronEfficiencyCorrectionTool*> dumVectorTool = { m_electronSFIso, m_electronSFReco, m_electronSFID };    
+    vector<AsgElectronEfficiencyCorrectionTool*> dumVectorTool = { m_electronSFIso, m_electronSFReco, m_electronSFID };
     for ( unsigned int  iTool = 0; iTool < dumVectorTool.size(); iTool++ ) {
-      double sf1=1, sf2=1;
+
+      double sf1=2, sf2=2;
       dumVectorTool[iTool]->getEfficiencyScaleFactor(*m_veGood[0],sf1);
       dumVectorTool[iTool]->getEfficiencyScaleFactor(*m_veGood[1],sf2);
       m_mapVar[weightNames[iTool]] = sf1*sf2;
+
     }//end for
   }//end isSimulation
   else {
@@ -665,7 +669,7 @@ int Analysis::InitializeTools () {
 
   //Setup the calibration tool
   m_EgammaCalibrationAndSmearingTool  = new CP::EgammaCalibrationAndSmearingTool("EgammaCalibrationAndSmearingTool"); 
-  m_EgammaCalibrationAndSmearingTool->setProperty("ESModel", m_esModel.c_str()); 
+  m_EgammaCalibrationAndSmearingTool->setProperty("ESModel", m_mapString["esModel"].c_str()); 
   m_EgammaCalibrationAndSmearingTool->setProperty("ResolutionType", "SigmaEff90"); 
   m_EgammaCalibrationAndSmearingTool->setProperty( "doSmearing", m_doScaleFactor );
   m_EgammaCalibrationAndSmearingTool->setProperty( "doScaleCorrection", m_doScaleFactor );
@@ -700,55 +704,40 @@ int Analysis::InitializeTools () {
   m_grl = new GoodRunsListSelectionTool("GoodRunsListSelectionTool");
   std::vector<std::string> vecStringGRL;
   string grlLocalFile = "/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/";
-  vector< string > grlFile;
   bool isLocal = system("ls data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml" );    
-
-
-  Info("","Declaring pileup reweighting tool");
-  m_pileup = new CP::PileupReweightingTool("prw");
-  std::vector<std::string> confFiles;
-  std::vector<std::string> lcalcFiles;
-  if ( m_esModel.find( "2012" ) != string::npos ) {
-    grlFile.push_back( "data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml" );
-    m_pileup->setProperty("DataScaleFactor",1./1.09);    //    m_pileup.SetDataScaleFactors(1/1.09); // For 2012
-    confFiles.push_back("PileupReweighting/mc14v1_defaults.prw.root");
-    lcalcFiles.push_back("ilumicalc_histograms_None_200842-215643.root");
-  }
-  else if ( m_esModel == "es2015PRE" ) {
-    grlFile.push_back( "data15_13TeV.periodAllYear_DetStatus-v73-pro19-08_DQDefects-00-01-02_PHYS_StandardGRL_All_Good_25ns.xml" );
-    m_pileup->setProperty("DataScaleFactor",1./1.16);
-    confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + m_pileupFile );
-    lcalcFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "ilumicalc_histograms_None_13TeV_25nsb.root");
-  }
-  else if ( m_esModel == "es2015cPRE" ) {
-    m_pileup->setProperty("DataScaleFactor",1./1.16);
-    confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + m_pileupFile );
-    lcalcFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "ilumicalc_histograms_None_13TeV_25ns.root");
-    grlFile.push_back( "data15_13TeV.periodAllYear_DetStatus-v75-repro20-01_DQDefects-00-02-02_PHYS_StandardGRL_All_Good_25ns.xml" ); 
-  }
-  else if ( m_esModel == "es2016PRE" ) {
-    m_pileup->setProperty("DataScaleFactor",1./1.16);
-    confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + m_pileupFile );
-    lcalcFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "ilumicalc_histograms_None_297730-300908.root");
-    grlFile.push_back( "data16_13TeV.periodAllYear_DetStatus-v78-pro20-04_DQDefects-00-02-02_PHYS_StandardGRL_All_Good_25ns_ignore_TOROID_STATUS.xml" ); 
-  }
-
-  dynamic_cast<CP::PileupReweightingTool&>(*m_pileup).setProperty( "ConfigFiles", confFiles);
-  dynamic_cast<CP::PileupReweightingTool&>(*m_pileup).setProperty( "LumiCalcFiles", lcalcFiles);
-  m_pileup->initialize();
-
-
-  for ( unsigned int i = 0; i< grlFile.size(); i++ ) {
-    vecStringGRL.push_back( string( isLocal ? grlLocalFile : "" ) + grlFile[i] );
-    cout << vecStringGRL.back() << endl;
-    }
-  
-  m_grl->setProperty( "GoodRunsListVec", vecStringGRL);
+  m_grl->setProperty( "GoodRunsListVec", m_mapVectString["grl"]);
   m_grl->setProperty("PassThrough", false); // if true (default) will ignore result of GRL and will just pass all events
   if (!m_grl->initialize().isSuccess()) { // check this isSuccess
     cout << "Erreur : GRL not initialized" << endl;
     exit(1);
   }
+
+  Info("","Declaring pileup reweighting tool");
+  m_pileup = new CP::PileupReweightingTool("prw");
+  m_pileup->setProperty( "DataScaleFactor", m_dataPUSF );
+  // if ( m_esModel.find( "2012" ) != string::npos ) {
+  //   grlFile.push_back( "data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml" );
+  //   m_pileup->setProperty("DataScaleFactor",1./1.09);    //    m_pileup.SetDataScaleFactors(1/1.09); // For 2012
+  //   confFiles.push_back("PileupReweighting/mc14v1_defaults.prw.root");
+  //   lcalcFiles.push_back("ilumicalc_histograms_None_200842-215643.root");
+  // }
+  // else if ( m_esModel == "es2015PRE" ) {
+  //   grlFile.push_back( "data15_13TeV.periodAllYear_DetStatus-v73-pro19-08_DQDefects-00-01-02_PHYS_StandardGRL_All_Good_25ns.xml" );
+  //   m_pileup->setProperty("DataScaleFactor",1./1.16);
+  //   confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + m_pileupFile );
+  //   lcalcFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "ilumicalc_histograms_None_13TeV_25nsb.root");
+  // }
+  // else if ( m_esModel == "es2015cPRE" ) {
+  //   m_pileup->setProperty("DataScaleFactor",1./1.16);
+  //   confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + m_pileupFile );
+  //   lcalcFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "ilumicalc_histograms_None_13TeV_25ns.root");
+  //   grlFile.push_back( "data15_13TeV.periodAllYear_DetStatus-v75-repro20-01_DQDefects-00-02-02_PHYS_StandardGRL_All_Good_25ns.xml" ); 
+  // }
+
+  dynamic_cast<CP::PileupReweightingTool&>(*m_pileup).setProperty( "ConfigFiles", m_mapVectString["pileupFile"]);
+  dynamic_cast<CP::PileupReweightingTool&>(*m_pileup).setProperty( "LumiCalcFiles", m_mapVectString["ilumCalc"]);
+  m_pileup->initialize();
+
 
   // m_vtxTool = new CP::VertexPositionReweightingTool( "VertexPosition" );  
   // m_vtxTool->setProperty("DataMean", 0.);
@@ -757,7 +746,8 @@ int Analysis::InitializeTools () {
 
   m_electronSFReco = new AsgElectronEfficiencyCorrectionTool( "SFReco" ) ;
   m_electronSFID = new AsgElectronEfficiencyCorrectionTool( "SFID" ) ;
-  if ( m_doIso )  m_electronSFIso = new AsgElectronEfficiencyCorrectionTool( "SFIso" ) ;
+  if ( m_doIso )  m_electronSFIso = new AsgElectronEfficiencyCorrectionTool( "SFIso" );
+  m_electronSFTrig = new AsgElectronEfficiencyCorrectionTool( "SFTrig" ) ;
   //define input file
   // std:string fileName = "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v1/offline/efficiencySF.offline.LooseAndBLayerLLH_d0z0_v11.2015_2016.13TeV.rel20.7.25ns.v01.root" 
  
@@ -933,3 +923,30 @@ double Analysis::GetFBrem( xAOD::Electron *el ) {
 
 }
 
+//==============================================================
+void Analysis::Configure( string configFile ) {
+  cout << "configFile : " << configFile << endl;
+  po::options_description configOptions("configOptions");
+  configOptions.add_options()
+    ("trigger", po::value<string>( &m_mapString["trigName"] ), "" )
+    ("esModel", po::value< string >( &m_mapString["esModel"] ), "" ) 
+    ("outName", po::value< string >( &m_mapString["name"] )->default_value( "Analysis" ), "Name of the object")
+    ("doScale", po::value<int >( &m_doScaleFactor )->default_value( false )->implicit_value(true), "Switch on the scale")
+    ("electronID", po::value< int >( &m_electronID )->default_value( 1 ), "" )
+    ("ptCut", po::value<double>( &m_ptCut ), "" )
+    ("fBremCut", po::value<double>( &m_fBremCut ), "" )
+    ("datasetWeight", po::value<vector<double>>( &m_datasetWeight )->multitoken(), "" )
+    ("pileupFile", po::value<vector<string> >( &m_mapVectString["pileupFile"] )->multitoken(), "" )
+    ("scaleSyst", po::value<int>( &m_scaleSyst )->default_value(0), "" )
+    ("doIso", po::value<int>( &m_doIso )->default_value(1), "" )
+    ("dataPUSF", po::value<double>( &m_dataPUSF )->default_value(1), "" )
+    ("ilumCalc", po::value<vector<string >>( &m_mapVectString["ilumCalc"] )->multitoken(), "" )
+    ("grl", po::value<vector< string> >( &m_mapVectString["grl"] )->multitoken(), "" )
+    ;
+
+  po::variables_map vm;
+  ifstream ifs( configFile, ifstream::in );
+  po::store(po::parse_config_file(ifs, configOptions), vm);
+  po::notify( vm );
+
+}
