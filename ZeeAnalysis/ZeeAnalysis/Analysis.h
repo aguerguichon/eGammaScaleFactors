@@ -110,6 +110,8 @@ class Analysis
   void SetFBremCut( double fBremCut ) { m_fBremCut = fBremCut; }
   TH1* GetHist( string histName )  { return m_mapHist[histName]; }
   double GetFBrem( xAOD::Electron *el );
+  double Getd0significance( xAOD::Electron *el );
+  double Getz0sintheta( xAOD::Electron *el );
   /**\brief Create an Analysis object from a ROOT file saving
      \param fileName ROOT file created by Analysis::Save 
 

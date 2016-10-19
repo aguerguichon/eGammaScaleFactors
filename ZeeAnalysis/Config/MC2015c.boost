@@ -1,5 +1,9 @@
 esModel=es2016PRE 
-trigger=HLT_2e17_lhvloose.* 
+trigger=HLT_2e17_lhvloose_nod0.* 
 dataPUSF=0.8621
 pileupFile=mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2576_s2132_r7725_r7676_prw.root
-ilumCalc=ilumicalc_histograms_None_297730-300908.root
+ilumCalc=ilumicalc_histograms_None_297730-308084_OflLumi-13TeV-005.root
+
+
+#pileupFile=mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2576_s2132_r7725_r7676_prw.root
+#ilumCalc=ilumicalc_histograms_None_297730-300908.root

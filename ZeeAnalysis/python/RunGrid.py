@@ -4,72 +4,103 @@ import numpy as np
 from FunctionsRunGrid import *
 import subprocess as sub
 from Test import *
+import csv
+
 inputs = []
 doScale = []
 electronID = []
 esModel = []
 ptCutVect = []
 outFilePrefix = []
+datasetList=[]
+mode=1
 
 if len( sys.argv ) == 1 :
-    print 'An option is needed to run the program. \nPossibilities are : '
-    print 'DATA25 to update 25ns datasets'
-    print 'DATA50 to update 50ns datasets'
-    print 'MC25'
+    print 'An option is needed to run the program.'
+
 
 launcherPath = os.popen( 'pwd' ).read().split()[0]+'/'
 
 for option in sys.argv:
     if option == 'RunGrid.py' : continue
-    datasetsPath = '/sps/atlas/c/cgoudet/Calibration/DataxAOD/'
-    if option in ['DATA25', 'DATA50'] :
+    datasetsPath = '/sps/atlas/a/aguerguichon/Calibration/DataxAOD/'
+    if len(sys.argv) == 2: mode=0 
+    print "mode: "+ str(mode)
+    if option in ['DATA15', 'DATA16'] :
 
 #Get the list of all the runs in the grl
-        path='/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/'
-        savingFile="DatasetList/Data_13TeV_Zee_" + ( '25' if option == 'DATA25' else '50' ) + "ns.csv"
-        datasetList = np.genfromtxt( path + savingFile, dtype='S100', delimiter=' ' )
-        runs = []
-        grlList=os.popen( 'ls /afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/data15*v75*').read().split()
-        for grl  in grlList :
-            file = open( grl )
-            for line in file :
-                if not 'RunList' in line : continue
-                runs += line.split( '>' )[1].split('<')[0].split(',')
-                
-#Check if the latest version of the run dataset belong to the datasetList
+        path='/afs/in2p3.fr/home/a/aguergui/public/eGammaScaleFactors/'
+        if mode == 0:
+            savingFile=open(path+"DatasetList/Data" + ( '15' if option == 'DATA15' else '16' ) + "_13TeV_Zee.csv", "w+") 
+            runs = []
+            grlList=os.popen( 'ls /afs/in2p3.fr/home/a/aguergui/public/eGammaScaleFactors/data'+ ('15*v75*' if option=='DATA15' else '16*v82*')).read().split()
+            for grl  in grlList :
+                file = open( grl )
+                for line in file :
+                    if not 'RunList' in line : continue
+                    runs += line.split( '>' )[1].split('<')[0].split(',')
+                    
+                    runs = sorted( set( runs ), reverse=True)
+                    print runs
+                    for run in runs :
+                        pNumber=0
+                        run = int( run )
+            #if option == 'DATA25' and ( run < 276262 or run == 276731 ): continue
+            #if option == 'DATA50' and run > 276261 and run != 276731 : continue
+                        print run
+                        
+                        line= "rucio list-dids "+("'data15_13TeV:data15_13TeV.00" if option == "DATA15" else "'data16_13TeV:data16_13TeV.00")+ str( run )+".physics_Main.merge.DAOD_EGAM1."+("r*" if option == "DATA15" else "*") +"p*' --filter type=container"  
+                        output = os.popen(line).read().split()
+                        for file in output :
+                            if "data" not in file: continue
+                            file = file.split(':')[1].rsplit('_p',1)[1] #removes scope name and gets the number p* corresponding to the derivation version
+                            if int(file)<pNumber: continue
+                            pNumber=int(file)
+            #print ("data15_13TeV.00" if option == "DATA15" else "data16_13TeV.00")+ str( run )+".physics_Main.merge.DAOD_EGAM1.r*p"+str(pNumber)+"/"
+      
+                        data=("data15_13TeV.00" if option == "DATA15" else "data16_13TeV.00")+str(run)+".physics_Main.merge.DAOD_EGAM1."+("r*" if option == "DATA15" else "*") +"p*"+str(pNumber)+ "/"
+                        savingFile.write( data+"\n"  )
+                        datasetList.append( data  )
+            
 
-        runAll = 0
-        runs = sorted( set( runs ), reverse=True)
-        print runs
-        treeDatasets=node( "/" )        
-        for run in runs :
+            #treeDatasets.Insert( file.split('.')[-1].split('/')[0].split('_'), file.split('.')[1] )
+                #pass
+            
+            #pass
 
-            run = int( run )
-            if option == 'DATA25' and ( run < 276262 or run == 276731 ): continue
-            if option == 'DATA50' and run > 276261 and run != 276731 : continue
-            print run
-
-            line='dq2-ls data15_13TeV.00'+ str( run )+'.physics_Main.merge.DAOD_EGAM1.*p2470/'#*p2582/'
-            output = os.popen(line).read().split()
-            print line
-            for file in output :
-                print file
-                file = file.split(':')[1]
-                treeDatasets.Insert( file.split('.')[-1].split('/')[0].split('_'), file.split('.')[1] )
-                pass        
-            pass
-
-        datasets=[]
-        treeDatasets.CreateTag('')
-        treeDatasets.FillDatasets( datasets )
+        # datasets=[]
+        # treeDatasets.CreateTag('')
+        # treeDatasets.FillDatasets( datasets )
  
-        np.savetxt( path + savingFile, datasetList, delimiter=' ', fmt='%s')
-        rangeMax = 8
+        # np.savetxt( path + savingFile, datasetList, delimiter=' ', fmt='%s')
+        # rangeMax = 8
+        
+            savingFile.close()
 
-    if 'DATA2016' == option : GetDataFiles( inputs, 'Data_13TeV_Zee_2016', {}, 1 )     
-    if 'DATA2015' == option : GetDataFiles( inputs, 'Data_13TeV_Zee_2015', {}, 1 )     
-    if 'MC2015c' == option : GetDataFiles( inputs, 'MC_13TeV_Zee_2015c', {}, 1 )     
-    if 'MC2015b' == option : GetDataFiles( inputs, 'MC_13TeV_Zee_2015b', {}, 0 )     
+        if mode == 1:
+            print "sys: "+sys.argv[2]
+            csvFile = open(sys.argv[2], "r")
+            reader = csv.reader( csvFile )
+            for dataset in reader:
+                datasetList.append( dataset[0]  )
+#            datasetList.append( dataset[0] for dataset in reader  )
+
+
+        GetDataFiles( inputs, 'Data' +( '15' if option == 'DATA15' else '16' )+'_13TeV_Zee', {} ,1, datasetList)
+        print inputs
+
+    if 'DATA2016' == option : GetDataFiles( inputs, 'Data16_13TeV_Zee', {}, 1 )     
+    if 'DATA2015' == option : GetDataFiles( inputs, 'Data15_13TeV_Zee', {}, 1 )     
+    
+    if 'MC2015c' == option : GetDataFiles( inputs, 'MC15c_13TeV_Zee_Mu15c', {}, 1 )     
+    if 'MC2015b' == option : GetDataFiles( inputs, 'MC15c_13TeV_Zee_Mu15b', {}, 1 )     
+   
+    if 'Ztautau15c' == option : GetDataFiles( inputs, 'MC_13TeV_Ztautau_2015c', {}, 1 )     
+    if 'ttbar15c' == option : GetDataFiles( inputs, 'MC_13TeV_ttbar_2015c', {}, 1 )     
+    if 'WWlvlv15c' == option : GetDataFiles( inputs, 'MC_13TeV_WWlvlv_2015c', {}, 1 )     
+    if 'WZlvll15c' == option : GetDataFiles( inputs, 'MC_13TeV_WZlvll_2015c', {}, 1 )     
+    if 'ZZ4l15c' == option : GetDataFiles( inputs, 'MC_13TeV_ZZ4l_2015c', {}, 1 )     
+    if 'ZZvvll15c' == option : GetDataFiles( inputs, 'MC_13TeV_ZZvvll_2015c', {}, 1 )     
 
 
 
@@ -156,13 +187,13 @@ for option in sys.argv:
                 if 'class=\'done_fill\'' in htmlLine : status='done'; break
             print status
 #create the name of the repository were the dataset must be downloaded
-            directory = job[1].replace( 'user.cgoudet.', '' ).replace('_Ntuple.root', '' )
+            directory = job[1].replace( 'user.aguergui.', '' ).replace('_Ntuple.root', '' )
             directory = directory[:directory.rfind('_')]
             print directory
             os.chdir( datasetsPath + directory )
 
 #download the dataset with rucio and get the number of failed download
-            nMiss = os.popen( 'rucio download '+ job[1] ).read().split()[-1]
+            nMiss = os.popen( 'rucio download --ndownloader 5 '+ job[1] ).read().split()[-1]
             os.system('rm OK*')
 
 #if done and missing files print it and do noting 
@@ -202,11 +233,11 @@ for option in sys.argv:
 
 #===================================================
 if len( inputs ) :
-    os.chdir( '/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/' )
+    os.chdir( '/afs/in2p3.fr/home/a/aguergui/public/eGammaScaleFactors/' )
     jobIDList=[]
 
     for iFile in range( 0, len( inputs ) ) :
-        tab = np.genfromtxt( "/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/ZeeAnalysis/python/Version.txt", dtype='S100', delimiter=' ' )
+        tab = np.genfromtxt( "/afs/in2p3.fr/home/a/aguergui/public/eGammaScaleFactors/ZeeAnalysis/python/Version.txt", dtype='S100', delimiter=' ' )
         version=0
         
         optionLine=""
@@ -271,30 +302,36 @@ if len( inputs ) :
 
 
         datasetList = ""
-        for dataset in inputs[iFile][0] : datasetList += dataset + ( ',' if dataset != inputs[iFile][0][-1] else '' )
+        
 
-#        print outFileName
+        for dataset in inputs[iFile][0] : 
+            datasetList += dataset + ( ',' if dataset != inputs[iFile][0][-1] else '' )
+
+        #        print outFileName
         
         commandLine = ( 'prun --exec "RunZee \`echo %IN | sed \'s/,/ /g\'\` --outName Ntuple.root '
                         + optionLine 
                         + '"'
-                        + ' --outDS user.cgoudet.' + outFileName + ' --inDS ' + datasetList + ' --outputs Ntuple.root '
+                        + ' --outDS user.aguergui.' + outFileName + ' --inDS ' + datasetList + ' --outputs Ntuple.root '
                         + ( ' --useRootCore '
                             + extFileLine
                             + ' --tmpDir /tmp '
                             )
                         )
 
-#        print( commandLine )
+        print ( commandLine )
+
         # exit(0)
         result = sub.check_output([commandLine], shell=1, stderr=sub.STDOUT)    
+        #result=[]
+        #os.system( commandLine )
         jobIDList=[]
         for line in result.split() :
             if 'jediTaskID' in line : 
-                jobIDList.append( [line.split('=')[1], 'user.cgoudet.' + outFileName+'_Ntuple.root'] )
+                jobIDList.append( [line.split('=')[1], 'user.aguergui.' + outFileName+'_Ntuple.root'] )
 
-        np.savetxt( '/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/ZeeAnalysis/python/Version.txt', tab, delimiter=' ', fmt='%s')   
-        with open( '/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/ZeeAnalysis/python/GridJobList.txt', 'a') as jobFile :
+        np.savetxt( '/afs/in2p3.fr/home/a/aguergui/public/eGammaScaleFactors/ZeeAnalysis/python/Version.txt', tab, delimiter=' ', fmt='%s')   
+        with open( '/afs/in2p3.fr/home/a/aguergui/public/eGammaScaleFactors/ZeeAnalysis/python/GridJobList.txt', 'a') as jobFile :
             for job in jobIDList : jobFile.write( job[0] + ' ' + job[1] + '\n' )
 
 

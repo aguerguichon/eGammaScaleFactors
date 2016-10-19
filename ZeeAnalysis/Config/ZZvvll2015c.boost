@@ -1,0 +1,6 @@
+esModel=es2016PRE 
+trigger=HLT_2e17_lhvloose.* 
+dataPUSF=0.8621
+pileupFile=mc15_13TeV.361604.PowhegPy8EG_CT10nloME_AZNLOCTEQ6L1_ZZvvll_mll4.merge.DAOD_STDM5.e4475_s2726_r7772_r7676_p2722_prw.root
+ilumCalc=ilumicalc_histograms_None_297730-300908.root
+datasetWeight=0.0097027

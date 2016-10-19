@@ -15,6 +15,8 @@
 #include "PATInterfaces/SystematicVariation.h"
 #include "PATInterfaces/SystematicsUtil.h"
 #include "IsolationSelection/IsolationSelectionTool.h"
+#include "xAODTracking/TrackParticlexAODHelpers.h"
+#include "xAODTracking/Vertex.h"
 
 
 using std::ifstream;
@@ -78,7 +80,7 @@ Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess),
   m_mapHist["eventZVertex"]->GetYaxis()->SetTitle( "Event / 5 mm" );
   m_mapHist["eventZVertex"]->Sumw2();
 
-  vector<TString> cutFlowNames = { "init", "GRL", "Trigger", "initEl", "fBrem", "Isolation", "mediumID",  "eta", "pt",  "OQ", "2el", "charge", "ZVertex" };
+  vector<TString> cutFlowNames = { "init", "GRL", "Trigger", "initEl", "fBrem", "Isolation", "d0","z0","mediumID",  "eta", "pt",  "OQ", "2el", "charge", "ZVertex" };
   m_mapHist["cutFlow"] = new TH1D( "cutFlow", "cutFlow", cutFlowNames.size(), 0.5, cutFlowNames.size()+0.5);
   m_mapHist["cutFlow"]->GetXaxis()->SetTitle( "Cuts" );
   m_mapHist["cutFlow"]->GetYaxis()->SetTitle( "# Events" );
@@ -454,6 +456,8 @@ void Analysis::TreatEvents(int nevent) {
 
 
       //      Make the electron selection and fill m_eGoodContainer
+      m_mapHist["cutFlow"]->Fill( "initEl", m_eContainer->size() );
+
       int err = (int) PassSelection();
       if ( m_debug ) cout << "PassSelection : " << err << endl;
       if ( err )  { //Pass selection return a boolean 
@@ -508,7 +512,8 @@ bool Analysis::PassSelection() {
   if ( m_veGood[0]->charge() *  m_veGood[1]->charge() > 0 ) return false;
   m_mapHist["cutFlow"]->Fill( "charge", 1 );
   //Cut on the position of the primary Vertex
-  if ( m_mapString["esModel"].find( "2015" ) == string::npos && fabs( (*m_ZVertex)[0]->z() ) > 150 ) return false;
+  if ( fabs( (*m_ZVertex)[0]->z() ) > 150 ) return false;
+
   m_mapHist["cutFlow"]->Fill( "ZVertex", 1 );
 
   if ( m_debug ) cout << "Analysis::PassSelection done" << endl;
@@ -521,24 +526,31 @@ void Analysis::MakeElectronCut() {
   if ( m_debug ) cout << "Analysis::MakeElectronCut" << endl;
   for ( xAOD::ElectronContainer::iterator eContItr = (m_eShallowContainer.first)->begin(); eContItr != (m_eShallowContainer.first)->end(); eContItr++ ) {
 
-    m_mapHist["cutFlow"]->Fill( "initEl", 1 );
-
     double fBrem = GetFBrem( *eContItr );
     m_mapHist["fBrem"]->Fill( fBrem );
     if ( fBrem > m_fBremCut  ) continue;
     m_mapHist["cutFlow"]->Fill( "fBrem", 1 );
 
+  
     bool isIso =  m_IsoSelTool->accept(**eContItr) ? true : false;
     if ( !isIso && m_doIso ) continue;
     m_mapHist["cutFlow"]->Fill( "Isolation", 1 );
 
+    double d0sign = Getd0significance ( *eContItr );
+    if ( fabs(d0sign) > 5 ) continue;
+    m_mapHist["cutFlow"]->Fill( "d0", 1 );
+
+    double z0sin = Getz0sintheta ( *eContItr );
+    if ( fabs(z0sin) > 0.5 ) continue;
+    m_mapHist["cutFlow"]->Fill( "z0", 1 );
+
     //  Cut on the quality of the **eContItrectron
+    //    cout << (m_electronID/3) << endl;
     if ( !(m_electronID/3)  && !m_LHToolMedium2012->accept( **eContItr ) ) continue;
     if ( (m_electronID/3) && !m_CutToolMedium2012->accept( **eContItr ) ) continue;
     
     m_mapHist["cutFlow"]->Fill( "mediumID", 1 );
 
-    //Get the fbrm variable as computed in the likelihood code
 
     //Calibrate this new electron
     m_EgammaCalibrationAndSmearingTool->applyCorrection( **eContItr );
@@ -670,6 +682,8 @@ int Analysis::InitializeTools () {
   //Setup the calibration tool
   m_EgammaCalibrationAndSmearingTool  = new CP::EgammaCalibrationAndSmearingTool("EgammaCalibrationAndSmearingTool"); 
   m_EgammaCalibrationAndSmearingTool->setProperty("ESModel", m_mapString["esModel"].c_str()); 
+  cout << "esModel : " <<  m_mapString["esModel"] << endl;
+  cout << "doScaleFactor : " << m_doScaleFactor << endl;
   m_EgammaCalibrationAndSmearingTool->setProperty("ResolutionType", "SigmaEff90"); 
   m_EgammaCalibrationAndSmearingTool->setProperty( "doSmearing", m_doScaleFactor );
   m_EgammaCalibrationAndSmearingTool->setProperty( "doScaleCorrection", m_doScaleFactor );
@@ -692,7 +706,11 @@ int Analysis::InitializeTools () {
   // initialize the primary vertex container for the tool to have access to the number of vertices used to adapt cuts based on the pileup
   m_LHToolMedium2012->setProperty("primaryVertexContainer","PrimaryVertices");
   string confDir = "ElectronPhotonSelectorTools/offline/mc15_20150712/";
+  //  string confDir = "ElectronPhotonSelectorTools/offline/mc15_20160512/";
   m_LHToolMedium2012->setProperty("ConfigFile",confDir+"ElectronLikelihood" + IDselection + "OfflineConfig2015.conf");
+  cout << "configLkh : " << confDir+"ElectronLikelihood" + IDselection + "OfflineConfig2015.conf" << endl;    // m_LHToolMedium2012->setProperty("ConfigFile",confDir+"ElectronLikelihood" + IDselection + "OfflineConfig2016_Smooth.conf");
+    //    cout<<confDir+"ElectronLikelihood" + IDselection + "OfflineConfig2016_Smooth.conf"<<endl;
+
   m_LHToolMedium2012->initialize();
 
   m_CutToolMedium2012 = new  AsgElectronIsEMSelector("m_CutToolMedium2012"); // create the selector
@@ -799,7 +817,7 @@ int Analysis::InitializeTools () {
 
   m_IsoSelTool = new CP::IsolationSelectionTool("IsoSelTool");
   m_IsoSelTool->setProperty("ElectronWP","Loose").ignore();
-  m_IsoSelTool->setProperty("doCutInterpolationElec",true).ignore(); // not the default, but prettier...
+  //OA  m_IsoSelTool->setProperty("doCutInterpolationElec",true).ignore(); // not the default, but prettier...
   m_IsoSelTool->initialize().ignore();
 
   return 0;
@@ -905,6 +923,8 @@ double Analysis::GetLineShapeWeight() {
 }
 
 
+
+//============================================================
 double Analysis::GetFBrem( xAOD::Electron *el ) {
     //Get the fbrm variable as computed in the likelihood code
     const xAOD::TrackParticle* t = el->trackParticle();
@@ -922,6 +942,37 @@ double Analysis::GetFBrem( xAOD::Electron *el ) {
     return 2;
 
 }
+
+//==============================================================
+double Analysis::Getd0significance ( xAOD::Electron *el ) 
+{
+      const xAOD::TrackParticle* t = el->trackParticle();
+      if (t) 
+	{
+	  return xAOD::TrackingHelpers::d0significance( t, m_eventInfo->beamPosSigmaX(), m_eventInfo->beamPosSigmaY(), m_eventInfo->beamPosSigmaXY() );
+	}
+      cout<<"electron has no track"<<endl;
+      return 2;
+}
+
+//==============================================================
+double Analysis::Getz0sintheta ( xAOD::Electron *el )
+{
+  //https://twiki.cern.ch/twiki/bin/view/AtlasProtected/EGammaIdentificationRun2#Electron_d0_and_z0_cut_definitio
+  //loop over vertices and look for good primary vertex
+  for (xAOD::VertexContainer::const_iterator vxIter = m_ZVertex->begin(); vxIter != m_ZVertex->end(); ++vxIter) {
+    // Select good primary vertex
+    if ((*vxIter)->vertexType() == xAOD::VxType::PriVtx) {
+      //This is the primary vertex
+      const xAOD::TrackParticle* t = el->trackParticle();
+      return (t->z0() + t->vz() - (*vxIter)->z())*sin(t->theta());
+    }
+  }
+  cout <<"Getz0sintheta failed"<<endl;
+  return 2;
+}
+
+
 
 //==============================================================
 void Analysis::Configure( string configFile ) {

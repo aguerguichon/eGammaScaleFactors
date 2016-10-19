@@ -23,7 +23,7 @@ toDownload = [
 
 missingFiles=[]
 
-with open( '/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/ZeeAnalysis/python/Version.txt' ) as versionFile :
+with open( '/afs/in2p3.fr/home/a/aguergui/public/eGammaScaleFactors/ZeeAnalysis/python/Version.txt' ) as versionFile :
     for line in versionFile :
         lineVect = line.split(' ')
         lineVect[1] = lineVect[1].replace('\n', "" )
