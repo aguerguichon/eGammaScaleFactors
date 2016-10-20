@@ -77,6 +77,7 @@ for option in sys.argv:
         
             savingFile.close()
 
+        print ("Finished writing csv file")
         if mode == 1:
             print "sys: "+sys.argv[2]
             csvFile = open(sys.argv[2], "r")
@@ -87,7 +88,7 @@ for option in sys.argv:
 
 
         GetDataFiles( inputs, 'Data' +( '15' if option == 'DATA15' else '16' )+'_13TeV_Zee', {} ,1, datasetList)
-        print inputs
+      
 
     if 'DATA2016' == option : GetDataFiles( inputs, 'Data16_13TeV_Zee', {}, 1 )     
     if 'DATA2015' == option : GetDataFiles( inputs, 'Data15_13TeV_Zee', {}, 1 )     
@@ -102,6 +103,25 @@ for option in sys.argv:
     if 'ZZ4l15c' == option : GetDataFiles( inputs, 'MC_13TeV_ZZ4l_2015c', {}, 1 )     
     if 'ZZvvll15c' == option : GetDataFiles( inputs, 'MC_13TeV_ZZvvll_2015c', {}, 1 )     
 
+
+    if 'SYST2016' == option :
+        print option
+      #Lkh2
+        GetDataFiles( inputs, 'Data16_13TeV_Zee', {}, -5 )
+#        GetDataFiles( inputs, 'MC15c_13TeV_Zee', {}, -5 )
+        print "after"
+        #fBrem
+        GetDataFiles( inputs, 'Data16_13TeV_Zee', {}, -6 )
+ #       GetDataFiles( inputs, 'MC15c_13TeV_Zee', {}, -6 )
+
+        #noIso = doIso0
+        GetDataFiles( inputs, 'Data16_13TeV_Zee', {}, -7 )
+   #     GetDataFiles( inputs, 'MC15c_13TeV_Zee', {}, -7)
+
+        #efficiency
+    #    GetDataFiles( inputs, 'MC15c_13TeV_Zee', {'scaleSyst' : 1}, 0)
+     #   GetDataFiles( inputs, 'MC15c_13TeV_Zee', {'scaleSyst' : 2}, 0)
+      #  GetDataFiles( inputs, 'MC15c_13TeV_Zee', {'scaleSyst' : 3}, 0)
 
 
     if 'MC25' == option :

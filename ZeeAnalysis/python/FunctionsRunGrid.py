@@ -1,6 +1,7 @@
 import os
 from string import *
 import numpy as np
+import csv
 
 #def GetDataFiles( inputs, scale, doScale, eleID, electronID, inFileIndex, outFilePrefix, esModel, ptCut, ptCutVect ) :
 def GetDataFiles( inputs, inFileIndex, options, configuration=1, datasetList=[]  ) :
@@ -10,9 +11,11 @@ def GetDataFiles( inputs, inFileIndex, options, configuration=1, datasetList=[] 
 
     #============TEST
     fileList['Data15_13TeV_Zee'] = ['list', 'ZeeAnalysis/Config/Data2015.boost' ]
-    fileList['Data16_13TeV_Zee'] = ['list', 'ZeeAnalysis/Config/Data2016.boost' ]
+    fileList['Data16_13TeV_Zee'] = ['../../DatasetList/Data16_13TeV_Zee.csv', 'ZeeAnalysis/Config/Data2016.boost' ]
+#    fileList['Data16_13TeV_Zee'] = ['list', 'ZeeAnalysis/Config/Data2016.boost' ]
 
     #====================MC
+    fileList['MC15c_13TeV_Zee'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2576_s2132_r7725_r7676_p2666/', 'ZeeAnalysis/Config/MC2015c.boost' ]
     fileList['MC15c_13TeV_Zee_Mu15c'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2576_s2132_r7725_r7676_p2666/', 'ZeeAnalysis/Config/MC2015c.boost' ]
     fileList['MC15c_13TeV_Zee_Mu15b'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2576_s2132_r7773_r7676_p2666/', 'ZeeAnalysis/Config/MC2015b.boost' ]
 
@@ -52,7 +55,9 @@ def GetDataFiles( inputs, inFileIndex, options, configuration=1, datasetList=[] 
 # 6 fBrem
 # 7 noIso
 
+
     minRange=0 if configuration>=0 else -configuration
+
     for iLaunch in range( minRange, abs(configuration)+1 ) :
         tmpOptions = options.copy()
         tmpOptions['electronID'] = ( 2 if iLaunch==5 else 1 )
@@ -64,9 +69,16 @@ def GetDataFiles( inputs, inFileIndex, options, configuration=1, datasetList=[] 
         if iLaunch == 6 : tmpOptions['fBremCut'] = 0.7
         if iLaunch == 7 : tmpOptions['doIso']=0
         if 'list' in fileList[inFileIndex][0] : inputs.append( [datasetList, tmpOptions] )
+        if '.csv' in fileList[inFileIndex][0]:
+            csvFile = open( fileList[inFileIndex][0], "r")
+            reader = csv.reader( csvFile )
+            tmpList=[]
+            for dataset in reader:
+                tmpList.append( dataset[0]  )
+            inputs.append( [tmpList, tmpOptions] )
         else : inputs.append( [[fileList[inFileIndex][0]], tmpOptions] )
 
-        
+
 
 def StripName( line, doPrefix = 1, doSuffix = 1 ) :
     if ( line.rfind( '.' ) != -1 and doSuffix ) : 

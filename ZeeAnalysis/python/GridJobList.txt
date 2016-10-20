@@ -1,10 +1,12 @@
 0 Test
 0 Test
-9654579 user.aguergui.Data16_13TeV_Zee_Lkh1_7_Ntuple.root
-9654582 user.aguergui.Data16_13TeV_Zee_Lkh1_scaled_7_Ntuple.root
-9620751 user.aguergui.Data15_13TeV_Zee_Lkh1_2_Ntuple.root
-9620753 user.aguergui.Data15_13TeV_Zee_Lkh1_scaled_2_Ntuple.root
-9649368 user.aguergui.MC15c_13TeV_Zee_Mu15c_Lkh1_0_Ntuple.root
 9649373 user.aguergui.MC15c_13TeV_Zee_Mu15c_Lkh1_scaled_0_Ntuple.root
-
-
+9678348 user.aguergui.MC15c_13TeV_Zee_Lkh2_0_Ntuple.root
+9678352 user.aguergui.MC15c_13TeV_Zee_Lkh1_fBrem70_0_Ntuple.root
+9678363 user.aguergui.MC15c_13TeV_Zee_Lkh1_doIso0_0_Ntuple.root
+9678367 user.aguergui.MC15c_13TeV_Zee_Lkh1_isoSyst_0_Ntuple.root
+9678373 user.aguergui.MC15c_13TeV_Zee_Lkh1_recoSyst_0_Ntuple.root
+9678381 user.aguergui.MC15c_13TeV_Zee_Lkh1_IDSyst_0_Ntuple.root
+9678796 user.aguergui.Data16_13TeV_Zee_Lkh2_0_Ntuple.root
+9678802 user.aguergui.Data16_13TeV_Zee_Lkh1_fBrem70_0_Ntuple.root
+9678809 user.aguergui.Data16_13TeV_Zee_Lkh1_doIso0_1_Ntuple.root
