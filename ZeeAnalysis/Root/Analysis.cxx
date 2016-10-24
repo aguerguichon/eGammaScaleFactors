@@ -645,20 +645,24 @@ int Analysis::FillSelectionTree() {
       m_vtxTool->getWeight( m_mapVar[ "vertexWeight" ] );
       m_mapHist["vertexWeight"]->Fill( m_mapVar[ "vertexWeight" ] );
     }
-    
-    vector<AsgElectronEfficiencyCorrectionTool*> dumVectorTool = { m_electronSFIso, m_electronSFReco, m_electronSFID };
-    for ( unsigned int  iTool = 0; iTool < dumVectorTool.size(); iTool++ ) {
 
+    vector<AsgElectronEfficiencyCorrectionTool*> dumVectorTool = { m_electronSFIso, m_electronSFReco, m_electronSFID };
+ 
+    for ( unsigned int  iTool = 0; iTool < dumVectorTool.size(); iTool++ ) {
       double sf1=2, sf2=2;
+      if ( !dumVectorTool[iTool] ) continue;
       dumVectorTool[iTool]->getEfficiencyScaleFactor(*m_veGood[0],sf1);
       dumVectorTool[iTool]->getEfficiencyScaleFactor(*m_veGood[1],sf2);
+      cout<<"in loop\n";
       m_mapVar[weightNames[iTool]] = sf1*sf2;
 
     }//end for
-  }//end isSimulation
+  }
+  //End isSimulation
   else {
 
   }
+
   //  m_mapVar["weight"] = m_mapVar["lineshapeWeight"]*m_mapVar["puWeight"]*m_mapVar["SFReco"]*m_mapVar["SFID"]*m_mapVar["datasetWeight"];
   m_mapVar["weight"] = m_mapVar["puWeight"]*m_mapVar["SFReco"]*m_mapVar["SFID"]*m_mapVar["datasetWeight"]*m_mapVar["SFIso"]*m_mapVar["vertexWeight"];
   
@@ -673,8 +677,8 @@ int Analysis::FillSelectionTree() {
 
   m_selectionTree->Fill();
   if ( m_debug ) cout << "Analysis::FillSelectionTree done" << endl;
-  return 0;
-}
+  return 0;}
+
 
 //=====================================================
 int Analysis::InitializeTools () {
@@ -711,24 +715,29 @@ int Analysis::InitializeTools () {
   cout << "configLkh : " << confDir+"ElectronLikelihood" + IDselection + "OfflineConfig2015.conf" << endl;    // m_LHToolMedium2012->setProperty("ConfigFile",confDir+"ElectronLikelihood" + IDselection + "OfflineConfig2016_Smooth.conf");
     //    cout<<confDir+"ElectronLikelihood" + IDselection + "OfflineConfig2016_Smooth.conf"<<endl;
 
+
   m_LHToolMedium2012->initialize();
+
 
   m_CutToolMedium2012 = new  AsgElectronIsEMSelector("m_CutToolMedium2012"); // create the selector
   // set the config file that contains the cuts on the shower shapes 
   m_CutToolMedium2012->setProperty("ConfigFile",confDir+"ElectronIsEM" + IDselection + "SelectorCutDefs.conf"); 
   m_CutToolMedium2012->initialize();
 
+
   //Setup the GRL 
   m_grl = new GoodRunsListSelectionTool("GoodRunsListSelectionTool");
-  std::vector<std::string> vecStringGRL;
-  string grlLocalFile = "/afs/in2p3.fr/home/c/cgoudet/private/eGammaScaleFactors/";
-  bool isLocal = system("ls data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml" );    
+  //std::vector<std::string> vecStringGRL;
+  //  string grlLocalFile = "/afs/in2p3.fr/home/a/aguergui/public/eGammaScaleFactors/";
+  // bool isLocal = system("ls data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml" );
+    
   m_grl->setProperty( "GoodRunsListVec", m_mapVectString["grl"]);
   m_grl->setProperty("PassThrough", false); // if true (default) will ignore result of GRL and will just pass all events
   if (!m_grl->initialize().isSuccess()) { // check this isSuccess
     cout << "Erreur : GRL not initialized" << endl;
     exit(1);
   }
+
 
   Info("","Declaring pileup reweighting tool");
   m_pileup = new CP::PileupReweightingTool("prw");
@@ -770,21 +779,41 @@ int Analysis::InitializeTools () {
   // std:string fileName = "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v1/offline/efficiencySF.offline.LooseAndBLayerLLH_d0z0_v11.2015_2016.13TeV.rel20.7.25ns.v01.root" 
  
   vector<string> filePerTool;
+  // filePerTool.push_back( "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v1/isolation/efficiencySF.Isolation.LooseAndBLayerLLH_d0z0_v11_isolLoose.2015_2016.13TeV.rel20.7.25ns.v01.root" );
+  // filePerTool.push_back( "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v1/offline/efficiencySF.offline.RecoTrk.2015_2016.13TeV.rel20.7.25ns.v01.root" );
+  // switch ( m_electronID ) {
+  // case 1 : 
+  //   filePerTool.push_back( "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v1/offline/efficiencySF.offline.MediumLLH_v11.2015_2016.13TeV.rel20.7.25ns.v01.root" );
+  //   break;
+  // case 2 :
+  //   filePerTool.push_back( "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v1/offline/efficiencySF.offline.TightLLH_d0z0.2015.13TeV.rel20p0.25ns.v04.root" );
+  //   break;
+  // default :
+  //   cout << "SFReco file not defined for m_electronID=" << m_electronID << endl;
+  //   exit(0);
+  // }
+
+
   filePerTool.push_back( "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v1/isolation/efficiencySF.Isolation.LooseAndBLayerLLH_d0z0_v11_isolLoose.2015_2016.13TeV.rel20.7.25ns.v01.root" );
   filePerTool.push_back( "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v1/offline/efficiencySF.offline.RecoTrk.2015_2016.13TeV.rel20.7.25ns.v01.root" );
   switch ( m_electronID ) {
   case 1 : 
+    //    filePerTool.push_back( "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v3/offline/efficiencySF.offline.MediumLLH_d0z0_v11.root" );
     filePerTool.push_back( "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v1/offline/efficiencySF.offline.MediumLLH_v11.2015_2016.13TeV.rel20.7.25ns.v01.root" );
     break;
   case 2 :
-    filePerTool.push_back( "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v1/offline/efficiencySF.offline.TightLLH_d0z0.2015.13TeV.rel20p0.25ns.v04.root" );
+    filePerTool.push_back( "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v3/offline/efficiencySF.offline.TightLLH_d0z0_v11.root" );
     break;
   default :
     cout << "SFReco file not defined for m_electronID=" << m_electronID << endl;
     exit(0);
   }
 
+    
+
+
   vector<AsgElectronEfficiencyCorrectionTool*> dumVectorTool = { m_electronSFIso, m_electronSFReco, m_electronSFID };
+
   vector<string> SFSyst = { "EL_EFF_Iso_CorrUncertainty__1up", "EL_EFF_Reco_TOTAL_UncorrUncertainty__1up", "EL_EFF_ID_TOTAL_UncorrUncertainty__1up" };
   for ( unsigned int iTool = 0; iTool < dumVectorTool.size(); iTool++ ) {
     if ( !dumVectorTool[iTool] ) continue;
@@ -804,7 +833,6 @@ int Analysis::InitializeTools () {
     }
   }
 
-  cout << "trig tool" << endl;
 
   m_trigConfigTool = new TrigConf::xAODConfigTool("xAODConfigTool"); // gives us access to the meta-data
   ToolHandle< TrigConf::ITrigConfigTool > trigConfigHandle( m_trigConfigTool );

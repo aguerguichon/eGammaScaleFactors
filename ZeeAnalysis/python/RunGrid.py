@@ -93,7 +93,8 @@ for option in sys.argv:
     if 'DATA2016' == option : GetDataFiles( inputs, 'Data16_13TeV_Zee', {}, 1 )     
     if 'DATA2015' == option : GetDataFiles( inputs, 'Data15_13TeV_Zee', {}, 1 )     
     
-    if 'MC2015c' == option : GetDataFiles( inputs, 'MC15c_13TeV_Zee_Mu15c', {}, 1 )     
+    if 'MC2015c' == option : GetDataFiles( inputs, 'MC15c_13TeV_Zee', {}, 1 )     
+    if 'TEST' == option : GetDataFiles( inputs, 'MC15c_TEST', {}, -5 )     
     if 'MC2015b' == option : GetDataFiles( inputs, 'MC15c_13TeV_Zee_Mu15b', {}, 1 )     
    
     if 'Ztautau15c' == option : GetDataFiles( inputs, 'MC_13TeV_Ztautau_2015c', {}, 1 )     
@@ -105,23 +106,23 @@ for option in sys.argv:
 
 
     if 'SYST2016' == option :
-        print option
-      #Lkh2
-        GetDataFiles( inputs, 'Data16_13TeV_Zee', {}, -5 )
+        #Lkh2
+ #       GetDataFiles( inputs, 'Data16_13TeV_Zee', {}, -5 )
+  #      GetDataFiles( inputs, 'Data16_13TeV_Zee', {}, -8 )
 #        GetDataFiles( inputs, 'MC15c_13TeV_Zee', {}, -5 )
-        print "after"
-        #fBrem
-        GetDataFiles( inputs, 'Data16_13TeV_Zee', {}, -6 )
- #       GetDataFiles( inputs, 'MC15c_13TeV_Zee', {}, -6 )
+       
+        # #fBrem
+        # GetDataFiles( inputs, 'Data16_13TeV_Zee', {}, -6 )
+        # GetDataFiles( inputs, 'MC15c_13TeV_Zee', {}, -6 )
 
-        #noIso = doIso0
-        GetDataFiles( inputs, 'Data16_13TeV_Zee', {}, -7 )
-   #     GetDataFiles( inputs, 'MC15c_13TeV_Zee', {}, -7)
+        # #noIso = doIso0
+         GetDataFiles( inputs, 'Data16_13TeV_Zee', {}, -7 )
+         GetDataFiles( inputs, 'MC15c_13TeV_Zee', {}, -7)
 
-        #efficiency
-    #    GetDataFiles( inputs, 'MC15c_13TeV_Zee', {'scaleSyst' : 1}, 0)
-     #   GetDataFiles( inputs, 'MC15c_13TeV_Zee', {'scaleSyst' : 2}, 0)
-      #  GetDataFiles( inputs, 'MC15c_13TeV_Zee', {'scaleSyst' : 3}, 0)
+        # #efficiency
+        #GetDataFiles( inputs, 'MC15c_13TeV_Zee', {'scaleSyst' : 1}, 0)
+        #GetDataFiles( inputs, 'MC15c_13TeV_Zee', {'scaleSyst' : 2}, 0)
+        #GetDataFiles( inputs, 'MC15c_13TeV_Zee', {'scaleSyst' : 3}, 0)
 
 
     if 'MC25' == option :

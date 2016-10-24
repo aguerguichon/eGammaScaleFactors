@@ -16,8 +16,11 @@ def GetDataFiles( inputs, inFileIndex, options, configuration=1, datasetList=[] 
 
     #====================MC
     fileList['MC15c_13TeV_Zee'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2576_s2132_r7725_r7676_p2666/', 'ZeeAnalysis/Config/MC2015c.boost' ]
-    fileList['MC15c_13TeV_Zee_Mu15c'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2576_s2132_r7725_r7676_p2666/', 'ZeeAnalysis/Config/MC2015c.boost' ]
+#    fileList['MC15c_13TeV_Zee_Mu15c'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2576_s2132_r7725_r7676_p2666/', 'ZeeAnalysis/Config/MC2015c.boost' ]
     fileList['MC15c_13TeV_Zee_Mu15b'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2576_s2132_r7773_r7676_p2666/', 'ZeeAnalysis/Config/MC2015b.boost' ]
+    #fileList['MC15c_TEST'] = [ 'mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2576_s2132_r7725_r7676_p2666_tid08601476_00/DAOD_EGAM1.08601476._000138.pool.root.1','ZeeAnalysis/Config/MC2015c.boost' ]
+
+    fileList['MC15c_TEST'] = [ 'mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2576_s2132_r7725_r7676_p2666/','ZeeAnalysis/Config/MC2015c.boost' ]
 
     #fileList['MC_13TeV_Zee_TestGuillaume'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2984_r8585_r7676/', 'ZeeAnalysis/Config/MC2015c.boost']
    
@@ -54,14 +57,14 @@ def GetDataFiles( inputs, inFileIndex, options, configuration=1, datasetList=[] 
 # 5 : 2 0  27
 # 6 fBrem
 # 7 noIso
-
+# 8 : 2 1 27
 
     minRange=0 if configuration>=0 else -configuration
 
     for iLaunch in range( minRange, abs(configuration)+1 ) :
         tmpOptions = options.copy()
-        tmpOptions['electronID'] = ( 2 if iLaunch==5 else 1 )
-        tmpOptions['doScale'] = ( 1 if iLaunch==1 else 0 )
+        tmpOptions['electronID'] = ( 2 if (iLaunch==5 or iLaunch==8) else 1 )
+        tmpOptions['doScale'] = ( 1 if (iLaunch==1 or iLaunch==8) else 0 )
         if iLaunch == 3 : tmpOptions["ptCut"] =  35
         elif iLaunch==2 : tmpOptions["ptCut"] =  30
         elif iLaunch==4 : tmpOptions["ptCut"] =  20

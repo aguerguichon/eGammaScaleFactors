@@ -76,7 +76,7 @@ int main( int argc, char* argv[] ) {
     analysisData.Configure( configFileName );
     analysisData.SetDatasetWeight( datasetWeight );
     //    if ( pileupFile != "" ) analysisData.SetPileupFile( pileupFile );
-    analysisData.SetDebug( false );
+    analysisData.SetDebug( true );
     if ( vm.count( "ptCut" ) ) analysisData.SetPtCut( ptCut );
     if ( vm.count( "fBremCut" ) ) analysisData.SetFBremCut( fBremCut );
     analysisData.SetDoScaleFactor( doScale );

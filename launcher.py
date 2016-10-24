@@ -10,8 +10,9 @@ commandLine = 'RunZee '
 
 #commandLine+= '/afs/cern.ch/work/k/kgrevtso/public/Calib_files/Data2015/Data/data15_13TeV.00283155.physics_Main.merge.DAOD_EGAM1.r7562_p2521_p2582_tid08024275_00/DAOD_EGAM1.08024275._000006.pool.root.1 --outName /sps/atlas/a/aguerguichon/Calibration/Test/TestCutFlow.root --config /afs/in2p3.fr/home/a/aguergui/public/eGammaScaleFactors/ZeeAnalysis/Config/Data2015.boost'
 
-commandLine+= 'data16_13TeV.00307656.physics_Main.merge.DAOD_EGAM1.f739_m1673_p2785_tid09397978_00/*pool* --outName ./TestAnalysis.root --config /afs/in2p3.fr/home/a/aguergui/public/eGammaScaleFactors/ZeeAnalysis/Config/Data2016.boost'
+commandLine+= '/sps/atlas/a/aguerguichon/Calibration/DataxAOD/mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2576_s2132_r7725_r7676_p2666_tid08601476_00/DAOD_EGAM1.08601476._000001.pool.root.1 --outName ./TestAnalysis.root --config /afs/in2p3.fr/home/a/aguergui/public/eGammaScaleFactors/ZeeAnalysis/Config/MC2015c.boost'
 
-commandLine+= ' --doScale '
+commandLine+= ' --electronID 1 --ptCut 27000 --doIso 0'
+#commandLine+= ' --electronID 2 --ptCut 27000'
 print commandLine
 os.system( commandLine )
