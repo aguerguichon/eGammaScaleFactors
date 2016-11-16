@@ -1,7 +1,0 @@
-inputType=0
-rootFileName=/afs/in2p3.fr/home/a/aguergui/public/eGammaScaleFactors/TotalCutFlow.root
-objName=CFMC
-legend=MC
-rootFileName=/afs/in2p3.fr/home/a/aguergui/public/eGammaScaleFactors/TotalCutFlow.root
-objName=CFData
-legend= Data
