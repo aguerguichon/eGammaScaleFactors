@@ -3,7 +3,6 @@ In the different mentionned files, be careful to change the paths and names "use
 ====================================
 
 
-
 How to make a Ntuple campaign
 ====================================
 
@@ -70,3 +69,10 @@ In Analysis::MakeElectronCut() are the cuts and selection at the electron level
 To include the new selection in the cut flow:
    -add the 'key' name of the selection in the vector cutFlowNames in the Analysis constructor
    -add the following line after your selection:'m_mapHist["cutFlow"]->Fill('key')'
+
+
+Tools
+=====
+
+Tools are declared as attributes of the Analysis class.
+They are initialized in Analysis::InitializeTools()
