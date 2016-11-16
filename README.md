@@ -20,13 +20,13 @@ Once the job is finished, download ('rucio download fileName') and merge all the
 2 : Running on data
 
 - In eGammaScaleFactors/ZeeAnalysis/python/FunctionsRunGrid.py:
-  *create a new entry in fileList as: fileList['shortcut']=['full name of dataset', 'config file name']
-  *the shortcut name will be the name of the directory where data will be uploaded once the job is finished
+  -create a new entry in fileList as: fileList['shortcut']=['full name of dataset', 'config file name']
+  -the shortcut name will be the name of the directory where data will be uploaded once the job is finished
 
 - In eGammaScaleFactors/ZeeAnalysis/python/RunGrid.py:
-  *create a new key as: 'if key == option: GetDataFiles(inputs, 'shortcut', {'options'}, 'nOptions')
-  -> more information on the different nOptions in FunctionsRunGrid.py l.70:
-  -> if nOptions > 0, all the selections corresponding to 0 -> nOptions are performed
+  -create a new key as: 'if key == option: GetDataFiles(inputs, 'shortcut', {'options'}, 'nOptions')\n
+  -> more information on the different nOptions in FunctionsRunGrid.py l.70\n
+  -> if nOptions > 0, all the selections corresponding to 0 -> nOptions are performed\n
   -> if nOptions < 0, only the selection corresponding to fabs(nOptions) is performed (baseline is 1)
 ex: -nOptions= 1: 2 different jobs are launched, the 1st one with electronID=1 doScale=0 ptCut=27 and the 2nd one with electronID=1 doScale=1 ptCut=27
     -nOptions=-1: only one job is launched with electronID=1 doScale=1 ptCut=27
