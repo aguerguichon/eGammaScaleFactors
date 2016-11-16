@@ -26,7 +26,7 @@ Once the job is finished, download ('rucio download fileName') and merge all the
 
 - In eGammaScaleFactors/ZeeAnalysis/python/RunGrid.py:
 
-  +create a new key as: 'if key == option: GetDataFiles(inputs, 'shortcut', {'options'}, 'nOptions')
+  *create a new key as: 'if key == option: GetDataFiles(inputs, 'shortcut', {'options'}, 'nOptions')
 
   -> more information on the different nOptions in FunctionsRunGrid.py l.70
 
@@ -34,12 +34,11 @@ Once the job is finished, download ('rucio download fileName') and merge all the
 
   -> if nOptions < 0, only the selection corresponding to fabs(nOptions) is performed (baseline is 1)
 
-ex: -nOptions= 1: 2 different jobs are launched, the 1st one with electronID=1 doScale=0 ptCut=27 and the 2nd one with electronID=1 doScale=1 ptCut=27
-
+ex: -nOptions= 1: 2 different jobs are launched, the 1st one with electronID=1 doScale=0 ptCut=27 and the 2nd one with electronID=1 doScale=1 ptCut=27  
     -nOptions=-1: only one job is launched with electronID=1 doScale=1 ptCut=27
 
 - In eGammaScaleFactors/ZeeAnalysis/Config/:
-  +create the config file with:
+  *create the config file with:
 for MC: esModel, trigger, dataPUSF, pileupFile, ilumCalc
 for data: esModel, trigger, dataPUSF, grl
 NB: dataPUSF=1.09 (converted into 1/1.09 in the Analysis.cxx code)
@@ -90,5 +89,4 @@ To include the new selection in the cut flow:
 Tools
 =====
 
-Tools are declared as attributes of the Analysis class.
-They are initialized in Analysis::InitializeTools()
+Tools are declared as attributes of the Analysis class. They are initialized in Analysis::InitializeTools()
