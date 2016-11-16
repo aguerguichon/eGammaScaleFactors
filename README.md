@@ -27,12 +27,10 @@ Once the job is finished, download ('rucio download fileName') and merge all the
 ###2 : Running on data###
 
 - In eGammaScaleFactors/ZeeAnalysis/python/FunctionsRunGrid.py:
-   * create a new entry in fileList as: 
+   * create a new entry in fileList as (don't forget to put the '/' at the end of your dataset to work on containers): 
 ```
-fileList['yourShortcut']=['yourDataset', 'yourConfigFile']
+fileList['yourShortcut']=['yourDataset/', 'yourConfigFile']
 ```
-   Don't forget to put the '/' at the end of your dataset to work on containers  
- 
    * the shortcut name will be the name of the directory where data will be uploaded once the job is finished
 - In eGammaScaleFactors/ZeeAnalysis/python/RunGrid.py:
    * create a new key as: 
