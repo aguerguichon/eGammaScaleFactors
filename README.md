@@ -8,11 +8,14 @@ How to make a Ntuple campaign
 1 : Generate MC Pileup File 
 ---------------------------
 
-- In ZeeAnalysis/python/GeneratePU.py, add the MC AOD dataset(s) corresponding to the DAOD which is used.
-- 'lsetup panda'
-- Check the latest athena release with the command 'showVersions --show=athena'
-- 'asetup AthAnalysisBase,X.Y.Z,here' (always use the latest release) in eGammaScaleFactors
-- 'python GeneratePU.py'
+- In ZeeAnalysis/python/GeneratePU.py, add the MC AOD dataset(s) corresponding to the DAOD which is used
+  lsetup panda
+- Check the latest athena release with the command 
+  showVersions --show=athena
+- Setup Athena (always use the latest release) in eGammaScaleFactors
+  asetup AthAnalysisBase,X.Y.Z,here 
+- Launch your job
+  python GeneratePU.py
 
 Once the job is finished, download ('rucio download fileName') and merge all the output files ('hadd fileName fileName_prw.root'). The merged file will then be the input file of RunZee.
 
@@ -34,8 +37,9 @@ Once the job is finished, download ('rucio download fileName') and merge all the
 
   -> if nOptions < 0, only the selection corresponding to fabs(nOptions) is performed (baseline is 1)
 
-ex: -nOptions= 1: 2 different jobs are launched, the 1st one with electronID=1 doScale=0 ptCut=27 and the 2nd one with electronID=1 doScale=1 ptCut=27  
-    -nOptions=-1: only one job is launched with electronID=1 doScale=1 ptCut=27
+ex: 
+-nOptions= 1: 2 different jobs are launched, the 1st one with electronID=1 doScale=0 ptCut=27 and the 2nd one with electronID=1 doScale=1 ptCut=27  
+-nOptions=-1: only one job is launched with electronID=1 doScale=1 ptCut=27
 
 - In eGammaScaleFactors/ZeeAnalysis/Config/:
   *create the config file with:
@@ -81,9 +85,9 @@ Adding cuts and selection steps
 In Analysis::PassSelection() are the cuts and selection at the event level
 In Analysis::MakeElectronCut() are the cuts and selection at the electron level
 
-To include the new selection in the cut flow:
-   -add the 'key' name of the selection in the vector cutFlowNames in the Analysis constructor
-   -add the following line after your selection:'m_mapHist["cutFlow"]->Fill('key')'
+To include the new selection in the cut flow: 
+-add the 'key' name of the selection in the vector cutFlowNames in the Analysis constructor
+-add the following line after your selection:'m_mapHist["cutFlow"]->Fill('key')'
 
 
 Tools
