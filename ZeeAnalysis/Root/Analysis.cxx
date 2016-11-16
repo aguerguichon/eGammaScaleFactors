@@ -1,23 +1,26 @@
 #include "ZeeAnalysis/Analysis.h"
-#include "TFile.h"
 #include "ZeeAnalysis/SideFunctions.h"
+#include "../LineShapeTool/LineShapeTool/LineShapeTool.h"
+
+#include "TFile.h"
 #include "TString.h"
 #include "TCanvas.h"
 #include "TTree.h"
-#include "GoodRunsLists/GoodRunsListSelectionTool.h"
-#include <boost/program_options.hpp>
 #include "TChain.h"
-#include "xAODEgamma/EgammaDefs.h"
+
+#include "GoodRunsLists/GoodRunsListSelectionTool.h"
 #include "CaloGeoHelpers/CaloSampling.h"
-#include "../LineShapeTool/LineShapeTool/LineShapeTool.h"
-#include "xAODTruth/TruthEventContainer.h"
 #include "PATInterfaces/SystematicRegistry.h"
 #include "PATInterfaces/SystematicVariation.h"
 #include "PATInterfaces/SystematicsUtil.h"
 #include "IsolationSelection/IsolationSelectionTool.h"
 #include "xAODTracking/TrackParticlexAODHelpers.h"
 #include "xAODTracking/Vertex.h"
+#include "xAODTruth/TruthEventContainer.h"
+#include "xAODEgamma/EgammaDefs.h"
+#include "xAODRootAccess/tools/ReturnCheck.h"
 
+#include <boost/program_options.hpp>
 
 using std::ifstream;
 using std::cout;
@@ -29,8 +32,8 @@ namespace po = boost::program_options;
 
 
 Analysis::Analysis() : m_tevent( xAOD::TEvent::kClassAccess), 
-		       m_debug( true),  m_numEvent(0), m_goodEvent(0),
-		       m_doScaleFactor(false), m_electronID(1), m_ptCut( 27000 ), m_fBremCut( 1 ), 
+		       m_debug( false ),  m_numEvent(0), m_goodEvent(0),
+		       m_doScaleFactor(0), m_electronID(1), m_ptCut( 27000 ), m_fBremCut( 1 ), 
 		       m_scaleSyst(0), m_doIso(1)
 {
   if ( m_debug ) cout << "Analysis::Analysis()" << endl;
@@ -204,7 +207,6 @@ void Analysis::AddFile( string infileName ) {
     // Open the input file:                                                        
     m_fileName.push_back( infileName );
     if ( m_tfile ) {
-      //      m_tfile->Close();
       delete m_tfile;
       m_tfile = 0;}
     m_tfile = TFile::Open( m_fileName.back().c_str() );
@@ -251,7 +253,6 @@ void Analysis::PlotResult(string fileName) {
 
   //check that the last character of directory is '/'
   if ( fileName == "" ) fileName = m_mapString["name"];
-
 
   TCanvas *canvas = new TCanvas();
 
@@ -407,17 +408,14 @@ void Analysis::TreatEvents(int nevent) {
     //Loop on all events of the TFile
     for (int i_event = 0 ; i_event < nentries ; i_event++) {
       currentEvent++;
-      //      cout << "event : " << i_event << endl;
       if ( currentEvent == nevent ) return;
       if (currentEvent % 1000 == 0 ) {
 	cout << "Event : " << currentEvent << endl;
-	//cout << m_eventInfo->runNumber() << " " << m_eventInfo->eventNumber()  << endl;
       }
       // Read event 
       m_tevent.getEntry( i_event );
 
       //Retrieve the electron container                  
-      //RELEASE      
       if ( ! m_tevent.retrieve( m_eContainer, "Electrons" ).isSuccess() ){ cout << "Can not retrieve ElectronContainer : ElectronCollection" << endl; exit(1); }// if retrieve                                                                 
       if ( ! m_tevent.retrieve( m_eventInfo, "EventInfo" ).isSuccess() ){ cout << "Can Not retrieve EventInfo" << endl; exit(1); }
       if ( ! m_tevent.retrieve( m_ZVertex, "PrimaryVertices" ).isSuccess() ){ cout << "Can Not retrieve Vertex Info" << endl; exit(1); }
@@ -440,9 +438,7 @@ void Analysis::TreatEvents(int nevent) {
       //Trigger
       bool passTrig = false;
       auto chainGroup = m_trigDecisionTool->getChainGroup( m_mapString["trigName"].c_str() );
-      //auto chainGroup = m_trigDecisionTool->getChainGroup( ".*" );
-      //      auto chainGroup = m_trigDecisionTool->getChainGroup("HLT_2e17_lhvloose_nod0.*");
-      //      auto chainGroup = m_trigDecisionTool->getChainGroup("HLT_e24_lhmedium_L1EM18VH.*");
+
       std::map<std::string,int> triggerCounts;
       for(auto &trig : chainGroup->getListOfTriggers()) {
 	auto cg = m_trigDecisionTool->getChainGroup(trig);
@@ -501,7 +497,6 @@ void Analysis::TreatEvents(int nevent) {
 bool Analysis::PassSelection() {
   if ( m_debug ) cout << "Analysis::PassSelection()" << endl;
   m_mapHist["eventZVertex"]->Fill( (*m_ZVertex)[0]->auxdecor< float >("beamPosZ") );
-  //m_mapHist["eventZVertex"]->Fill( (*m_ZVertex)[0]->z() );
   //Reduce number of electron in container by appling cuts on electrons
   MakeElectronCut();
 
@@ -612,13 +607,20 @@ int Analysis::FillSelectionTree() {
     m_mapVar[string(TString::Format( "e1_%d", iEl+1 ))] = m_veGood[iEl]->caloCluster()->energyBE(1);
     m_mapVar[string(TString::Format( "e2_%d", iEl+1 ))] = m_veGood[iEl]->caloCluster()->energyBE(2);
     m_mapVar[string(TString::Format( "energy_%d", iEl+1 ))] = m_veGood[iEl]->e();
-    //    m_mapVar[string(TString::Format( "gain_%d", iEl+1 ) )] = m_veGood[iEl]->auxdata<int>( "maxEcell_gain");
+
     //Get the fbrm variable as computed in the likelihood code
     m_mapVar[string(TString::Format("fBrem_%d", iEl+1))] = GetFBrem( m_veGood[iEl] );
-    // m_mapVar[string(TString::Format("E_Lr2_HiG_%d", iEl+1))] = m_veGood[iEl]->auxdata<float>( "Cells3x7_Lr2_HiG");
-    // m_mapVar[string(TString::Format("E_Lr2_MdG_%d", iEl+1))] = m_veGood[iEl]->auxdata<double>( "Lr2_MdG");
-    // m_mapVar[string(TString::Format("E_Lr2_LwG_%d", iEl+1))] = m_veGood[iEl]->auxdata<double>( "Lr2_LwG");
-    // if ( m_mapVar[string(TString::Format("E_Lr2_MdG_%d", iEl+1))] )    cout << m_mapVar[string(TString::Format("E_Lr2_HiG_%d", iEl+1))] << " " << m_mapVar[string(TString::Format("E_Lr2_MdG_%d", iEl+1))] << " " << m_mapVar[string(TString::Format("E_Lr2_HiG_%d", iEl+1))] << endl;
+   
+    //Get information for the gain
+    for (unsigned int iLr = 0; iLr < 4; iLr++){ 
+      m_mapVar[string(TString::Format("E_Lr%d_HiG_%d", iLr,iEl+1))] = m_veGood[iEl]->auxdata<float>( string(TString::Format("E_Lr%d_HiG", iLr))  );
+      m_mapVar[string(TString::Format("E_Lr%d_MedG_%d", iLr, iEl+1))] = m_veGood[iEl]->auxdata<float>( string(TString::Format("E_Lr%d_MedG", iLr))  );
+      m_mapVar[string(TString::Format("E_Lr%d_LowG_%d", iLr, iEl+1))] = m_veGood[iEl]->auxdata<float>( string(TString::Format("E_Lr%d_LowG", iLr))  ); 
+      m_mapVar[string(TString::Format("nCells_Lr%d_HiG_%d", iLr,iEl+1))] = m_veGood[iEl]->auxdata<unsigned char>( string(TString::Format("nCells_Lr%d_HiG", iLr))  );
+      m_mapVar[string(TString::Format("nCells_Lr%d_MedG_%d", iLr, iEl+1))] = m_veGood[iEl]->auxdata<unsigned char>( string(TString::Format("nCells_Lr%d_MedG", iLr)) );
+      m_mapVar[string(TString::Format("nCells_Lr%d_LowG_%d", iLr, iEl+1))] = m_veGood[iEl]->auxdata<unsigned char>( string(TString::Format("nCells_Lr%d_LowG", iLr)) ); 
+
+    }
   }//end for iEl
 
 
@@ -653,7 +655,6 @@ int Analysis::FillSelectionTree() {
       if ( !dumVectorTool[iTool] ) continue;
       dumVectorTool[iTool]->getEfficiencyScaleFactor(*m_veGood[0],sf1);
       dumVectorTool[iTool]->getEfficiencyScaleFactor(*m_veGood[1],sf2);
-      cout<<"in loop\n";
       m_mapVar[weightNames[iTool]] = sf1*sf2;
 
     }//end for
@@ -709,27 +710,21 @@ int Analysis::InitializeTools () {
   m_LHToolMedium2012 = new AsgElectronLikelihoodTool ("m_LHToolMedium2012"); 
   // initialize the primary vertex container for the tool to have access to the number of vertices used to adapt cuts based on the pileup
   m_LHToolMedium2012->setProperty("primaryVertexContainer","PrimaryVertices");
-  string confDir = "ElectronPhotonSelectorTools/offline/mc15_20150712/";
-  //  string confDir = "ElectronPhotonSelectorTools/offline/mc15_20160512/";
-  m_LHToolMedium2012->setProperty("ConfigFile",confDir+"ElectronLikelihood" + IDselection + "OfflineConfig2015.conf");
-  cout << "configLkh : " << confDir+"ElectronLikelihood" + IDselection + "OfflineConfig2015.conf" << endl;    // m_LHToolMedium2012->setProperty("ConfigFile",confDir+"ElectronLikelihood" + IDselection + "OfflineConfig2016_Smooth.conf");
-    //    cout<<confDir+"ElectronLikelihood" + IDselection + "OfflineConfig2016_Smooth.conf"<<endl;
-
-
+  string confDir = "ElectronPhotonSelectorTools/offline/mc15_20160512/";
+  m_LHToolMedium2012->setProperty("ConfigFile",confDir+"ElectronLikelihood" + IDselection + "OfflineConfig2016_Smooth.conf");
+  cout << "configLkh : " << confDir+"ElectronLikelihood" + IDselection + "OfflineConfig2016_Smooth.conf" << endl;   
+  
   m_LHToolMedium2012->initialize();
 
 
   m_CutToolMedium2012 = new  AsgElectronIsEMSelector("m_CutToolMedium2012"); // create the selector
   // set the config file that contains the cuts on the shower shapes 
-  m_CutToolMedium2012->setProperty("ConfigFile",confDir+"ElectronIsEM" + IDselection + "SelectorCutDefs.conf"); 
+  m_CutToolMedium2012->setProperty("ConfigFile","ElectronPhotonSelectorTools/offline/mc15_20151012/ElectronIsEM" + IDselection + "SelectorCutDefs.conf"); 
   m_CutToolMedium2012->initialize();
 
 
   //Setup the GRL 
   m_grl = new GoodRunsListSelectionTool("GoodRunsListSelectionTool");
-  //std::vector<std::string> vecStringGRL;
-  //  string grlLocalFile = "/afs/in2p3.fr/home/a/aguergui/public/eGammaScaleFactors/";
-  // bool isLocal = system("ls data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml" );
     
   m_grl->setProperty( "GoodRunsListVec", m_mapVectString["grl"]);
   m_grl->setProperty("PassThrough", false); // if true (default) will ignore result of GRL and will just pass all events
@@ -741,25 +736,7 @@ int Analysis::InitializeTools () {
 
   Info("","Declaring pileup reweighting tool");
   m_pileup = new CP::PileupReweightingTool("prw");
-  m_pileup->setProperty( "DataScaleFactor", m_dataPUSF );
-  // if ( m_esModel.find( "2012" ) != string::npos ) {
-  //   grlFile.push_back( "data12_8TeV.periodAllYear_DetStatus-v61-pro14-02_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml" );
-  //   m_pileup->setProperty("DataScaleFactor",1./1.09);    //    m_pileup.SetDataScaleFactors(1/1.09); // For 2012
-  //   confFiles.push_back("PileupReweighting/mc14v1_defaults.prw.root");
-  //   lcalcFiles.push_back("ilumicalc_histograms_None_200842-215643.root");
-  // }
-  // else if ( m_esModel == "es2015PRE" ) {
-  //   grlFile.push_back( "data15_13TeV.periodAllYear_DetStatus-v73-pro19-08_DQDefects-00-01-02_PHYS_StandardGRL_All_Good_25ns.xml" );
-  //   m_pileup->setProperty("DataScaleFactor",1./1.16);
-  //   confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + m_pileupFile );
-  //   lcalcFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "ilumicalc_histograms_None_13TeV_25nsb.root");
-  // }
-  // else if ( m_esModel == "es2015cPRE" ) {
-  //   m_pileup->setProperty("DataScaleFactor",1./1.16);
-  //   confFiles.push_back( ( isLocal ? grlLocalFile : "" ) + m_pileupFile );
-  //   lcalcFiles.push_back( ( isLocal ? grlLocalFile : "" ) + "ilumicalc_histograms_None_13TeV_25ns.root");
-  //   grlFile.push_back( "data15_13TeV.periodAllYear_DetStatus-v75-repro20-01_DQDefects-00-02-02_PHYS_StandardGRL_All_Good_25ns.xml" ); 
-  // }
+  m_pileup->setProperty( "DataScaleFactor", 1./m_dataPUSF );
 
   dynamic_cast<CP::PileupReweightingTool&>(*m_pileup).setProperty( "ConfigFiles", m_mapVectString["pileupFile"]);
   dynamic_cast<CP::PileupReweightingTool&>(*m_pileup).setProperty( "LumiCalcFiles", m_mapVectString["ilumCalc"]);
@@ -775,31 +752,14 @@ int Analysis::InitializeTools () {
   m_electronSFID = new AsgElectronEfficiencyCorrectionTool( "SFID" ) ;
   if ( m_doIso )  m_electronSFIso = new AsgElectronEfficiencyCorrectionTool( "SFIso" );
   m_electronSFTrig = new AsgElectronEfficiencyCorrectionTool( "SFTrig" ) ;
+
   //define input file
-  // std:string fileName = "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v1/offline/efficiencySF.offline.LooseAndBLayerLLH_d0z0_v11.2015_2016.13TeV.rel20.7.25ns.v01.root" 
- 
   vector<string> filePerTool;
-  // filePerTool.push_back( "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v1/isolation/efficiencySF.Isolation.LooseAndBLayerLLH_d0z0_v11_isolLoose.2015_2016.13TeV.rel20.7.25ns.v01.root" );
-  // filePerTool.push_back( "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v1/offline/efficiencySF.offline.RecoTrk.2015_2016.13TeV.rel20.7.25ns.v01.root" );
-  // switch ( m_electronID ) {
-  // case 1 : 
-  //   filePerTool.push_back( "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v1/offline/efficiencySF.offline.MediumLLH_v11.2015_2016.13TeV.rel20.7.25ns.v01.root" );
-  //   break;
-  // case 2 :
-  //   filePerTool.push_back( "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v1/offline/efficiencySF.offline.TightLLH_d0z0.2015.13TeV.rel20p0.25ns.v04.root" );
-  //   break;
-  // default :
-  //   cout << "SFReco file not defined for m_electronID=" << m_electronID << endl;
-  //   exit(0);
-  // }
-
-
-  filePerTool.push_back( "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v1/isolation/efficiencySF.Isolation.LooseAndBLayerLLH_d0z0_v11_isolLoose.2015_2016.13TeV.rel20.7.25ns.v01.root" );
-  filePerTool.push_back( "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v1/offline/efficiencySF.offline.RecoTrk.2015_2016.13TeV.rel20.7.25ns.v01.root" );
+  filePerTool.push_back( "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v3/isolation/efficiencySF.Isolation.LooseAndBLayerLLH_d0z0_v11_isolLoose.root");
+  filePerTool.push_back( "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v3/offline/efficiencySF.offline.RecoTrk.root" );
   switch ( m_electronID ) {
   case 1 : 
-    //    filePerTool.push_back( "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v3/offline/efficiencySF.offline.MediumLLH_d0z0_v11.root" );
-    filePerTool.push_back( "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v1/offline/efficiencySF.offline.MediumLLH_v11.2015_2016.13TeV.rel20.7.25ns.v01.root" );
+    filePerTool.push_back( "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v3/offline/efficiencySF.offline.MediumLLH_d0z0_v11.root" );
     break;
   case 2 :
     filePerTool.push_back( "ElectronEfficiencyCorrection/2015_2016/rel20.7/ICHEP_June2016_v3/offline/efficiencySF.offline.TightLLH_d0z0_v11.root" );
@@ -808,9 +768,6 @@ int Analysis::InitializeTools () {
     cout << "SFReco file not defined for m_electronID=" << m_electronID << endl;
     exit(0);
   }
-
-    
-
 
   vector<AsgElectronEfficiencyCorrectionTool*> dumVectorTool = { m_electronSFIso, m_electronSFReco, m_electronSFID };
 
@@ -1010,7 +967,7 @@ void Analysis::Configure( string configFile ) {
     ("trigger", po::value<string>( &m_mapString["trigName"] ), "" )
     ("esModel", po::value< string >( &m_mapString["esModel"] ), "" ) 
     ("outName", po::value< string >( &m_mapString["name"] )->default_value( "Analysis" ), "Name of the object")
-    ("doScale", po::value<int >( &m_doScaleFactor )->default_value( false )->implicit_value(true), "Switch on the scale")
+    ("doScale", po::value<int >( &m_doScaleFactor )->default_value( 0 )->implicit_value(1), "Switch on the scale")
     ("electronID", po::value< int >( &m_electronID )->default_value( 1 ), "" )
     ("ptCut", po::value<double>( &m_ptCut ), "" )
     ("fBremCut", po::value<double>( &m_fBremCut ), "" )

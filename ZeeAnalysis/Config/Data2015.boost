@@ -1,4 +1,4 @@
-esModel=es2016PRE 
+esModel=es2015c_summer 
 trigger=HLT_2e17_lhvloose.* 
-dataPUSF=0.8621
+dataPUSF=1.09
 grl=data15_13TeV.periodAllYear_DetStatus-v75-repro20-01_DQDefects-00-02-02_PHYS_StandardGRL_All_Good_25ns.xml

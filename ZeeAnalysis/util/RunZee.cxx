@@ -1,4 +1,3 @@
-
 //C++ libraries
 #include <iostream>
 #include <string>
@@ -32,7 +31,7 @@ int main( int argc, char* argv[] ) {
     ("outName", po::value<string >(&outName)->default_value("/sps/atlas/c/cgoudet/Calibration/DataxAOD/TestAnalysis.root") , "Name of the output file")
     ("infile", po::value< vector< string > >(&infile), "The name of xAOD rootfiles")
     ("anaName", po::value< string >( &anaName )->default_value( "Analysis" ), "Name of the object")
-    ("doScale", po::value<int >( &doScale )->default_value( false )->implicit_value(true), "Switch on the scale")
+    ("doScale", po::value<int >( &doScale )->default_value( 0 )->implicit_value(1), "Switch on the scale")
     ("electronID", po::value< int >( &electronID )->default_value( 1 ), "" )
     ("ptCut", po::value<double>( &ptCut ), "" )
     ("fBremCut", po::value<double>( &fBremCut ), "" )
@@ -64,7 +63,7 @@ int main( int argc, char* argv[] ) {
     //  inputMC.push_back( infileNameMC2 );
     
     Analysis analysisMC1( "MC",  inputMC, outName );
-    analysisMC1.SetDebug( true );
+    //analysisMC1.SetDebug( true );
     analysisMC1.TreatEvents( );
     analysisMC1.Save();
     
@@ -76,7 +75,7 @@ int main( int argc, char* argv[] ) {
     analysisData.Configure( configFileName );
     analysisData.SetDatasetWeight( datasetWeight );
     //    if ( pileupFile != "" ) analysisData.SetPileupFile( pileupFile );
-    analysisData.SetDebug( true );
+    //analysisData.SetDebug( true );
     if ( vm.count( "ptCut" ) ) analysisData.SetPtCut( ptCut );
     if ( vm.count( "fBremCut" ) ) analysisData.SetFBremCut( fBremCut );
     analysisData.SetDoScaleFactor( doScale );

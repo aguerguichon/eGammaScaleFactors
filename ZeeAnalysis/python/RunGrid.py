@@ -3,7 +3,7 @@ import sys
 import numpy as np
 from FunctionsRunGrid import *
 import subprocess as sub
-from Test import *
+#from Test import *
 import csv
 
 inputs = []
@@ -20,20 +20,21 @@ if len( sys.argv ) == 1 :
 
 
 launcherPath = os.popen( 'pwd' ).read().split()[0]+'/'
+datasetsPath = '/sps/atlas/a/aguerguichon/Calibration/DataxAOD/'
+path='/afs/in2p3.fr/home/a/aguergui/public/eGammaScaleFactors/'
 
 for option in sys.argv:
     if option == 'RunGrid.py' : continue
-    datasetsPath = '/sps/atlas/a/aguerguichon/Calibration/DataxAOD/'
-    if len(sys.argv) == 2: mode=0 
-    print "mode: "+ str(mode)
-    if option in ['DATA15', 'DATA16'] :
+    if option == 'makecsv': 
+        mode=0 
+        print ("Creating csv file... ")
 
+    if option in ['DATA15', 'DATA16'] :
 #Get the list of all the runs in the grl
-        path='/afs/in2p3.fr/home/a/aguergui/public/eGammaScaleFactors/'
         if mode == 0:
             savingFile=open(path+"DatasetList/Data" + ( '15' if option == 'DATA15' else '16' ) + "_13TeV_Zee.csv", "w+") 
             runs = []
-            grlList=os.popen( 'ls /afs/in2p3.fr/home/a/aguergui/public/eGammaScaleFactors/data'+ ('15*v75*' if option=='DATA15' else '16*v82*')).read().split()
+            grlList=os.popen( 'ls '+path +'/data'+ ('15*v75*' if option=='DATA15' else '16*v83*')).read().split()
             for grl  in grlList :
                 file = open( grl )
                 for line in file :
@@ -44,21 +45,27 @@ for option in sys.argv:
                     print runs
                     for run in runs :
                         pNumber=0
+                        tagList=[]
                         run = int( run )
-            #if option == 'DATA25' and ( run < 276262 or run == 276731 ): continue
-            #if option == 'DATA50' and run > 276261 and run != 276731 : continue
                         print run
                         
                         line= "rucio list-dids "+("'data15_13TeV:data15_13TeV.00" if option == "DATA15" else "'data16_13TeV:data16_13TeV.00")+ str( run )+".physics_Main.merge.DAOD_EGAM1."+("r*" if option == "DATA15" else "*") +"p*' --filter type=container"  
                         output = os.popen(line).read().split()
                         for file in output :
                             if "data" not in file: continue
-                            file = file.split(':')[1].rsplit('_p',1)[1] #removes scope name and gets the number p* corresponding to the derivation version
+                            commandLine= "ami list datasets "+file.split(":")[1]+ ' --prodsys-status "ALL EVENTS AVAILABLE"' #checks if DAOD is complete
+                            tagList.append(file.rsplit('.',1)[1])
+                            result = sub.check_output([commandLine], shell=1, stderr=sub.STDOUT)    
+                            if "data" not in result: print ("Run "+str(run)+" not completed")
+                            file = file.rsplit('_p',1)[1] #removes scope name and gets the number p* corresponding to the derivation version
                             if int(file)<pNumber: continue
                             pNumber=int(file)
-            #print ("data15_13TeV.00" if option == "DATA15" else "data16_13TeV.00")+ str( run )+".physics_Main.merge.DAOD_EGAM1.r*p"+str(pNumber)+"/"
-      
-                        data=("data15_13TeV.00" if option == "DATA15" else "data16_13TeV.00")+str(run)+".physics_Main.merge.DAOD_EGAM1."+("r*" if option == "DATA15" else "*") +"p*"+str(pNumber)+ "/"
+
+                        print tagList
+                        tagList=[tag for tag in tagList if str(pNumber) in tag]
+                        tagList=sorted( tagList, reverse=True)
+                        data=("data15_13TeV.00" if option == "DATA15" else "data16_13TeV.00")+str(run)+".physics_Main.merge.DAOD_EGAM1."+tagList[0]+"/"
+                        print data
                         savingFile.write( data+"\n"  )
                         datasetList.append( data  )
             
@@ -76,26 +83,14 @@ for option in sys.argv:
         # rangeMax = 8
         
             savingFile.close()
+            GetDataFiles( inputs, 'Data' +( '15' if option == 'DATA15' else '16' )+'_13TeV_Zee', {} ,1, datasetList)
+            print ("Finished writing csv file")
 
-        print ("Finished writing csv file")
-        if mode == 1:
-            print "sys: "+sys.argv[2]
-            csvFile = open(sys.argv[2], "r")
-            reader = csv.reader( csvFile )
-            for dataset in reader:
-                datasetList.append( dataset[0]  )
-#            datasetList.append( dataset[0] for dataset in reader  )
-
-
-        GetDataFiles( inputs, 'Data' +( '15' if option == 'DATA15' else '16' )+'_13TeV_Zee', {} ,1, datasetList)
+        if mode == 1: GetDataFiles( inputs, 'Data' +( '15' if option == 'DATA15' else '16' )+'_13TeV_Zee', {} ,1 )
       
 
-    if 'DATA2016' == option : GetDataFiles( inputs, 'Data16_13TeV_Zee', {}, 1 )     
-    if 'DATA2015' == option : GetDataFiles( inputs, 'Data15_13TeV_Zee', {}, 1 )     
-    
-    if 'MC2015c' == option : GetDataFiles( inputs, 'MC15c_13TeV_Zee', {}, 1 )     
-    if 'TEST' == option : GetDataFiles( inputs, 'MC15c_TEST', {}, -5 )     
-    if 'MC2015b' == option : GetDataFiles( inputs, 'MC15c_13TeV_Zee_Mu15b', {}, 1 )     
+    if 'MC15c' == option : GetDataFiles( inputs, 'MC15c_13TeV_Zee', {}, 1 )     
+    if 'MC15b' == option : GetDataFiles( inputs, 'MC15c_13TeV_Zee_Mu15b', {}, 1 )     
    
     if 'Ztautau15c' == option : GetDataFiles( inputs, 'MC_13TeV_Ztautau_2015c', {}, 1 )     
     if 'ttbar15c' == option : GetDataFiles( inputs, 'MC_13TeV_ttbar_2015c', {}, 1 )     
@@ -104,40 +99,27 @@ for option in sys.argv:
     if 'ZZ4l15c' == option : GetDataFiles( inputs, 'MC_13TeV_ZZ4l_2015c', {}, 1 )     
     if 'ZZvvll15c' == option : GetDataFiles( inputs, 'MC_13TeV_ZZvvll_2015c', {}, 1 )     
 
+    if 'SYST2015' == option : GetDataFiles( inputs, 'Data15_13TeV_Zee', {}, -5 )
 
-    if 'SYST2016' == option :
+    if 'SYST' == option :
         #Lkh2
- #       GetDataFiles( inputs, 'Data16_13TeV_Zee', {}, -5 )
-  #      GetDataFiles( inputs, 'Data16_13TeV_Zee', {}, -8 )
-#        GetDataFiles( inputs, 'MC15c_13TeV_Zee', {}, -5 )
+        GetDataFiles( inputs, 'MC15c_13TeV_Zee', {}, -5 )
+        GetDataFiles( inputs, 'Data1615_13TeV_Zee', {}, -5 )
+        GetDataFiles( inputs, 'Data1615_13TeV_Zee', {}, -8 )
        
-        # #fBrem
-        # GetDataFiles( inputs, 'Data16_13TeV_Zee', {}, -6 )
-        # GetDataFiles( inputs, 'MC15c_13TeV_Zee', {}, -6 )
+        #fBrem
+        GetDataFiles( inputs, 'MC15c_13TeV_Zee', {}, -6 )         
+        GetDataFiles( inputs, 'Data1615_13TeV_Zee', {}, -6 )
 
-        # #noIso = doIso0
-         GetDataFiles( inputs, 'Data16_13TeV_Zee', {}, -7 )
-         GetDataFiles( inputs, 'MC15c_13TeV_Zee', {}, -7)
+        #noIso = doIso0
+        GetDataFiles( inputs, 'MC15c_13TeV_Zee', {}, -7)
+        GetDataFiles( inputs, 'Data1615_13TeV_Zee', {}, -7 )
 
-        # #efficiency
-        #GetDataFiles( inputs, 'MC15c_13TeV_Zee', {'scaleSyst' : 1}, 0)
-        #GetDataFiles( inputs, 'MC15c_13TeV_Zee', {'scaleSyst' : 2}, 0)
-        #GetDataFiles( inputs, 'MC15c_13TeV_Zee', {'scaleSyst' : 3}, 0)
+        #efficiency
+        GetDataFiles( inputs, 'MC15c_13TeV_Zee', {'scaleSyst' : 1}, 0)
+        GetDataFiles( inputs, 'MC15c_13TeV_Zee', {'scaleSyst' : 2}, 0)
+        GetDataFiles( inputs, 'MC15c_13TeV_Zee', {'scaleSyst' : 3}, 0)
 
-
-    if 'MC25' == option :
-        # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1} )     
-        GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'fBremCut' : 0.7 } )     
-        # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 2} )     
-#        GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 1, 'electronID' : 1} )     
-        # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'ptCut' : 30} )     
-        # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'ptCut' : 20} )     
-        # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'ptCut' : 35} )     
-        # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'scaleSyst' : 1 } )     
-        # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'scaleSyst' : 2 } )     
-        # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'scaleSyst' : 3 } )     
-        # GetDataFiles( inputs, 'MC_13TeV_Zee_25ns', {'doScale' : 0, 'electronID' : 1, 'doIso' : 0} )     
-        # print inputs
 
     if 'MC25_dis' == option :
         # GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns_geo02', outFilePrefix, esModel, 27, ptCutVect)
@@ -147,29 +129,7 @@ for option in sys.argv:
         # GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns_geo14', outFilePrefix, esModel, 27, ptCutVect)
         # GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_25ns_geo15', outFilePrefix, esModel, 27, ptCutVect)
         GetDataFiles( inputs, 'MC_13TeV_Zee_25nsb', {'doScale' : 0, 'electronID' : 1} )     
-        GetDataFiles( inputs, 'MC_13TeV_Zee_25nsb_IBL', {'doScale' : 0, 'electronID' : 1} )     
-
-
-
-    if 'MC50' == option :
-        GetDataFiles( inputs, 0, doScale, 2, electronID, 'MC_13TeV_Zee_50ns', outFilePrefix, esModel, 27, ptCutVect)
-        GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_13TeV_Zee_50ns', outFilePrefix, esModel, 27, ptCutVect)
-
-    if 'MC8' == option :
-        GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_8TeV_Zee_1Lepton', outFilePrefix, esModel, 27, ptCutVect)
-        GetDataFiles( inputs, 0, doScale, 1, electronID, 'MC_8TeV_Zee_DiLepton', outFilePrefix, esModel, 27, ptCutVect)
-        GetDataFiles( inputs, 1, doScale, 1, electronID, 'MC_8TeV_Zee_1Lepton', outFilePrefix, esModel, 27, ptCutVect)
-        GetDataFiles( inputs, 1, doScale, 1, electronID, 'MC_8TeV_Zee_DiLepton', outFilePrefix, esModel, 27, ptCutVect)
-
-    if 'DATA8' == option :
-        GetDataFiles( inputs, 0, doScale, 1, electronID, 'Data_8TeV_Zee', outFilePrefix, esModel, 27, ptCutVect)
-        GetDataFiles( inputs, 1, doScale, 1, electronID, 'Data_8TeV_Zee', outFilePrefix, esModel, 27, ptCutVect)
-
-    if 'BKG' == option : 
-#        GetDataFiles( inputs, 'MC_13TeV_Ztautau_25ns', {'doScale' : 0, 'electronID' : 1} )     
-#        GetDataFiles( inputs, 'MC_13TeV_Ztautau_25ns', {'doScale' : 1, 'electronID' : 1} )     
-        GetDataFiles( inputs, 'MC_13TeV_Zttbar_25ns', {'doScale' : 0, 'electronID' : 1} )     
- #       GetDataFiles( inputs, 'MC_13TeV_Zttbar_25ns', {'doScale' : 1, 'electronID' : 1} )     
+        GetDataFiles( inputs, 'MC_13TeV_Zee_25nsb_IBL', {'doScale' : 0, 'electronID' : 1} ) 
 
 
     if option=='clean' :
@@ -218,7 +178,7 @@ for option in sys.argv:
             os.system('rm OK*')
 
 #if done and missing files print it and do noting 
-# if done and no missing file mark the job for removal and print and OK file in the directory
+# if done and no missing file mark the job for removal and print an OK file in the directory
             if status == 'done' :
                 if not int(nMiss)  :
                     os.system('touch OK' + job[1].split('.')[2].split('_')[-2] )
@@ -239,7 +199,7 @@ for option in sys.argv:
                 else :
                     missingFiles.append( [ job[1], nMiss ] )
             elif status == 'broken' :
-                toRemove.apend( job[0] )
+                toRemove.append( job[0] )
                 pass
 
         
@@ -325,10 +285,9 @@ if len( inputs ) :
         datasetList = ""
         
 
-        for dataset in inputs[iFile][0] : 
-            datasetList += dataset + ( ',' if dataset != inputs[iFile][0][-1] else '' )
+        for dataset in inputs[iFile][0] : datasetList += dataset + ( ',' if dataset != inputs[iFile][0][-1] else '' )
 
-        #        print outFileName
+            #print outFileName
         
         commandLine = ( 'prun --exec "RunZee \`echo %IN | sed \'s/,/ /g\'\` --outName Ntuple.root '
                         + optionLine 
@@ -342,8 +301,7 @@ if len( inputs ) :
 
         print ( commandLine )
 
-        # exit(0)
-        result = sub.check_output([commandLine], shell=1, stderr=sub.STDOUT)    
+        result = sub.check_output([commandLine], shell=1, stderr=sub.STDOUT)  
         #result=[]
         #os.system( commandLine )
         jobIDList=[]
