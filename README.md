@@ -45,11 +45,13 @@ if yourKey == option: GetDataFiles(inputs, 'yourShortcut', {options}, nOptions)
    ex: 
    * nOptions= 1: 2 different jobs are launched, the 1st one with electronID=1 doScale=0 ptCut=27 and the 2nd one with electronID=1 doScale=1 ptCut=27  
    * nOptions=-1: only one job is launched with electronID=1 doScale=1 ptCut=27
+
 - In eGammaScaleFactors/ZeeAnalysis/Config/:
    * create the config file with:  
 **for MC**: esModel, trigger, dataPUSF, pileupFile, ilumCalc  
 **for data**: esModel, trigger, dataPUSF, grl  
 **_NB_**: dataPUSF=1.09 (converted into 1/1.09 in the Analysis.cxx code)
+
 - Setup: 
 ```
 rcSetup 
