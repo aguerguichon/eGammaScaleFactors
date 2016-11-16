@@ -8,9 +8,9 @@ How to make a Ntuple campaign
 ---------------------------
 
 - In ZeeAnalysis/python/GeneratePU.py, add the MC AOD dataset(s) corresponding to the DAOD which is used
-'''  
+```
   lsetup panda
-'''
+```
 - Check the latest athena release with the command 
   
   showVersions --show=athena
