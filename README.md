@@ -69,12 +69,15 @@ if yourKey == option: GetDataFiles(inputs, 'yourShortcut', {options}, nOptions)
 **_NB_**: dataPUSF=1.09 (converted into 1/1.09 in the Analysis.cxx code)
 
 
-> **ZeeAnalysis/Config/Data2015.boost**  
+> **ZeeAnalysis/Config/Data2015.boost example: **  
+  
 >      esModel=es2015c_summer  
 >      trigger=HLT_2e17_lhvloose.*  
 >      dataPUSF=1.09  
 >      grl=data15_13TeV.periodAllYear_DetStatus-v75-repro20-01_DQDefects-00-02-02_PHYS_StandardGRL_All_Good_25ns.xml  
-> **ZeeAnalysis/Config/MC2015c.boost**  
+
+> **ZeeAnalysis/Config/MC2015c.boost example: **  
+
 >      esModel=es2016PRE  
 >      trigger=HLT_2e17_lhvloose_nod0.*  
 >      dataPUSF=1.09  
@@ -97,7 +100,7 @@ NB: GridJobList.txt is a list of all jobs which output files haven't been downlo
 - It it possible to create a csv file with the dataset corresponding to each run number available in a given grl.  
 For that, add the `makecsv` in your line command (works only for DATA15 and DATA16 keys for now):    
 
->     python RunGrid.py makecsv DATA15
+>     python RunGrid.py makecsv DATA15 DATA16
 
 In FunctionsRunGrid.py, instead of writing the full name of the datasets in the fileList map, just indicate the `list` key.  
 
