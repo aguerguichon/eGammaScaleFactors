@@ -1,10 +1,43 @@
 /**
 
+\mainpage
+
+
+# eGammaScaleFactors
+
 **_In the different mentionned files, be careful to change the paths and names "user.aguergui" (in RunGrid.py and GeneratePU.py especially)_**  
 
 **An example is given at each step for 2015 data. It will be wrapped within a block quote as follows:**
 
-> Here is the example.
+> Here is the example.  
+
+
+___
+
+
+eGammaScaleFactors is a package designed in the ROOT Analysis framework allowing to:
+- get the PileUp-reweighting files from a MC AOD
+- run on DxAOD and get a smaller Ntuple to work with  
+
+After running on the CERN GRID, the output Ntuple basically contains:
+- Z->ee kinematic information
+- electons fBrem
+- gain information
+
+
+Download and setup
+------------------
+
+Download the eGammaScaleFactors package and setup RootCore.
+```
+git clone git@github.com:aguerguichon/eGammaScaleFactors.git  
+cd eGammaScaleFactors
+rcSetup -r //to check the latest version of RootCore available  
+rcSetup Base,2.4.X  
+rc find_packages  
+rc compile  
+```
+
 
 How to make a Ntuple campaign
 -----------------------------
@@ -69,14 +102,14 @@ if yourKey == option: GetDataFiles(inputs, 'yourShortcut', {options}, nOptions)
 **_NB_**: dataPUSF=1.09 (converted into 1/1.09 in the Analysis.cxx code)
 
 
-> **ZeeAnalysis/Config/Data2015.boost example: **  
+> **ZeeAnalysis/Config/Data2015.boost example:**  
   
 >      esModel=es2015c_summer  
 >      trigger=HLT_2e17_lhvloose.*  
 >      dataPUSF=1.09  
 >      grl=data15_13TeV.periodAllYear_DetStatus-v75-repro20-01_DQDefects-00-02-02_PHYS_StandardGRL_All_Good_25ns.xml  
 
-> **ZeeAnalysis/Config/MC2015c.boost example: **  
+> **ZeeAnalysis/Config/MC2015c.boost example:**  
 
 >      esModel=es2016PRE  
 >      trigger=HLT_2e17_lhvloose_nod0.*  
@@ -94,6 +127,15 @@ python RunGrid.py yourKeys
 ```
   
 NB: GridJobList.txt is a list of all jobs which output files haven't been downloaded yet
+
+###Testing the code before running on the grid###
+If you want to test the Analysis code before running on the entire dataset on, you can do so locally. For that, you just need to run the `eGammaScaleFactors/launcher.py` macro with a small file. In this macro, it is possible to test different options, config files... This should take only a few minutes.
+
+>     commandLine+= '/sps/atlas/a/aguerguichon/Calibration/Test/data16_13TeV.00311481.physics_Main.merge.DAOD_EGAM1.f758_m1710_p2840_tid09767074_00/DAOD_EGAM1.09767074._000001.pool.root.1 --outName /sps/atlas/a/aguerguichon/Calibration/Test/TestAnalysis.root --config /afs/in2p3.fr/home/a/aguergui/public/eGammaScaleFactors/ZeeAnalysis/Config/Data2016.boost'  
+
+>     commandLine+= ' --electronID 1 --ptCut 27000'  
+
+
 
 ###Reading datasets from a csv file - creating csv file with datasets###
 

@@ -1,7 +1,5 @@
 0 Test
 0 Test
-9929107 user.aguergui.Data15_13TeV_Zee_Lkh1_3_Ntuple.root
-9929113 user.aguergui.Data15_13TeV_Zee_Lkh1_scaled_3_Ntuple.root
 9929192 user.aguergui.Data16_13TeV_Zee_Lkh1_8_Ntuple.root
 9929202 user.aguergui.Data16_13TeV_Zee_Lkh1_scaled_8_Ntuple.root
 9929214 user.aguergui.MC15c_13TeV_Zee_Lkh2_6_Ntuple.root
