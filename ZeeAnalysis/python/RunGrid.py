@@ -99,7 +99,16 @@ for option in sys.argv:
     if 'ZZ4l15c' == option : GetDataFiles( inputs, 'MC_13TeV_ZZ4l_2015c', {}, 1 )     
     if 'ZZvvll15c' == option : GetDataFiles( inputs, 'MC_13TeV_ZZvvll_2015c', {}, 1 )     
 
-    if 'SYST2015' == option : GetDataFiles( inputs, 'Data15_13TeV_Zee', {}, -5 )
+    if 'SYST2015' == option : 
+        GetDataFiles( inputs, 'Data15_13TeV_Zee', {}, -5 )
+        GetDataFiles( inputs, 'Data15_13TeV_Zee', {}, -6 )
+        GetDataFiles( inputs, 'Data15_13TeV_Zee', {}, -7 )
+
+    if 'SYST2016' == option : 
+        GetDataFiles( inputs, 'Data16_13TeV_Zee', {}, -5 )
+        GetDataFiles( inputs, 'Data16_13TeV_Zee', {}, -6 )
+        GetDataFiles( inputs, 'Data16_13TeV_Zee', {}, -7 )
+
 
     if 'SYST' == option :
         #Lkh2

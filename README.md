@@ -1,3 +1,5 @@
+/**
+
 **_In the different mentionned files, be careful to change the paths and names "user.aguergui" (in RunGrid.py especially)_**
 
 
@@ -21,7 +23,7 @@ How to make a Ntuple campaign
   python GeneratePU.py
 ```
 
-Once the job is finished, download ('rucio download fileName') and merge all the output files ('hadd fileName fileName_prw.root'). The merged file will then be the input file of RunZee.
+Once the job is finished, download `rucio download fileName` and merge all the output files `hadd fileName fileName_prw.root`. The merged file will then be the input file of RunZee.
 
 
 ###2 : Running on data###
@@ -62,14 +64,14 @@ python RunGrid.py yourKey
   
 NB: GridJobList.txt is a list of all jobs which output files haven't been downloaded yet
 
-####Reading datasets from a csv file - creating csv file with datasets####
+###Reading datasets from a csv file - creating csv file with datasets###
 
 - It it possible to create a csv file with the dataset corresponding to each run number available in a given grl.  
-For that, add the 'makecsv' in your line command (works only for DATA15 and DATA16 keys for now):    
+For that, add the `makecsv` in your line command (works only for DATA15 and DATA16 keys for now):    
 ```
 python RunGrid.py makecsv DATA15 DATA16
 ```  
-In FunctionsRunGrid.py, instead of writing the full name of the datasets in the fileList map, just indicate the 'list' key as follows:  
+In FunctionsRunGrid.py, instead of writing the full name of the datasets in the fileList map, just indicate the `list` key as follows:  
 ```
 fileList['yourShortcut']=['list', 'yourConfigFile']
 ```
@@ -104,8 +106,8 @@ m_mapVar['name you want to give to your variable in the tree']= 'the variable'
 
 ###Adding cuts and selection steps###
 
-In Analysis::PassSelection() are the cuts and selection at the event level.  
-In Analysis::MakeElectronCut() are the cuts and selection at the electron level.  
+In `Analysis::PassSelection()` are the cuts and selection at the event level.  
+In `Analysis::MakeElectronCut()` are the cuts and selection at the electron level.  
 
 To include the new selection in the cut flow: 
 - add the key name of the selection in the vector cutFlowNames in the Analysis constructor
@@ -119,3 +121,5 @@ Tools
 -----
 
 Tools are declared as attributes of the Analysis class. They are initialized in Analysis::InitializeTools()
+
+*/

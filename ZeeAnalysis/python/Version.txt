@@ -32,13 +32,13 @@ MC15c_13TeV_Zee_Mu15c_Lkh1 0
 MC15c_13TeV_Zee_Mu15c_Lkh1_scaled 0
 MC15c_13TeV_Zee_Lkh2 6
 MC15c_13TeV_Zee_Lkh1_fBrem70 2
-Data16_13TeV_Zee_Lkh1_doIso0 2
+Data16_13TeV_Zee_Lkh1_doIso0 3
 MC15c_13TeV_Zee_Lkh1_doIso0 5
 MC15c_13TeV_Zee_Lkh1_isoSyst 2
 MC15c_13TeV_Zee_Lkh1_recoSyst 2
 MC15c_13TeV_Zee_Lkh1_IDSyst 2
-Data16_13TeV_Zee_Lkh2 1
-Data16_13TeV_Zee_Lkh1_fBrem70 0
+Data16_13TeV_Zee_Lkh2 2
+Data16_13TeV_Zee_Lkh1_fBrem70 1
 MC15c_13TeV_Zee_Lkh1 1
 MC15c_13TeV_Zee_Lkh1_scaled 1
 MC15c_TEST_Lkh2 2
@@ -47,4 +47,6 @@ Data1615_13TeV_Zee_Lkh2 1
 Data1615_13TeV_Zee_Lkh2_scaled 1
 Data1615_13TeV_Zee_Lkh1_fBrem70 1
 Data1615_13TeV_Zee_Lkh1_doIso0 1
-Data15_13TeV_Zee_Lkh2 0
+Data15_13TeV_Zee_Lkh2 1
+Data15_13TeV_Zee_Lkh1_fBrem70 0
+Data15_13TeV_Zee_Lkh1_doIso0 0

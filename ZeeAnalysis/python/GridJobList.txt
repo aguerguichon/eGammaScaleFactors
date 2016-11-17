@@ -16,3 +16,9 @@
 9929324 user.aguergui.MC15c_13TeV_Zee_Lkh1_IDSyst_2_Ntuple.root
 9929564 user.aguergui.MC15c_13TeV_Zee_Lkh1_1_Ntuple.root
 9929579 user.aguergui.MC15c_13TeV_Zee_Lkh1_scaled_1_Ntuple.root
+9946861 user.aguergui.Data15_13TeV_Zee_Lkh2_1_Ntuple.root
+9946867 user.aguergui.Data15_13TeV_Zee_Lkh1_fBrem70_0_Ntuple.root
+9946876 user.aguergui.Data15_13TeV_Zee_Lkh1_doIso0_0_Ntuple.root
+9946885 user.aguergui.Data16_13TeV_Zee_Lkh2_2_Ntuple.root
+9946891 user.aguergui.Data16_13TeV_Zee_Lkh1_fBrem70_1_Ntuple.root
+9946897 user.aguergui.Data16_13TeV_Zee_Lkh1_doIso0_3_Ntuple.root
