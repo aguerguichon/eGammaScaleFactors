@@ -2,7 +2,7 @@
 
 **_In the different mentionned files, be careful to change the paths and names "user.aguergui" (in RunGrid.py and GeneratePU.py especially)_**  
 
-**An example is given at each step for 2016 data. It will be wrapped within a block quote as follows:**
+**An example is given at each step for 2015 data. It will be wrapped within a block quote as follows:**
 
 > Here is the example.
 
@@ -33,7 +33,7 @@ Once the job is finished, download `rucio download fileName` and merge all the o
 
 >      cd /sps/atlas/a/aguerguichon/Calibration/DataxAOD/  
 >      rucio download user.aguergui.mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2576_s2132_r7725_r7676_prw_0_METADATA/  
->      cd ~/public/eGammaScaleFactors  
+>      cd ~/public/eGammaScaleFactors/  
 >      hadd mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2576_s2132_r7725_r7676_prw.root  user.aguergui.mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2576_s2132_r7725_r7676_prw_0_METADATA/  
 
 ###2 : Running on data###
@@ -41,22 +41,26 @@ Once the job is finished, download `rucio download fileName` and merge all the o
 - In eGammaScaleFactors/ZeeAnalysis/python/FunctionsRunGrid.py:
    * create a new entry in fileList (don't forget to put the '/' at the end of your dataset to work on containers), the shortcut name will be the name of the directory where data will be uploaded once the job is finished: 
 ```
-fileList['yourShortcut']=['yourDataset/', 'yourConfigFile']
+fileList['yourShortcut']=['yourDataset/', 'yourConfigFile']  
 ```
  
+>      fileList['Data16_13TeV_Zee'] = ['data15_13TeV.*.physics_Main.merge.DAOD_EGAM1.r7562_p2521_p2667/', 'ZeeAnalysis/Config/Data2015.boost' ]   
+
 - In eGammaScaleFactors/ZeeAnalysis/python/RunGrid.py:
    * create a new key as: 
 ```
 if yourKey == option: GetDataFiles(inputs, 'yourShortcut', {options}, nOptions)
 ```  
+
+>     if 'DATA15' == option : GetDataFiles( inputs, 'Data15_13TeV_Zee', {}, 1 )  
+
   -> each GetDataFiles() line corresponds to one job  
   -> more information on the different nOptions in FunctionsRunGrid.py l.70  
   -> if nOptions > 0, all the selections corresponding to 0 -> nOptions are performed  
   -> if nOptions < 0, only the selection corresponding to fabs(nOptions) is performed (baseline is 1)  
 
-   ex: 
-   * nOptions= 1: 2 different jobs are launched, the 1st one with electronID=1 doScale=0 ptCut=27 and the 2nd one with electronID=1 doScale=1 ptCut=27  
-   * nOptions=-1: only one job is launched with electronID=1 doScale=1 ptCut=27
+> nOptions= 1: 2 different jobs are launched, the 1st one with electronID=1 doScale=0 ptCut=27 and the 2nd one with electronID=1 doScale=1 ptCut=27    
+> nOptions=-1: only one job is launched with electronID=1 doScale=1 ptCut=27  
 
 - In eGammaScaleFactors/ZeeAnalysis/Config/:
    * create the config file with:  
@@ -64,12 +68,26 @@ if yourKey == option: GetDataFiles(inputs, 'yourShortcut', {options}, nOptions)
 **for data**: esModel, trigger, dataPUSF, grl  
 **_NB_**: dataPUSF=1.09 (converted into 1/1.09 in the Analysis.cxx code)
 
+
+> **ZeeAnalysis/Config/Data2015.boost**  
+>      esModel=es2015c_summer  
+>      trigger=HLT_2e17_lhvloose.*  
+>      dataPUSF=1.09  
+>      grl=data15_13TeV.periodAllYear_DetStatus-v75-repro20-01_DQDefects-00-02-02_PHYS_StandardGRL_All_Good_25ns.xml  
+> **ZeeAnalysis/Config/MC2015c.boost**  
+>      esModel=es2016PRE  
+>      trigger=HLT_2e17_lhvloose_nod0.*  
+>      dataPUSF=1.09  
+>      pileupFile=mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2576_s2132_r7725_r7676_prw.root  
+>      ilumCalc=ilumicalc_histograms_None_297730-311481_OflLumi-13TeV-005.root   
+
+
 - Setup: 
 ```
 rcSetup 
 lsetup panda
 lsetup rucio
-python RunGrid.py yourKey
+python RunGrid.py yourKeys
 ```
   
 NB: GridJobList.txt is a list of all jobs which output files haven't been downloaded yet
@@ -78,17 +96,16 @@ NB: GridJobList.txt is a list of all jobs which output files haven't been downlo
 
 - It it possible to create a csv file with the dataset corresponding to each run number available in a given grl.  
 For that, add the `makecsv` in your line command (works only for DATA15 and DATA16 keys for now):    
-```
-python RunGrid.py makecsv DATA15 DATA16
-```  
-In FunctionsRunGrid.py, instead of writing the full name of the datasets in the fileList map, just indicate the `list` key as follows:  
-```
-fileList['yourShortcut']=['list', 'yourConfigFile']
-```
+
+>     python RunGrid.py makecsv DATA15
+
+In FunctionsRunGrid.py, instead of writing the full name of the datasets in the fileList map, just indicate the `list` key.  
+
+>     fileList['Data15_13TeV_Zee']=['list', 'ZeeAnalysis/Config/Data2015.boost']
+
 - To read datasets from a csv file, just put the name (with absolute path) of your csv file in the fileList map of FunctionsRunGrid.py
-```
-fileList['yourShortcut']=['yourcsvFile', 'yourConfigFile']
-```
+
+>     fileList['Data15_13TeV_Zee'] = ['/afs/in2p3.fr/home/a/aguergui/public/eGammaScaleFactors/DatasetList/Data15_13TeV_Zee.csv', 'ZeeAnalysis/Config/Data2015.boost' ]
 
 
 ###3 : Downloading output files###
@@ -109,10 +126,9 @@ Customize the selection and the variables
 Knowing what information is stored in the DAOD:
 https://twiki.cern.ch/twiki/bin/viewauth/AtlasComputing/SoftwareTutorialxAODAnalysisInROOT#Knowing_what_information_is_in_t
 
-To add variables, you have to modify Analysis::FillSelectionTree() in ZeeAnalysis/Root/Analysis.cxx by adding a new line:
-```
-m_mapVar['name you want to give to your variable in the tree']= 'the variable'
-```
+To add variables, you have to modify Analysis::FillSelectionTree() in ZeeAnalysis/Root/Analysis.cxx by adding a new line
+
+>     m_mapVar[string(TString::Format( "pt_%d", iEl+1 ))] = m_veGood[iEl]->pt();  
 
 ###Adding cuts and selection steps###
 
