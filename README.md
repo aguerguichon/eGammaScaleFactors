@@ -31,10 +31,10 @@ How to make a Ntuple campaign
 
 Once the job is finished, download `rucio download fileName` and merge all the output files `hadd fileName fileName_prw.root`. The merged file will then be the input file of RunZee.
 
-> >>cd /sps/atlas/a/aguerguichon/Calibration/DataxAOD/  
-> >>rucio download user.aguergui.mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2576_s2132_r7725_r7676_prw_0_METADATA/  
-> >>cd ~/public/eGammaScaleFactors  
-> >>hadd mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2576_s2132_r7725_r7676_prw.root  user.aguergui.mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2576_s2132_r7725_r7676_prw_0_METADATA/  
+>      cd /sps/atlas/a/aguerguichon/Calibration/DataxAOD/  
+> rucio download user.aguergui.mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2576_s2132_r7725_r7676_prw_0_METADATA/  
+> cd ~/public/eGammaScaleFactors  
+> hadd mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2576_s2132_r7725_r7676_prw.root  user.aguergui.mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2576_s2132_r7725_r7676_prw_0_METADATA/  
 
 ###2 : Running on data###
 
