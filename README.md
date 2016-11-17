@@ -1,7 +1,10 @@
 /**
 
-**_In the different mentionned files, be careful to change the paths and names "user.aguergui" (in RunGrid.py especially)_**
+**_In the different mentionned files, be careful to change the paths and names "user.aguergui" (in RunGrid.py and GeneratePU.py especially)_**  
 
+**An example is given at each step for 2016 data. It will be wrapped within a block quote as follows:**
+
+> Here is the example.
 
 How to make a Ntuple campaign
 -----------------------------
@@ -9,6 +12,9 @@ How to make a Ntuple campaign
 ###1 : Generate MC Pileup File###
 
 - In ZeeAnalysis/python/GeneratePU.py, add the MC AOD dataset(s) corresponding to the DAOD which is used
+
+> datasetVect = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2576_s2132_r7725_r7676/']
+
 - Check the latest athena release with the command 
 ```
   lsetup panda
@@ -25,6 +31,10 @@ How to make a Ntuple campaign
 
 Once the job is finished, download `rucio download fileName` and merge all the output files `hadd fileName fileName_prw.root`. The merged file will then be the input file of RunZee.
 
+> cd /sps/atlas/a/aguerguichon/Calibration/DataxAOD/  
+> rucio download user.aguergui.mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2576_s2132_r7725_r7676_prw_0_METADATA/  
+> cd ~/public/eGammaScaleFactors  
+> hadd mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2576_s2132_r7725_r7676_prw.root  user.aguergui.mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2576_s2132_r7725_r7676_prw_0_METADATA/  
 
 ###2 : Running on data###
 
