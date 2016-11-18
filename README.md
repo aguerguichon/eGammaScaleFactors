@@ -77,23 +77,23 @@ Once the job is finished, download `rucio download fileName` and merge all the o
 fileList['yourShortcut']=['yourDataset/', 'yourConfigFile']  
 ```
  
->      fileList['Data16_13TeV_Zee'] = ['data15_13TeV.*.physics_Main.merge.DAOD_EGAM1.r7562_p2521_p2667/', 'ZeeAnalysis/Config/Data2015.boost' ]   
+>      fileList['Data15_13TeV_Zee'] = ['data15_13TeV.*.physics_Main.merge.DAOD_EGAM1.r7562_p2521_p2667/', 'ZeeAnalysis/Config/Data2015.boost' ]   
 
 - In eGammaScaleFactors/ZeeAnalysis/python/RunGrid.py:
    * create a new key as: 
 ```
-if yourKey == option: GetDataFiles(inputs, 'yourShortcut', {options}, nOptions)
+if yourKey == option: GetDataFiles(inputs, 'yourShortcut', {options}, mode)
 ```  
 
 >     if 'DATA15' == option : GetDataFiles( inputs, 'Data15_13TeV_Zee', {}, 1 )  
 
   -> each GetDataFiles() line corresponds to one job  
-  -> more information on the different nOptions in FunctionsRunGrid.py l.70  
-  -> if nOptions > 0, all the selections corresponding to 0 -> nOptions are performed  
-  -> if nOptions < 0, only the selection corresponding to fabs(nOptions) is performed (baseline is 1)  
+  -> more information on the different modes in FunctionsRunGrid.py l.70  
+  -> if mode > 0, all the selections corresponding to 0 -> mode are performed  
+  -> if mode < 0, only the selection corresponding to fabs(mode) is performed (baseline is mode=1)  
 
-> nOptions= 1: 2 different jobs are launched, the 1st one with electronID=1 doScale=0 ptCut=27 and the 2nd one with electronID=1 doScale=1 ptCut=27    
-> nOptions=-1: only one job is launched with electronID=1 doScale=1 ptCut=27  
+> mode= 1: 2 different jobs are launched, the 1st one with electronID=1 doScale=0 ptCut=27 and the 2nd one with electronID=1 doScale=1 ptCut=27    
+> mode=-1: only one job is launched with electronID=1 doScale=1 ptCut=27  
 
 - In eGammaScaleFactors/ZeeAnalysis/Config/:
    * create the config file with:  
@@ -129,7 +129,7 @@ python RunGrid.py yourKeys
 NB: GridJobList.txt is a list of all jobs which output files haven't been downloaded yet
 
 ###Testing the code before running on the grid###
-If you want to test the Analysis code before running on the entire dataset on, you can do so locally. For that, you just need to run the `eGammaScaleFactors/launcher.py` macro with a small file. In this macro, it is possible to test different options, config files... This should take only a few minutes.
+If you want to test the Analysis code before running on the entire dataset on, you can do so in interactive mode. For that, you just need to run the `eGammaScaleFactors/launcher.py` macro with a small file. In this macro, it is possible to test different options, config files... This should take only a few minutes.
 
 >     commandLine+= '/sps/atlas/a/aguerguichon/Calibration/Test/data16_13TeV.00311481.physics_Main.merge.DAOD_EGAM1.f758_m1710_p2840_tid09767074_00/DAOD_EGAM1.09767074._000001.pool.root.1 --outName /sps/atlas/a/aguerguichon/Calibration/Test/TestAnalysis.root --config /afs/in2p3.fr/home/a/aguergui/public/eGammaScaleFactors/ZeeAnalysis/Config/Data2016.boost'  
 
