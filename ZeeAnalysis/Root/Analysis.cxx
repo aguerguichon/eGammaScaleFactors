@@ -278,8 +278,8 @@ void Analysis::Save( ) {
   treeout->Branch( "m_numEvent", &m_numEvent, "m_numEvent/l" );
   treeout->Branch( "m_goodEvent", &m_goodEvent, "m_goodEvent/l" );
   treeout->Branch( "m_doScaleFactor", &m_doScaleFactor);
-
   treeout->Fill();
+  cout<<"Size: "<<treeout->GetTotBytes()<<endl;
   treeout->Write( "", TObject::kOverwrite );
   delete treeout;
   treeout = 0;
@@ -632,17 +632,16 @@ int Analysis::FillSelectionTree() {
   m_mapVar["ptZ"] = m_Z->Pt() / 1000.;
 
   m_mapVar["NVertex"] = m_ZVertex->size();
-  m_mapVar["muPU"] = m_eventInfo->averageInteractionsPerCrossing();
 
   vector<string> weightNames = {  "SFIso", "SFReco", "SFID", "vertexWeight", "puWeight" };
   for ( auto name : weightNames ) m_mapVar[name]=1;  
-  if ( m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {
-    if ( m_pileup ) {
-      m_pileup->apply( *m_eventInfo, 1 );
-      m_mapVar["puWeight"] = m_eventInfo->auxdecor< float >( "PileupWeight" );
-    }
-    m_mapHist["puWeight"]->Fill( m_mapVar["puWeight"] );
 
+  m_mapVar["muPU"] = m_eventInfo->averageInteractionsPerCrossing();
+  m_pileup->apply( *m_eventInfo, 1);
+  
+
+  if ( m_eventInfo->eventType( xAOD::EventInfo::IS_SIMULATION ) ) {
+    m_mapVar["puWeight"] = m_eventInfo->auxdecor< float >( "PileupWeight" );
     if ( m_vtxTool ) {
       m_vtxTool->getWeight( m_mapVar[ "vertexWeight" ] );
       m_mapHist["vertexWeight"]->Fill( m_mapVar[ "vertexWeight" ] );
@@ -656,14 +655,14 @@ int Analysis::FillSelectionTree() {
       dumVectorTool[iTool]->getEfficiencyScaleFactor(*m_veGood[0],sf1);
       dumVectorTool[iTool]->getEfficiencyScaleFactor(*m_veGood[1],sf2);
       m_mapVar[weightNames[iTool]] = sf1*sf2;
-
     }//end for
+  }//End isSimulation
+  else { 
+    m_mapVar["muCorr"] = m_eventInfo->auxdecor< float  >("corrected_averageInteractionsPerCrossing");
   }
-  //End isSimulation
-  else {
 
-  }
-
+  m_mapHist["puWeight"]->Fill( m_mapVar["puWeight"] );
+   
   //  m_mapVar["weight"] = m_mapVar["lineshapeWeight"]*m_mapVar["puWeight"]*m_mapVar["SFReco"]*m_mapVar["SFID"]*m_mapVar["datasetWeight"];
   m_mapVar["weight"] = m_mapVar["puWeight"]*m_mapVar["SFReco"]*m_mapVar["SFID"]*m_mapVar["datasetWeight"]*m_mapVar["SFIso"]*m_mapVar["vertexWeight"];
   
@@ -692,6 +691,7 @@ int Analysis::InitializeTools () {
   m_EgammaCalibrationAndSmearingTool->setProperty("ResolutionType", "SigmaEff90"); 
   m_EgammaCalibrationAndSmearingTool->setProperty( "doSmearing", m_doScaleFactor );
   m_EgammaCalibrationAndSmearingTool->setProperty( "doScaleCorrection", m_doScaleFactor );
+  m_EgammaCalibrationAndSmearingTool->setProperty( "useGainCorrection", 0 );
   m_EgammaCalibrationAndSmearingTool->initialize();
 
   //Setup the electron ID tool  

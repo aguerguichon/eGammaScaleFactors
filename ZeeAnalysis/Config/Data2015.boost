@@ -2,3 +2,5 @@ esModel=es2015c_summer
 trigger=HLT_2e17_lhvloose.* 
 dataPUSF=1.09
 grl=data15_13TeV.periodAllYear_DetStatus-v75-repro20-01_DQDefects-00-02-02_PHYS_StandardGRL_All_Good_25ns.xml
+pileupFile=mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2576_s2132_r7725_r7676_prw.root
+ilumCalc=ilumicalc_histograms_None_276262-284484_OflLumi-13TeV-005.root

@@ -86,12 +86,15 @@ for option in sys.argv:
             GetDataFiles( inputs, 'Data' +( '15' if option == 'DATA15' else '16' )+'_13TeV_Zee', {} ,1, datasetList)
             print ("Finished writing csv file")
 
-        if mode == 1: GetDataFiles( inputs, 'Data' +( '15' if option == 'DATA15' else '16' )+'_13TeV_Zee', {} ,1 )
+        if mode == 1: GetDataFiles( inputs, 'Data' +( '15' if option == 'DATA15' else '16' )+'_13TeV_Zee_noGain', {} ,1 )
       
 
-    if 'MC15c' == option : GetDataFiles( inputs, 'MC15c_13TeV_Zee', {}, 1 )     
-    if 'MC15b' == option : GetDataFiles( inputs, 'MC15c_13TeV_Zee_Mu15b', {}, 1 )     
-   
+    if 'MC15c_2015' == option : GetDataFiles( inputs, 'MC15c_13TeV_Zee_2015_noGain', {}, 1 )    
+    if 'MC15c_2016'== option : GetDataFiles( inputs, 'MC15c_13TeV_Zee_2016_noGain', {}, 1 )     
+    if 'MC15c' == option : GetDataFiles( inputs, 'MC15c_13TeV_Zee_noGain', {}, 1 )     
+ 
+    if 'NewGeom' == option : GetDataFiles( inputs, 'MC_13TeV_Zee_NewGeom', {}, 0 )
+
     if 'Ztautau15c' == option : GetDataFiles( inputs, 'MC_13TeV_Ztautau_2015c', {}, 1 )     
     if 'ttbar15c' == option : GetDataFiles( inputs, 'MC_13TeV_ttbar_2015c', {}, 1 )     
     if 'WWlvlv15c' == option : GetDataFiles( inputs, 'MC_13TeV_WWlvlv_2015c', {}, 1 )     
@@ -192,7 +195,9 @@ for option in sys.argv:
                 if not int(nMiss)  :
                     os.system('touch OK' + job[1].split('.')[2].split('_')[-2] )
                     os.system('rm ' +job[1] + '/*.part' )
-                    addFileLine= 'AddFiles ' + job[1] + '/* --outName ' + directory + '.root'
+                    #addFileLine= 'AddFiles ' + job[1] + '/* --outName ' + directory + '.root'
+                    os.system('rm ' + directory +'.root')
+                    addFileLine= 'hadd '+ directory + '.root ' + job[1] + '/*' 
                     print addFileLine
                     os.system( addFileLine )
 #create boost file to ease plotting
@@ -201,8 +206,9 @@ for option in sys.argv:
                     rootFiles.remove('')
                     rootFiles = [ os.popen( 'pwd' ).read().split()[0]+'/' + f for f in rootFiles ]
                     boostFile.write( 'rootFileName=' + ' '.join( rootFiles ) + '\n' )
-                    rootFiles = [ StripName( x ) + '_selectionTree' for x in rootFiles]
-                    boostFile.write( 'objName=' + ' '.join( rootFiles ) + '\n' )
+                    #rootFiles = [ StripName( x ) + '_selectionTree' for x in rootFiles]
+                    #boostFile.write( 'objName=' + ' '.join( rootFiles ) + '\n' )
+                    boostFile.write( 'objName= Analysis_selectionTree \n' )
                     boostFile.close();
                     toRemove.append( job[0] )
                 else :

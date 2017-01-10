@@ -14,18 +14,22 @@ def GetDataFiles( inputs, inFileIndex, options, configuration=1, datasetList=[] 
     #============TEST
     
     #============DATA
-    fileList['Data15_13TeV_Zee'] = ['/afs/in2p3.fr/home/a/aguergui/public/eGammaScaleFactors/DatasetList/Data15_13TeV_Zee.csv', 'ZeeAnalysis/Config/Data2015.boost' ]
-    fileList['Data16_13TeV_Zee'] = ['/afs/in2p3.fr/home/a/aguergui/public/eGammaScaleFactors/DatasetList/Data16_13TeV_Zee.csv', 'ZeeAnalysis/Config/Data2016.boost' ]
+    fileList['Data15_13TeV_Zee_noGain'] = ['/afs/in2p3.fr/home/a/aguergui/public/eGammaScaleFactors/DatasetList/Data15_13TeV_Zee.csv', 'ZeeAnalysis/Config/Data2015.boost' ]
+    fileList['Data16_13TeV_Zee_noGain'] = ['/afs/in2p3.fr/home/a/aguergui/public/eGammaScaleFactors/DatasetList/Data16_13TeV_Zee.csv', 'ZeeAnalysis/Config/Data2016.boost' ]
     fileList['Data1615_13TeV_Zee'] = ['/afs/in2p3.fr/home/a/aguergui/public/eGammaScaleFactors/DatasetList/Data1615_13TeV_Zee.csv', 'ZeeAnalysis/Config/Data1615.boost' ]
 
 
     #====================MC
-    fileList['MC15c_13TeV_Zee'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2576_s2132_r7725_r7676_p2666/', 'ZeeAnalysis/Config/MC2015c.boost' ]
+    fileList['MC15c_13TeV_Zee_noGain'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2576_s2132_r7725_r7676_p2666/', 'ZeeAnalysis/Config/MC2015c.boost' ]
+
+    fileList['MC15c_13TeV_Zee_2015_noGain'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2576_s2132_r7725_r7676_p2666/', 'ZeeAnalysis/Config/MC2015c_2015.boost' ]
+
+    fileList['MC15c_13TeV_Zee_2016_noGain'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2576_s2132_r7725_r7676_p2666/', 'ZeeAnalysis/Config/MC2015c_2016.boost' ]
 
     fileList['MC15c_13TeV_Zee_Mu15b'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2576_s2132_r7773_r7676_p2666/', 'ZeeAnalysis/Config/MC2015b.boost' ]
     #fileList['MC15c_TEST'] = [ 'mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2576_s2132_r7725_r7676_p2666_tid08601476_00/DAOD_EGAM1.08601476._000138.pool.root.1','ZeeAnalysis/Config/MC2015c.boost' ]
 
-    #fileList['MC_13TeV_Zee_TestGuillaume'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.AOD.e3601_s2984_r8585_r7676/', 'ZeeAnalysis/Config/MC2015c.boost']
+    fileList['MC_13TeV_Zee_NewGeom'] = ['mc15_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.merge.DAOD_EGAM1.e3601_s2984_r8585_r7676_p2666/', 'ZeeAnalysis/Config/MC2015c.boost']
    
 
 
